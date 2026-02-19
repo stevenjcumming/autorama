@@ -1,0 +1,120 @@
+# Autopilot Configuration
+# Copy this file to .claude/autopilot.yml and customize for your project
+
+# Agent overrides (optional)
+# Replace default agents with your own implementations
+agents:
+  tester: autopilot-tester        # Agent for running tests
+  coder: autopilot-coder          # Agent for implementing tasks
+  refactorer: autopilot-refactorer # Agent for cleanup/refactoring
+
+# Coding skills (optional)
+# List skills the coder agent can choose from based on task context
+# The agent will dynamically select the most appropriate skill(s)
+# Skills are loaded from .claude/skills/<skill-name>/SKILL.md
+coding_skills: []
+  # Examples:
+  # - service-object-skill      # For business logic 
+  # - controller-skill          # For Rails controllers
+  # - react-component-skill     # For React components
+  # - api-endpoint-skill        # For API routes
+
+# Testing skills (optional)
+# Skills available to the tester agent
+testing_skills: []
+  # Examples:
+  # - rspec-skill               # For RSpec test patterns
+  # - jest-skill                # For Jest/React testing
+
+# Refactoring skills (optional)
+# Skills available to the refactorer agent
+refactoring_skills: []
+  # Examples:
+  # - dry-refactor-skill        # For DRY principle refactoring
+  # - performance-skill         # For performance optimizations
+
+# Justification configuration (optional)
+# Customize when and how justifications are required for file modifications
+# Requires `yq` to be installed; falls back to built-in defaults without it
+justification:
+  # Custom categories for file pattern matching
+  # Each category defines patterns (glob) and prompting questions
+  categories:
+    spec_modification:
+      title: "Test/Spec Modification"
+      patterns:
+        - "*_spec.rb"
+        - "*_test.rb"
+      questions:
+        - "Is this adding new specs for extracted code?"
+        - "Is this refactoring spec structure (no assertion changes)?"
+        - "Is this updating test doubles for extracted collaborators?"
+        - "Is this removing specs for deleted code?"
+        - "Is this fixing specs that tested implementation details?"
+        - "Are you changing assertions to make a failing test pass? **(STOP IF YES)**"
+
+    migration:
+      title: "Database Migration"
+      patterns:
+        - "*/db/migrate/*"
+        - "*/migrations/*"
+      questions:
+        - "Is this a new migration?"
+        - "Is this editing an unmigrated migration?"
+        - "Is this editing a deployed migration? **(CREATE NEW MIGRATION INSTEAD)**"
+
+    dependency:
+      title: "Dependency Change"
+      patterns:
+        - "Gemfile"
+        - "Gemfile.lock"
+      questions:
+        - "Why is this dependency needed?"
+        - "What is the security/maintenance status?"
+        - "Are there lighter alternatives?"
+        - "Does this require approval (e.g., enterprise requirements)?"
+
+    configuration:
+      title: "Configuration Change"
+      patterns:
+        - "*/config/*.yml"
+        - "*/config/*.yaml"
+      questions:
+        - "What behavior does this change?"
+        - "Does this affect production?"
+        - "Are secrets or credentials involved?"
+        - "Is this environment-specific?"
+
+    security:
+      title: "Security-Sensitive File"
+      patterns:
+        - "*auth*"
+        - "*security*"
+        - "*permission*"
+        - "*policy*"
+        - "*credential*"
+      questions:
+        - "What security implications does this change have?"
+        - "Have you verified this doesn't weaken access controls?"
+        - "Does this need security review?"
+
+    # Example custom category - uncomment and modify as needed
+    # infrastructure:
+    #   title: "Infrastructure Change"
+    #   patterns:
+    #     - "terraform/**"
+    #     - "*.tf"
+    #     - "k8s/**"
+    #     - "*.yaml"  # Be specific to avoid matching all YAML
+    #   questions:
+    #     - "Has platform team reviewed?"
+    #     - "Is this change reversible?"
+    #     - "What environments are affected?"
+
+  # Default behavior for files that don't match any category
+  default:
+    title: "File Modification"
+    questions:
+      - "What is the purpose of this change?"
+      - "Does this change affect other parts of the codebase?"
+      - "Is this change reversible?"

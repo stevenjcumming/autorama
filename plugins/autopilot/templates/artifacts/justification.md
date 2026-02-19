@@ -1,0 +1,26 @@
+---
+category: {category}
+file: {file_path}
+tool: {edit|write}
+timestamp: {ISO 8601}
+---
+
+## {Category Title}
+
+**File:** `{file_path}`
+
+### Checklist
+
+<!-- Answer category-specific questions -->
+
+### Justification
+
+<!-- Why this change is necessary -->
+
+### Alternatives Considered
+
+<!-- Other approaches evaluated, or "None - straightforward implementation" -->
+
+### Risk Assessment
+
+<!-- Low/Medium/High and why -->

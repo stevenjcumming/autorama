@@ -1,0 +1,38 @@
+{
+  "name": "autopilot",
+  "version": "0.10.0",
+  "description": "AI-autonomous software development toolkit with safety guardrails",
+  "author": {
+    "name": "Steven Cumming"
+  },
+  "repository": "https://github.com/stevenjcumming/claude-code-autopilot",
+  "commands": [
+    "./commands/init.md",
+    "./commands/new-spec.md",
+    "./commands/create-plan.md",
+    "./commands/create-tasks.md",
+    "./commands/execute.md",
+    "./commands/pause-autopilot.md",
+    "./commands/review.md",
+    "./commands/reflect.md",
+    "./commands/commit.md",
+    "./commands/sync-pr.md"
+  ],
+  "agents": [
+    "./agents/plan-builder.md",
+    "./agents/plan-analyzer.md",
+    "./agents/plan-researcher.md",
+    "./agents/task-builder.md",
+    "./agents/rules-builder.md",
+    "./agents/autopilot.md",
+    "./agents/autopilot-tester.md",
+    "./agents/autopilot-coder.md",
+    "./agents/autopilot-refactorer.md",
+    "./agents/autopilot-analyzer.md",
+    "./agents/loop-controller.md",
+    "./agents/autopilot-task-runner.md",
+    "./agents/handoff-writer.md",
+    "./agents/session-summarizer.md"
+  ],
+  "hooks": "./hooks/hooks.json"
+}
