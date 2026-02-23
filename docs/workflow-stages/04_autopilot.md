@@ -9,33 +9,41 @@ Execute the Test -> Code -> Analysis -> Refactor loop autonomously for a spec, g
 Autopilot uses an **Agent Harness** architecture where background agents complete individual tasks with clean handoffs between them:
 
 ```
-/autopilot:execute
-    └── Loop Controller (hook-based)
-            │
-            ├── PreToolUse Hook: Load context
-            │   ├── Read TODO.md for next task
-            │   └── Read handoff/handoff.md
-            │
-            ├── Task Agent (background, one task)
-            │   ├── autopilot-tester
-            │   ├── autopilot-coder
-            │   ├── autopilot-analyzer
-            │   └── autopilot-refactorer
-            │
-            └── PostToolUse Hook: Save state
-                ├── Update TODO.md
-                ├── Write handoff/handoff.md
-                ├── Generate session summary
-                └── Git commit
-
-            ... new agent spawns for next task ...
+/autopilot:execute (command — lightweight loop owner)
+    │
+    ├── Step 3: setup-artifacts.sh + build-task-queue.sh
+    │
+    ├── Step 4: Task Loop (for each task in queue)
+    │   │
+    │   ├── Spawn fresh Task(autopilot-task-runner) per task
+    │   │   │
+    │   │   ├── PreToolUse Hook: load-context.sh
+    │   │   │   └── Loads TODO.md, handoff.md
+    │   │   │
+    │   │   ├── autopilot-task-runner (clean context)
+    │   │   │   ├── 1. tester (writes tests)
+    │   │   │   ├── 2. Bash: run tests → expect RED (fail)
+    │   │   │   ├── 3. coder (implements to satisfy tests)
+    │   │   │   ├── 4. Bash: run tests → expect GREEN (pass)
+    │   │   │   ├── 5. analyzer (static analysis)
+    │   │   │   └── 6. refactorer (cleanup)
+    │   │   │
+    │   │   ├── PostToolUse Hook: save-state.sh
+    │   │   │   └── Writes current.json state tracker
+    │   │   ├── PostToolUse Hook: commit.sh
+    │   │   │   └── Triggers auto-commit on uncommitted changes
+    │   │   └── SubagentStop Hook: on-agent-complete.sh
+    │   │       └── Auto-commits, generates handoff.md, checks context
+    │   │
+    │   └── Parse <task-completed> / <task-failed> status
+    │
+    └── Step 5: Present final summary
 ```
 
 **Key benefits:**
 - **Fresh context per task** - Each task agent starts with clean context
 - **Clean handoffs** - Handoff artifacts preserve decisions
 - **Automatic commits** - Git history tracks each task completion
-- **Pause signals** - Analyzer can trigger pause for human review
 - **Background execution** - Task agents run in background for monitoring
 
 ## Command
@@ -91,16 +99,6 @@ refactoring_skills: []
 auto_commit:
   enabled: true                    # Commit after each task (default: true)
   message_template: "feat({spec_id}): complete {task_id} - {task_summary}"
-
-# Pause signal configuration
-pause_signals:
-  enabled: true                    # Pause on analyzer signals (default: true)
-  triggers:
-    - signal: "repeated_violation"
-      threshold: 3                 # Same rule violated 3+ times
-    - signal: "high_severity"
-      types: ["security", "breaking_change"]
-    - signal: "human_review_needed"
 
 # Static analysis configuration
 static_analysis:
@@ -206,54 +204,6 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 
 To disable auto-commits and commit manually: `auto_commit.enabled: false`
 
-### Pause Signals
-
-When `pause_signals.enabled: true` (default), autopilot pauses automatically on certain analyzer signals:
-
-| Signal | Trigger | Action |
-|--------|---------|--------|
-| `repeated_violation` | Same rule violated 3+ times | Pause for human review |
-| `high_severity` | Security or breaking change | Pause immediately |
-| `human_review_needed` | Explicit review flag | Pause for approval |
-
-**Configuration:**
-
-```yaml
-pause_signals:
-  enabled: true
-  triggers:
-    - signal: "repeated_violation"
-      threshold: 3
-    - signal: "high_severity"
-      types: ["security", "breaking_change"]
-    - signal: "human_review_needed"
-```
-
-When paused, autopilot saves state to `artifacts/state/paused.md` with:
-- Current task and attempt count
-- Recent analyzer signals
-- Resume instructions
-
-To resume: re-run `/autopilot:execute <identifier>` - it picks up from the paused task.
-
-### Manual Pause
-
-You can manually pause autopilot at any time using:
-
-```
-/autopilot:pause-autopilot <identifier>
-```
-
-This immediately:
-1. Saves current state to `artifacts/state/paused.md`
-2. Records the current task and attempt count
-3. Outputs resume instructions
-
-Use manual pause when you want to:
-- Review progress before continuing
-- Make manual changes to the spec or tasks
-- Intervene in the automation loop
-
 ### Justification Configuration
 
 Customize when and how justifications are required for file modifications:
@@ -325,27 +275,23 @@ justification:
 ```
 /autopilot:execute <identifier>
 ├── Validates prerequisites (TODO.md, PLAN.md, SPEC.md)
-├── loop-controller (orchestrator)
-│   ├── Reads TODO.md for next task
-│   ├── Checks for pause signals
-│   └── Spawns autopilot-task-runner in background
-│       ├── autopilot-tester - Writes tests from acceptance criteria (TDD red phase)
-│       ├── autopilot-coder - Implements changes with artifacts
-│       ├── autopilot-analyzer - Runs static analysis, reports issues
-│       └── autopilot-refactorer - Cleans up code
-├── PostToolUse hooks on task completion:
-│   ├── handoff-writer - Generates handoff.md
-│   ├── session-summarizer - Compresses context
-│   └── Auto-commit changes
-└── Repeats until all tasks done or pause triggered
+├── Spawns fresh autopilot-task-runner per task (clean context)
+│   ├── autopilot-tester - Writes tests from acceptance criteria (TDD red phase)
+│   ├── autopilot-coder - Implements changes with artifacts
+│   ├── autopilot-analyzer - Runs static analysis, reports issues
+│   └── autopilot-refactorer - Cleans up code
+├── Hooks on task completion:
+│   ├── save-state.sh (PostToolUse) - Writes current.json
+│   ├── commit.sh (PostToolUse) - Auto-commit trigger
+│   └── on-agent-complete.sh (SubagentStop) - Auto-commit, handoff, context check
+└── Repeats until all tasks done or failure
 ```
 
 ### Agents
 
 | Agent | Purpose | Output |
 |-------|---------|--------|
-| `loop-controller` | Orchestrates the agent loop | Spawns task runners, monitors completion |
-| `autopilot-task-runner` | Executes single task with full loop | Task completion status |
+| `autopilot-task-runner` | Executes single task with full loop (fresh context per task) | Task completion status |
 | `autopilot-tester` | Write tests from acceptance criteria (TDD red phase) | Test files |
 | `autopilot-coder` | Implement task with justifications | Code changes, artifacts |
 | `autopilot-analyzer` | Run static analysis tools | Issue reports, fix instructions |
@@ -446,13 +392,6 @@ If `MAX_REFACTOR_CYCLES` (default: 3) refactor iterations occur, the system chec
 
 If a refactor cycle only produces whitespace, formatting, or comment-only changes, the system treats this as diminishing returns and accepts the current state rather than continuing to loop.
 
-### Signal Generation
-
-When stuck is detected, a signal artifact is generated:
-- Type: `repetition_refactor_stuck`
-- Confidence: high
-- Details: files affected, cycle count, pattern type (oscillating/diminishing)
-
 ## Error-Driven Retries (v0.11.0)
 
 Test failures are classified by category, and each category has its own retry limit:
@@ -521,12 +460,6 @@ For LARGE tasks, the coder writes an approach document to `{SPEC_DIR}/artifacts/
 | Review Hints | Human judgment needed | `.claude/specs/<identifier>/artifacts/review_hints/` |
 | Technical Debt | Shortcuts taken | `.claude/specs/<identifier>/artifacts/debt/` |
 
-### During Analysis Phase
-
-| Artifact | When | Location |
-|----------|------|----------|
-| Signals | Clean analysis or repeated violations | `.claude/specs/<identifier>/artifacts/signals/` |
-
 ### File Categories Requiring Justification
 
 | Category | Pattern | Prompt |
@@ -544,22 +477,21 @@ For LARGE tasks, the coder writes an approach document to `{SPEC_DIR}/artifacts/
 .claude/
 ├── autopilot.yml             # Configuration (optional)
 ├── commands/
-│   ├── autopilot.md           # Command definition
-│   └── pause-autopilot.md     # Manual pause command
+│   └── autopilot.md           # Command definition
 ├── scripts/
 │   ├── validate-autopilot.sh  # Prerequisite validation
-│   ├── evaluate-signals.sh    # Pause signal evaluation
 │   ├── check-context.sh       # Context limit detection
 │   └── read-handoff.sh        # Handoff reader utility
 ├── hooks/
 │   ├── hooks.json             # Hook definitions
 │   ├── load-context.sh        # PreToolUse context loader
-│   ├── save-state.sh          # PostToolUse state saver
+│   ├── save-state.sh          # PostToolUse state saver (Task)
+│   ├── commit.sh              # PostToolUse auto-commit trigger (Write|Edit|Bash)
 │   └── on-agent-complete.sh   # SubagentStop handler
 ├── agents/
-│   ├── autopilot.md           # Main orchestrator
-│   ├── loop-controller.md     # Agent loop orchestrator
-│   ├── autopilot-task-runner.md # Single-task executor
+│   ├── autopilot.md           # Deprecated (superseded by execute.md)
+│   ├── loop-controller.md     # Deprecated (superseded by execute.md)
+│   ├── autopilot-task-runner.md # Single-task executor (fresh per task)
 │   ├── autopilot-tester.md    # Test writing (TDD red phase)
 │   ├── autopilot-coder.md     # Implementation + artifacts
 │   ├── autopilot-analyzer.md  # Static analysis + fix instructions
@@ -570,8 +502,7 @@ For LARGE tasks, the coder writes an approach document to `{SPEC_DIR}/artifacts/
 │   └── artifacts/
 │       ├── handoff/
 │       │   └── handoff.md     # Handoff template
-│       └── state/
-│           └── paused.md      # Pause state template
+│       └── state/      # Pause state template
 ├── skills/                    # Custom coding patterns (optional)
 │   └── <skill-name>/
 │       └── SKILL.md
@@ -592,11 +523,9 @@ For LARGE tasks, the coder writes an approach document to `{SPEC_DIR}/artifacts/
             ├── risks/
             ├── review_hints/
             ├── debt/
-            ├── signals/
             ├── handoff/        # Handoff artifacts
             │   └── handoff.md
-            └── state/          # Pause state
-                └── paused.md
+            └── state/
 ```
 
 ## Output

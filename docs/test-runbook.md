@@ -81,105 +81,19 @@ git log --oneline | head -3 | grep -c "feat(test-multi-task)"  # Should be 3
 
 ---
 
-### T3: Pause on Analyzer Signal
+### T3: Resume from Incomplete State
 
-**Purpose:** Verify autopilot pauses when analyzer detects repeated violations.
-
-**Setup:**
-```bash
-# Create spec that will trigger repeated lint violations
-mkdir -p .claude/specs/test-pause-signal/artifacts/signals
-cat > .claude/specs/test-pause-signal/TODO.md << 'EOF'
-- [ ] [T1] Create code that violates linting rules 3+ times
-EOF
-
-# Pre-seed signal files to simulate repeated violations
-for i in 1 2 3; do
-  cat > .claude/specs/test-pause-signal/artifacts/signals/violation-$i.md << EOF
----
-rule: no-unused-vars
-severity: high
----
-Unused variable detected
-EOF
-done
-```
-
-**Configuration:**
-```yaml
-# .claude/autopilot.yml — pause_signals section must be present to be active
-pause_signals:
-  triggers:
-    - signal: "repeated_violation"
-      threshold: 3
-    - signal: "high_severity"
-      types: ["security", "breaking_change"]
-    - signal: "human_review_needed"
-```
-
-**Execution:**
-```bash
-/autopilot:execute test-pause-signal
-```
-
-**Expected Results:**
-- [ ] Autopilot pauses before completing task
-- [ ] paused.md created at `artifacts/state/paused.md`
-- [ ] Pause reason includes "repeated_violation"
-- [ ] Resume instructions are provided
-
-**Verification:**
-```bash
-test -f .claude/specs/test-pause-signal/artifacts/state/paused.md
-grep -q "repeated_violation" .claude/specs/test-pause-signal/artifacts/state/paused.md
-```
-
----
-
-### T4: Resume from Paused State
-
-**Purpose:** Verify autopilot correctly resumes from a paused state.
+**Purpose:** Verify autopilot correctly resumes from incomplete tasks.
 
 **Setup:**
 ```bash
-# Use the paused state from T3, or create manually:
-mkdir -p .claude/specs/test-resume/artifacts/state
-cat > .claude/specs/test-resume/artifacts/state/paused.md << 'EOF'
-# Autopilot Paused
-
-## Pause Reason
-Manual pause for testing
-
-## Current State
-- **Spec:** test-resume
-- **Current Task:** T2 - Task that was in progress
-- **Last Agent:** unknown
-- **Timestamp:** 2025-01-01T00:00:00Z
-
-## Progress
-- **Completed:** 1 tasks
-- **Remaining:** 2 tasks
-- **Total:** 3 tasks
-
-## Analyzer Signals
-No signals recorded.
-
-## To Resume
-
-Run the following command to continue:
-
-```
-/autopilot:execute test-resume
-```
-
-The next agent will pick up from task T2.
-EOF
-
+mkdir -p .claude/specs/test-resume/artifacts
 cat > .claude/specs/test-resume/TODO.md << 'EOF'
 - [x] [T1] Completed task
 - [ ] [T2] Task that was in progress
 - [ ] [T3] Pending task
 EOF
+# ... create other required files
 ```
 
 **Execution:**
@@ -189,19 +103,17 @@ EOF
 
 **Expected Results:**
 - [ ] Autopilot resumes from T2 (not T1)
-- [ ] paused.md is removed or archived
 - [ ] Context from handoff is loaded
 - [ ] T2 and T3 complete successfully
 
 **Verification:**
 ```bash
 grep -q "\[x\] \[T2\]" .claude/specs/test-resume/TODO.md
-! test -f .claude/specs/test-resume/artifacts/state/paused.md  # Should be removed
 ```
 
 ---
 
-### T5: Context Limit Handling
+### T4: Context Limit Handling
 
 **Purpose:** Verify session summarizer triggers when context approaches limit.
 
@@ -237,7 +149,7 @@ grep -q "Session Summary" .claude/specs/test-context/artifacts/handoff/handoff.m
 
 ---
 
-### T6: Background Agent Completion
+### T5: Background Agent Completion
 
 **Purpose:** Verify background agents complete and trigger hooks correctly.
 
@@ -269,43 +181,6 @@ git log -1 --oneline | grep -q "feat(test-background)"
 
 ---
 
-### T7: Manual Pause Command
-
-**Purpose:** Verify /autopilot:pause-autopilot command works correctly.
-
-**Setup:**
-```bash
-# Start autopilot with a long-running task
-mkdir -p .claude/specs/test-manual-pause/artifacts
-cat > .claude/specs/test-manual-pause/TODO.md << 'EOF'
-- [ ] [T1] Long running task
-- [ ] [T2] Another task
-EOF
-```
-
-**Execution:**
-```bash
-# In one session:
-/autopilot:execute test-manual-pause
-
-# While running, in another context or after interrupt:
-/autopilot:pause-autopilot test-manual-pause
-```
-
-**Expected Results:**
-- [ ] Autopilot stops immediately
-- [ ] paused.md created with current state
-- [ ] Resume instructions provided
-- [ ] No partial/corrupt state
-
-**Verification:**
-```bash
-test -f .claude/specs/test-manual-pause/artifacts/state/paused.md
-grep -q "To Resume" .claude/specs/test-manual-pause/artifacts/state/paused.md
-```
-
----
-
 ## Hook Integration Tests
 
 ### H1: PreToolUse Hook - Context Loading
@@ -327,9 +202,8 @@ grep -q "To Resume" .claude/specs/test-manual-pause/artifacts/state/paused.md
 
 **Test:**
 1. Run autopilot on a single task
-2. Verify TODO.md is updated
-3. Verify handoff.md is written
-4. Verify git commit is created
+2. Verify `current.json` is written to `artifacts/state/`
+3. Verify commit.sh triggers on uncommitted changes
 
 ---
 
@@ -358,17 +232,7 @@ auto_commit:
 
 **Expected:** Commits use the custom template instead of the default `feat({spec_id}): complete {task_id} - {task_summary}`.
 
-### C2: Pause Signals Disabled
-
-**Configuration:**
-```yaml
-# .claude/autopilot.yml — remove the pause_signals section entirely
-# (section presence = active; absence = disabled)
-```
-
-**Expected:** Autopilot continues even with analyzer violations; evaluate-signals.sh outputs `CONTINUE`.
-
-### C3: Custom Agent Overrides
+### C2: Custom Agent Overrides
 
 **Configuration:**
 ```yaml
@@ -413,7 +277,7 @@ To run these tests manually:
 
 ```bash
 # Run all tests
-for test in test-single-task test-multi-task test-pause-signal test-resume test-context test-background test-manual-pause; do
+for test in test-single-task test-multi-task test-resume test-context test-background; do
   echo "Running $test..."
   # Setup test
   # Run autopilot
@@ -427,11 +291,9 @@ done
 All scenarios must pass:
 - [ ] T1: Single task completion with auto-commit
 - [ ] T2: Multi-task loop with handoffs
-- [ ] T3: Pause on analyzer signal
-- [ ] T4: Resume from paused state
-- [ ] T5: Context limit handling
-- [ ] T6: Background agent completion
-- [ ] T7: Manual pause command
+- [ ] T3: Resume from incomplete state
+- [ ] T4: Context limit handling
+- [ ] T5: Background agent completion
 - [ ] H1-H3: Hook integration tests
-- [ ] C1-C3: Configuration tests
+- [ ] C1-C2: Configuration tests
 - [ ] E1-E4: Error handling tests

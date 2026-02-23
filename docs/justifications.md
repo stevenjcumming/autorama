@@ -248,26 +248,6 @@ graphql:
 
 ---
 
-## Disabling Justifications
-
-### Disable globally
-
-```yaml
-justification:
-  enabled: false
-```
-
-### Disable for unmatched files only
-
-```yaml
-justification:
-  enabled: true
-  default:
-    enabled: false  # Only matched categories require justification
-```
-
----
-
 ## Best Practices
 
 1. **Be specific with patterns** - Avoid overly broad patterns like `*.yaml` that match too many files

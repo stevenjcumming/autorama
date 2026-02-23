@@ -89,12 +89,6 @@ This enables targeted execution: `/autopilot:execute <SPEC_DIR> T3` runs only ta
 - [ ] [T5] First task
 - [ ] [T6] Second task
 - [ ] [T7] Write tests for [component]
-
----
-
-## Completed
-
-<!-- Move completed tasks here with [x] -->
 ```
 
 ### Step 4: Output Summary

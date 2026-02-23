@@ -111,20 +111,6 @@ Run a parse/compile check to ensure test files are syntactically valid (not func
 
 If syntax errors are found, fix them before completing.
 
-### Step 7: Generate Signals
-
-Generate signals for the Reflect stage when appropriate:
-
-| Trigger | Signal Type | Description |
-|---------|-------------|-------------|
-| No existing test conventions found | `clarification` | Test setup unclear |
-| Test framework detection failed | `clarification` | Could not detect framework |
-| Task acceptance criteria are vague | `clarification` | Missing test specification |
-
-Signal location: `{SPEC_DIR}/artifacts/signals/{timestamp}_{type}_{description}.md`
-
-Set `source_agent: tester` for all signals from this agent.
-
 ## Output Format
 
 ```markdown
@@ -169,6 +155,5 @@ The `<test-files>` and `<test-command>` tags are machine-parseable by the task-r
 - **Follow existing conventions** - Match the project's test style exactly
 - **Be minimal** - Only write tests that the task requires
 - **Always output tags** - `<test-files>` and `<test-command>` are required for the task-runner
-- **Generate signals** - Capture patterns for the Reflect stage
 - **Import missing modules** - Tests should reference modules that will be created in the code phase
 - **Syntax-valid only** - Tests must parse/compile but are expected to fail at runtime

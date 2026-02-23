@@ -37,8 +37,8 @@ if [ ! -f "$SPEC_DIR/TODO.md" ]; then
   exit 1
 fi
 
-# Check for uncompleted tasks (lines with "- [ ]")
-UNCOMPLETED_TASKS=$(grep -c "^\- \[ \]" "$SPEC_DIR/TODO.md" 2>/dev/null || echo "0")
+# Check for uncompleted tasks (lines with "- [ ]", including indented sub-tasks)
+UNCOMPLETED_TASKS=$(grep -cE '^\s*- \[ \]' "$SPEC_DIR/TODO.md" 2>/dev/null || echo "0")
 
 if [ "$UNCOMPLETED_TASKS" -eq "0" ]; then
   echo "Error: No uncompleted tasks found in $SPEC_DIR/TODO.md"
@@ -54,7 +54,7 @@ if [ -n "$FILTER" ]; then
       echo "Error: Task $FILTER not found in TODO.md"
       exit 1
     fi
-    if ! grep -q "^\- \[ \] \[$FILTER\]" "$SPEC_DIR/TODO.md"; then
+    if ! grep -qE "^\s*- \[ \] \[$FILTER\]" "$SPEC_DIR/TODO.md"; then
       echo "Error: Task $FILTER is already completed"
       exit 1
     fi

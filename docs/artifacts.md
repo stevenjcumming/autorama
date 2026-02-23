@@ -53,9 +53,6 @@ This location is for curated artifacts that users manually move there. Examples 
 ┌─────────────────────────────────────────────────────────────────────────┐
 │                        TRIGGER CONDITIONS                               │
 ├─────────────────────────────────────────────────────────────────────────┤
-│  TESTER (writes tests, TDD red phase):                                  │
-│  • Ambiguous or unclear requirements → Signal (clarification)           │
-│                                                                         │
 │  CODER:                                                                 │
 │  • File modified     → Justification (based on file category)           │
 │  • Choice made       → Decision                                         │
@@ -63,7 +60,6 @@ This location is for curated artifacts that users manually move there. Examples 
 │  • Potential issue   → Risk                                             │
 │  • Shortcut taken    → Debt                                             │
 │  • Needs human eye   → Review Hint                                      │
-│  • Approach changed  → Signal (correction)                              │
 └─────────────────────────────────────────────────────────────────────────┘
                                    │
                                    ▼
@@ -73,7 +69,7 @@ This location is for curated artifacts that users manually move there. Examples 
 │  1. Agent identifies trigger condition                                  │
 │  2. Agent generates filename: {timestamp}_{type}_{description}.md       │
 │  3. Agent writes to: .claude/specs/<SPEC_ID>/artifacts/{artifact_type}/ │
-│  4. Uses template structure from .claude/templates/artifacts/           │
+│  4. Uses template structure from plugins/autopilot/templates/artifacts/ │
 └─────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -127,14 +123,6 @@ This location is for curated artifacts that users manually move there. Examples 
 
 **Location**: `.claude/specs/<SPEC_ID>/artifacts/review_hints/`
 
-### Signal
-
-**Trigger**: Interaction patterns worth capturing (approach changes, repeated failures, validated assumptions)
-
-**Purpose**: Raw material for the `/autopilot:reflect` stage. Signals are analyzed to propose rules for `.claude/rules/`.
-
-**Location**: `.claude/specs/<SPEC_ID>/artifacts/signals/`
-
 ## File Categories Requiring Justification
 
 | Category | File Patterns | Key Questions |
@@ -163,8 +151,7 @@ This location is for curated artifacts that users manually move there. Examples 
     ├── assumptions/       # Inferred requirements
     ├── risks/             # Potential problems
     ├── debt/              # Shortcuts taken
-    ├── review_hints/      # Human review needed
-    └── signals/           # Patterns for /autopilot:reflect
+    └── review_hints/      # Human review needed
 ```
 
 ### Curated Artifacts (User-Promoted)
@@ -174,17 +161,23 @@ This location is for curated artifacts that users manually move there. Examples 
 ├── artifacts/             # Manually curated artifacts
 │   ├── decisions/         # Precedent-setting decisions
 │   └── ...                # Other promoted artifacts
-└── templates/
-    └── artifacts/         # Template files for each type
+```
+
+### Artifact Templates
+
+Templates used for artifact generation are located within the plugin:
+
+```
+plugins/autopilot/templates/artifacts/   # Template files for each type
 ```
 
 ## Agent Responsibilities
 
 | Agent | Artifacts Generated |
 |-------|---------------------|
-| `autopilot-tester` | Test files, Signal (clarification, repetition) |
-| `autopilot-coder` | Justification, Decision, Assumption, Risk, Debt, Review Hint, Signal (correction, approval) |
-| `autopilot-refactorer` | Signal (if patterns observed) |
+| `autopilot-tester` | Test files |
+| `autopilot-coder` | Justification, Decision, Assumption, Risk, Debt, Review Hint |
+| `autopilot-refactorer` | (none — produces refactoring changes, not artifacts) |
 
 ## Using Artifacts
 
@@ -201,7 +194,6 @@ This location is for curated artifacts that users manually move there. Examples 
 
 ### For Improvement
 
-- **Signals** feed into `/autopilot:reflect` to generate rules
 - **Debt** tracks cleanup work for future sprints
 
 ## Promoting Artifacts

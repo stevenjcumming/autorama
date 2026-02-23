@@ -11,7 +11,7 @@ save-state.sh (PostToolUse) → Writes current.json with task status
     ↓
 on-agent-complete.sh (SubagentStop) → Auto-commits, generates handoff.md
     ↓
-Loop controller checks context limits
+Execute command checks context limits
     ↓  (if critical)
 session-summarizer → Writes SESSION_SUMMARY.md
     ↓
@@ -84,11 +84,11 @@ Fires after each `autopilot-*` Task agent completes. Writes lightweight state tr
 }
 ```
 
-This file is a quick-reference for the loop controller and other hooks to determine what just happened without parsing agent output.
+This file is a quick-reference for the execute command and other hooks to determine what just happened without parsing agent output.
 
 ### `on-agent-complete.sh` (SubagentStop)
 
-Fires when an autopilot agent finishes. Handles the heavier post-task work:
+Fires when a subagent finishes. Handles the heavier post-task work:
 
 1. **Auto-commit** (if `auto_commit` section present in config) -- stages all changes, creates a commit with the task summary as the message
 2. **Generate handoff.md** -- builds the handoff artifact from git diff and TODO.md
@@ -110,7 +110,7 @@ When context usage hits critical levels, the `session-summarizer` agent compress
 
 ### Trigger
 
-The loop controller spawns the session summarizer when:
+The session summarizer is triggered when:
 - `on-agent-complete.sh` emits `<context-critical>`
 - `check-context.sh` reports context above the configured threshold
 - Manual invocation at session end
@@ -136,28 +136,7 @@ Existing summaries are archived with timestamps before being overwritten.
 | Low | Routine completions, standard approaches |
 | Omit | Redundant information, verbose descriptions |
 
-## 4. Pause State
-
-When the autopilot pauses (signal evaluation, context limits, or manual pause), a `paused.md` artifact preserves the exact state for resumption.
-
-**Written to:** `{SPEC_DIR}/artifacts/state/paused.md`
-
-### Contents
-
-| Section | Purpose |
-|---------|---------|
-| **Pause Reason** | Why execution stopped (signal threshold, context limit, manual) |
-| **Current State** | Spec, task, attempt count, phase, timestamp |
-| **Progress** | Completed and remaining task lists |
-| **Analyzer Signals** | Recent signals from static analysis |
-| **Recent Errors** | Errors encountered during execution |
-| **Files Modified** | Uncommitted changes at pause time |
-| **Context for Resume** | What was being attempted, what went wrong, suggested next steps |
-| **Manual Intervention Notes** | Space for human reviewer notes before resuming |
-
-Resuming with `/autopilot:execute <spec_id>` loads the pause state and continues from where execution stopped.
-
-## 5. `read-handoff.sh` Utility
+## 4. `read-handoff.sh` Utility
 
 A standalone script that assembles handoff context for any consumer. Used by `load-context.sh` but can be called directly.
 
@@ -182,4 +161,4 @@ Feature sections are active when present. To disable a feature, remove the secti
 
 - [Orchestration Flow](orchestration_flow.md)
 - [Evaluation Pipeline](evaluation_pipeline.md)
-- [Autopilot Workflow](workflows/04_autopilot.md)
+- [Autopilot Workflow](workflow-stages/04_autopilot.md)

@@ -7,7 +7,7 @@ model: opus
 
 # Autopilot Task Runner Agent
 
-Execute a single task from TODO.md through the complete TDD loop: **write tests → red → code → green → analyze → refactor**. This agent is designed for background execution and produces structured output for the loop controller.
+Execute a single task from TODO.md through the complete TDD loop: **write tests → red → code → green → analyze → refactor**. This agent is designed for background execution and produces structured output for the execute command.
 
 ## Input
 
@@ -57,11 +57,41 @@ static_analysis:
   max_fix_attempts: 2
 ```
 
-#### 1.4 Create Directories
+#### 1.5 Load Skill Descriptions
+
+Read skill configuration from `.claude/autopilot.yml`:
+
+```yaml
+coding_skills: []       # Skills available to coder
+testing_skills: []      # Skills available to tester
+refactoring_skills: []  # Skills available to refactorer
+```
+
+For each skill listed in the config, read `.claude/skills/{skill-name}/SKILL.md` and extract its description from frontmatter. Build a skill registry:
+
+```
+skill_registry = {
+  coding: [
+    { name: "service-object-skill", description: "Use for business logic..." },
+    { name: "controller-skill", description: "Use for Rails controllers..." }
+  ],
+  testing: [...],
+  refactoring: [...]
+}
+```
+
+Pass the relevant skill descriptions to sub-agents:
+- `AVAILABLE_SKILLS=<testing_skills with descriptions>` to tester
+- `AVAILABLE_SKILLS=<coding_skills with descriptions>` to coder
+- `AVAILABLE_SKILLS=<refactoring_skills with descriptions>` to refactorer
+
+If `.claude/autopilot.yml` doesn't exist or skill lists are empty, skip this step.
+
+#### 1.6 Create Directories
 
 Ensure artifact directories exist:
 ```bash
-$CLAUDE_PLUGIN_ROOT/scripts/setup-artifacts.sh {SPEC_DIR}
+$AUTOPILOT_PLUGIN_ROOT/scripts/setup-artifacts.sh {SPEC_DIR}
 ```
 
 ### Step 2: Execute Task Loop (TDD)
@@ -99,7 +129,7 @@ loop:
         if red_result.exit_code == 0:
             # Tests pass before code written — implementation may already
             # exist or tests are trivial. Log warning, skip code phase.
-            generate_signal("warning_tests_pass_before_implementation")
+            log_warning("tests_pass_before_implementation")
 
     # 2.1 Code Phase (if needed)
     if task_needs_implementation:
@@ -160,7 +190,6 @@ loop:
             if is_oscillating(refactor_history):
                 # Detect apply/revert patterns in last N diffs
                 log_warning("refactor_loop_stuck: oscillating changes detected")
-                generate_signal("repetition_refactor_stuck")
                 break  # Accept current state
             if is_diminishing(refactor_history):
                 # Detect trivial-only changes (formatting, whitespace)
@@ -170,7 +199,124 @@ loop:
     else:
         # Task complete
         break
+
 ```
+
+### Step 3: Generate Artifacts
+
+After the TDD loop completes (Step 2), generate artifacts from first-hand TDD context. Each artifact type has a specific **trigger condition** — only write an artifact when its trigger is met. Do not generate artifacts that lack a genuine trigger.
+
+#### 3.1: Write Justifications for Configured File Categories
+
+**Trigger**: A changed file matches a category pattern from the `justification.categories` section in `.claude/autopilot.yml`.
+
+Load the justification config from `.claude/autopilot.yml`:
+
+```yaml
+justification:
+  categories:
+    spec_modification:
+      title: "Test/Spec Modification"
+      patterns: ["*_spec.rb", "*_test.rb"]
+      questions: [...]
+    migration:
+      patterns: ["*/db/migrate/*", "*/migrations/*"]
+      questions: [...]
+    # ... user-defined categories
+  default:
+    title: "File Modification"
+    questions: [...]
+```
+
+For each file changed during the TDD loop, check if it matches any configured category's patterns. If it matches, write `{SPEC_DIR}/artifacts/justifications/{task_id}_{filename}_{timestamp}.md` using the justification template. Include the matching category's title and address its questions in the justification content.
+
+If the PostToolUse hook already created justification files for these files (check for existing files matching the filename), fill their empty sections instead of creating new files.
+
+Do **not** write justification artifacts for files that don't match any configured category. The `default` section is only used by hooks, not for proactive artifact generation here.
+
+#### 3.2: Conditionally Write Decision
+
+**Trigger**: A choice was made between multiple valid approaches during implementation.
+
+Write `{SPEC_DIR}/artifacts/decisions/{task_id}_{timestamp}.md` using the decision template only when the task involved evaluating alternatives — e.g., choosing between data structures, libraries, API designs, or architectural patterns. Record:
+- **Context**: What the task required
+- **Options Considered**: The approaches evaluated and their trade-offs
+- **Decision**: Why the chosen approach was selected
+
+Do **not** write a decision artifact for straightforward implementations with no meaningful alternatives.
+
+#### 3.3: Conditionally Write Risk
+
+**Trigger**: A potential negative impact was identified — e.g., changed files touch security, auth, payment, or migration paths, or the implementation introduces a known risk.
+
+Write `{SPEC_DIR}/artifacts/risks/{task_id}_{timestamp}.md` using the risk template. Capture likelihood, impact, mitigation strategies, and rollback plans.
+
+#### 3.4: Conditionally Write Debt
+
+**Trigger**: A shortcut or compromise was taken — e.g., a workaround was used instead of a proper fix, or retry count > 1 for any phase indicating fragility.
+
+Write `{SPEC_DIR}/artifacts/debt/{task_id}_{timestamp}.md` using the debt template. Document the ideal implementation, why the shortcut was taken, and a plan for paying it back. Skip if debt artifacts were already written inline during Step 2.4 (deferred analysis issues).
+
+#### 3.5: Conditionally Write Review Hint
+
+**Trigger**: Human judgment is needed — e.g., test files were modified (`spec_modification` category), > 3 files changed, or a change has subtle implications that automated checks can't verify.
+
+Write `{SPEC_DIR}/artifacts/review_hints/{task_id}_{timestamp}.md` using the review hint template. Flag specific files and line ranges that require human review, with focused questions for the reviewer.
+
+#### 3.6: Conditionally Write Assumption
+
+**Trigger**: The task required inferring unstated requirements from the spec.
+
+Write `{SPEC_DIR}/artifacts/assumptions/{task_id}_{timestamp}.md` using the assumption template. Document what was assumed, the basis for the assumption, validation questions, and what would need to change if the assumption is wrong.
+
+#### 3.7: Fill Hook-Created Artifacts
+
+Scan all artifact directories for files with empty sections (created by PostToolUse hooks but not yet filled):
+
+```
+artifact_dirs = [
+    "{SPEC_DIR}/artifacts/justifications",
+    "{SPEC_DIR}/artifacts/risks",
+    "{SPEC_DIR}/artifacts/dependencies",
+    "{SPEC_DIR}/artifacts/debt",
+    "{SPEC_DIR}/artifacts/review_hints",
+    "{SPEC_DIR}/artifacts/decisions",
+    "{SPEC_DIR}/artifacts/assumptions"
+]
+
+for dir in artifact_dirs:
+    files = Glob("{dir}/*.md")
+    for file in files:
+        content = Read(file)
+        if has_empty_sections(content):
+            fill_artifact(file, content)
+```
+
+**Detecting empty sections:** An artifact file has empty sections if its body (after frontmatter) contains heading markers (`### Justification`, `### Risk Summary`, etc.) followed by blank lines, HTML comments (`<!-- ... -->`), or another heading with no substantive content between them.
+
+**Filling artifacts:** Use the task context (SPEC.md requirements, PLAN.md approach, the task description, and the file category from the artifact's frontmatter) to write concise, accurate content for each empty section. Use Edit to replace each empty heading + placeholder with the heading + real content.
+
+**Category-specific guidance:**
+
+| Category | Justification Focus | Risk Focus |
+|----------|-------------------|------------|
+| `dependency` | Why needed, security/maintenance status, alternatives | Supply chain risk, version pinning |
+| `migration` | Schema change rationale, reversibility | Data loss, downtime, rollback plan |
+| `security` | Access control impact, threat model | Privilege escalation, data exposure |
+| `api_change` | Contract change rationale, consumer impact | Breaking changes, versioning |
+| `configuration` | Behavior change, environment impact | Production misconfiguration |
+| `spec_modification` | Why tests changed, not just to pass | False positives masking bugs |
+| `general` | Purpose of change, scope of impact | Regression risk |
+
+#### 3.8: Emit Completion Tag
+
+After all artifacts are written/filled, output:
+
+```
+<artifacts-generated count="N" />
+```
+
+Where N is the total number of artifacts written or filled in Steps 3.1–3.7.
 
 ### Inline Test Failure Categorization
 
@@ -190,9 +336,9 @@ When parsing Bash test output (steps 2.0.5 and 2.2), categorize failures by insp
 
 If no pattern matches, use `unknown`.
 
-### Step 3: Spawn Sub-Agents
+### Step 4: Spawn Sub-Agents
 
-#### 3.1 Tester (Write Tests)
+#### 4.1 Tester (Write Tests)
 
 ```
 Task(
@@ -207,7 +353,7 @@ Task(
 )
 ```
 
-#### 3.2 Coder
+#### 4.2 Coder
 
 ```
 Task(
@@ -224,7 +370,7 @@ Task(
 )
 ```
 
-#### 3.3 Analyzer
+#### 4.3 Analyzer
 
 ```
 Task(
@@ -238,7 +384,7 @@ Task(
 )
 ```
 
-#### 3.4 Refactorer
+#### 4.4 Refactorer
 
 ```
 Task(
@@ -289,19 +435,19 @@ attempts: {attempt_count}
 Manual review required. The automated fix loop could not resolve this issue.
 ```
 
-### Step 4: Update TODO.md
+### Step 5: Update TODO.md
 
 When task completes, run the task status updater:
 
 ```bash
-$CLAUDE_PLUGIN_ROOT/scripts/update-task-status.sh {SPEC_DIR} {TASK_ID} --timestamp
+$AUTOPILOT_PLUGIN_ROOT/scripts/update-task-status.sh {SPEC_DIR} {TASK_ID} --timestamp
 ```
 
 Output is `UPDATED:<task_id>:<description>` on success, `ALREADY_DONE:<task_id>:<description>` if already completed, or `NOT_FOUND:<task_id>` if the task ID wasn't found.
 
-### Step 5: Output Completion Status
+### Step 6: Output Completion Status
 
-Always output structured completion status for the loop controller:
+Always output structured completion status for the execute command:
 
 #### Success Output
 
@@ -327,12 +473,14 @@ Always output structured completion status for the loop controller:
 
 ### Artifacts Generated
 - {artifact_type}: `{path}`
+<!-- Enumerate all artifacts written in Step 3 (justifications, decisions, and any conditional artifacts) -->
 
 ### Metrics
 - Attempts: {attempt_count}
 - Analysis Fixes: {fix_count}
 - Tests: passed
 
+<artifacts-generated count="{N}" />
 <task-completed task="{task_id}" status="completed" />
 ```
 
@@ -380,12 +528,6 @@ with similar-sized diffs across consecutive cycles, flag as oscillating.
 ### Diminishing Returns Detection
 If a refactor cycle only produces whitespace, formatting, or comment-only changes, treat as
 diminishing returns and accept the current state.
-
-### Signal Generation
-When stuck is detected, generate a signal artifact:
-- Type: `repetition_refactor_stuck`
-- Confidence: high
-- Details: files affected, cycle count, pattern type (oscillating/diminishing)
 
 ## Background Execution Notes
 

@@ -6,7 +6,7 @@ argument-hint: <identifier>
 
 # Review
 
-Generate a review summary for human oversight before proceeding to Reflect and Submit stages.
+Generate a review summary for human oversight before proceeding to the Submit stage.
 
 ## Arguments
 
@@ -24,13 +24,19 @@ This command provides a human checkpoint by summarizing:
 3. High-risk items requiring attention
 4. Review hints flagged for human judgment
 
-## Step 1: Run Review Script
+## Step 1: Run Review Scripts
 
-Execute the review script with the spec identifier to gather summary data:
+Execute the review script with the spec identifier to gather summary data, then generate the summary report:
 
 ```bash
-bash $CLAUDE_PLUGIN_ROOT/scripts/review.sh $ARGUMENTS
+bash $AUTOPILOT_PLUGIN_ROOT/scripts/review.sh $ARGUMENTS
 ```
+
+```bash
+bash $AUTOPILOT_PLUGIN_ROOT/scripts/generate-report.sh .claude/specs/$IDENTIFIER
+```
+
+The `generate-report.sh` script creates a `SUMMARY.md` file in the spec directory with artifact counts, deferred issues, and review hints. Read the generated `SUMMARY.md` and include its data in your review output.
 
 ## Step 2: Present Enhanced Summary
 
@@ -78,7 +84,7 @@ Present this checklist for the human reviewer:
 - [ ] All high-risk items reviewed and accepted
 
 ### Ready to Proceed
-- [ ] Approved to continue to Reflect stage
+- [ ] Approved to continue to Submit stage
 - [ ] Needs changes (return to implementation)
 - [ ] Fundamental issues (return to Spec)
 ```
@@ -90,7 +96,7 @@ After presenting the summary, ask the reviewer:
 "Please review the summary above. What would you like to do?"
 
 Options:
-1. **Approve** - Proceed to Reflect stage
+1. **Approve** - Proceed to Submit stage
 2. **Request changes** - Return to implementation (specify what needs fixing)
 3. **Reject** - Return to Spec stage (fundamental issues found)
 

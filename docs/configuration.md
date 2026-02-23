@@ -21,7 +21,6 @@ agents:
   tester: autopilot-tester
   coder: autopilot-coder
   refactorer: autopilot-refactorer
-  analyzer: autopilot-analyzer
 ```
 
 All fields are optional. When omitted, the built-in agent is used. Use this to swap in project-specific agents that follow different conventions.
@@ -49,35 +48,6 @@ refactoring_skills:
   - dry-refactor-skill
 ```
 
-### Loop Behavior
-
-Control how the autopilot loop executes.
-
-```yaml
-single_task_mode: true
-```
-
-| Key | Default | Effect |
-|-----|---------|--------|
-| `single_task_mode` | `true` | Exit after completing one task instead of continuing the queue |
-
-Setting `single_task_mode: false` makes the loop-controller process all tasks in `TODO.md` sequentially without stopping.
-
-### Auto-Commit
-
-Automatically commit changes after each task completes.
-
-```yaml
-auto_commit:
-  message_template: "feat({spec_id}): complete {task_id} - {task_summary}"
-```
-
-| Key | Default | Effect |
-|-----|---------|--------|
-| `message_template` | `feat({spec_id}): complete {task_id} - {task_summary}` | Commit message format. Variables: `{spec_id}`, `{task_id}`, `{task_summary}` |
-
-Commits include a `Co-Authored-By: Claude` footer. Handled by the `on-agent-complete.sh` hook.
-
 ### Justification
 
 Require written justifications when modifying certain file categories.
@@ -91,41 +61,59 @@ justification:
         - "*_spec.rb"
         - "*_test.rb"
       questions:
-        - "Why does this test need to change?"
+        - "Is this adding new specs for extracted code?"
+        - "Is this refactoring spec structure (no assertion changes)?"
+        - "Is this updating test doubles for extracted collaborators?"
+        - "Is this removing specs for deleted code?"
+        - "Is this fixing specs that tested implementation details?"
+        - "Are you changing assertions to make a failing test pass? **(STOP IF YES)**"
     migration:
       title: "Database Migration"
       patterns:
         - "*/db/migrate/*"
         - "*/migrations/*"
       questions:
-        - "Is this migration reversible?"
+        - "Is this a new migration?"
+        - "Is this editing an unmigrated migration?"
+        - "Is this editing a deployed migration? **(CREATE NEW MIGRATION INSTEAD)**"
     dependency:
       title: "Dependency Change"
       patterns:
         - "Gemfile"
-        - "package.json"
+        - "Gemfile.lock"
       questions:
         - "Why is this dependency needed?"
+        - "What is the security/maintenance status?"
+        - "Are there lighter alternatives?"
+        - "Does this require approval (e.g., enterprise requirements)?"
     configuration:
       title: "Configuration Change"
       patterns:
         - "*/config/*.yml"
         - "*/config/*.yaml"
       questions:
-        - "What does this configuration change affect?"
+        - "What behavior does this change?"
+        - "Does this affect production?"
+        - "Are secrets or credentials involved?"
+        - "Is this environment-specific?"
     security:
       title: "Security-Sensitive File"
       patterns:
         - "*auth*"
         - "*security*"
         - "*permission*"
+        - "*policy*"
         - "*credential*"
       questions:
         - "What security implications does this change have?"
+        - "Have you verified this doesn't weaken access controls?"
+        - "Does this need security review?"
   default:
     title: "File Modification"
     questions:
-      - "Why is this file being modified?"
+      - "What is the purpose of this change?"
+      - "Does this change affect other parts of the codebase?"
+      - "Is this change reversible?"
 ```
 
 Each category has:
@@ -133,62 +121,13 @@ Each category has:
 - `patterns` -- Glob patterns matching file paths
 - `questions` -- Prompting questions the coder must answer
 
-Questions can include `**(STOP IF YES)**` to block work when a condition is met.
+Questions can include `**(STOP IF YES)**` or similar directives to block work when a condition is met.
 
 The `default` section applies to files not matching any category. Remove it to only require justifications for explicitly listed categories.
 
 Feature sections are active when present. To disable a feature, remove the section entirely.
 
 Requires `yq` for full functionality. Falls back to built-in defaults without it.
-
-### Pause Signals
-
-Configure when the autopilot loop should pause for human review.
-
-```yaml
-pause_signals:
-  triggers:
-    - signal: "repeated_violation"
-      threshold: 3
-    - signal: "high_severity"
-      types:
-        - "security"
-        - "breaking_change"
-    - signal: "human_review_needed"
-```
-
-| Trigger | Condition |
-|---------|-----------|
-| `repeated_violation` | Same rule violated N+ times (configurable threshold) |
-| `high_severity` | Signal severity is "high" or type matches listed types |
-| `human_review_needed` | Signal flagged `human_review: required` |
-
-Evaluated by `evaluate-signals.sh` between tasks. Remove the `pause_signals` section to disable all pause triggers.
-
-### Static Analysis
-
-Run static analysis tools and auto-fix issues during the autopilot loop.
-
-```yaml
-static_analysis:
-  commands:
-    - rubocop
-    - npm run lint
-    - command: "eslint --format json src/"
-      format: json
-  fail_on_warnings: false
-  max_fix_attempts: 2
-```
-
-| Key | Default | Effect |
-|-----|---------|--------|
-| `commands` | `[]` | List of commands to run. String for simple commands, object with `command` and `format` for structured output |
-| `fail_on_warnings` | `false` | Treat warnings as blocking issues |
-| `max_fix_attempts` | `2` | Maximum times the coder will attempt to fix analysis issues before continuing |
-
-The `format` field accepts `auto`, `json`, or `text`. JSON format enables structured parsing of tool output.
-
-Remove the `static_analysis` section to disable analysis entirely.
 
 ## Full Example
 
@@ -197,38 +136,33 @@ agents:
   tester: autopilot-tester
   coder: autopilot-coder
   refactorer: autopilot-refactorer
-  analyzer: autopilot-analyzer
 
 coding_skills:
+  - service-object-skill
   - react-component-skill
 testing_skills:
   - jest-skill
-
-single_task_mode: false
-
-auto_commit:
-  message_template: "feat({spec_id}): complete {task_id} - {task_summary}"
+refactoring_skills:
+  - dry-refactor-skill
 
 justification:
   categories:
+    spec_modification:
+      title: "Test/Spec Modification"
+      patterns:
+        - "*_spec.rb"
+        - "*_test.rb"
+      questions:
+        - "Is this adding new specs for extracted code?"
+        - "Are you changing assertions to make a failing test pass? **(STOP IF YES)**"
     security:
       title: "Security-Sensitive File"
       patterns: ["*auth*", "*credential*"]
       questions: ["What security implications does this change have?"]
-
-pause_signals:
-  triggers:
-    - signal: "repeated_violation"
-      threshold: 3
-    - signal: "high_severity"
-      types: ["security", "breaking_change"]
-
-static_analysis:
-  commands:
-    - npm run lint
-    - command: "eslint --format json src/"
-      format: json
-  max_fix_attempts: 2
+  default:
+    title: "File Modification"
+    questions:
+      - "What is the purpose of this change?"
 ```
 
 ## File Locations
@@ -243,4 +177,4 @@ static_analysis:
 - [Hook System](hook-system.md)
 - [Agent Architecture](agent-architecture.md)
 - [Evaluation Pipeline](evaluation_pipeline.md)
-- [Signals and Rules](signals-and-rules.md)
+- [Rules](rules.md)

@@ -2,7 +2,7 @@
 
 ## Overview
 
-Skills are reusable coding patterns that teach the autopilot agents how to write code in your project's style. The autopilot agent dynamically selects the most appropriate skill based on task context.
+Skills are reusable coding patterns that teach the autopilot agents how to write code in your project's style. The task-runner agent loads skill descriptions and passes them to sub-agents, which dynamically select the most appropriate skill based on task context.
 
 ## Directory Structure
 
@@ -74,7 +74,7 @@ end
 
 ### Writing Good Descriptions
 
-The `description` field is critical - it's how the autopilot agent decides which skill to use. Include:
+The `description` field is critical - it's how the coder agent decides which skill to use. Include:
 
 - **File patterns**: Where this skill applies (`app/services/`, `src/components/`)
 - **Task types**: What kind of work (`business logic`, `API endpoints`, `UI components`)

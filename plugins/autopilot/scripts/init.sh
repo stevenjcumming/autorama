@@ -119,6 +119,60 @@ else
   echo "Created .gitignore with .claude/specs/"
 fi
 
+# Bootstrap AUTOPILOT_PLUGIN_ROOT into .claude/settings.local.json
+echo ""
+echo "=== Bootstrapping Plugin Root ==="
+
+SETTINGS_FILE=".claude/settings.local.json"
+
+# Function to merge env into settings JSON
+merge_env_setting() {
+  local file="$1"
+  local plugin_dir="$2"
+
+  if command -v jq &> /dev/null; then
+    # Use jq if available
+    if [ -f "$file" ]; then
+      local tmp
+      tmp=$(jq --arg dir "$plugin_dir" '.env["AUTOPILOT_PLUGIN_ROOT"] = $dir' "$file")
+      echo "$tmp" > "$file"
+    else
+      jq -n --arg dir "$plugin_dir" '{"env": {"AUTOPILOT_PLUGIN_ROOT": $dir}}' > "$file"
+    fi
+  elif command -v python3 &> /dev/null; then
+    # Fallback to python3
+    python3 -c "
+import json, os, sys
+file_path = sys.argv[1]
+plugin_dir = sys.argv[2]
+data = {}
+if os.path.exists(file_path):
+    with open(file_path) as f:
+        data = json.load(f)
+if 'env' not in data:
+    data['env'] = {}
+data['env']['AUTOPILOT_PLUGIN_ROOT'] = plugin_dir
+with open(file_path, 'w') as f:
+    json.dump(data, f, indent=2)
+    f.write('\n')
+" "$file" "$plugin_dir"
+  else
+    echo "WARNING: Neither jq nor python3 found. Cannot write settings."
+    echo "  Manually add to $file:"
+    echo "  {\"env\": {\"AUTOPILOT_PLUGIN_ROOT\": \"$plugin_dir\"}}"
+    return 1
+  fi
+}
+
+merge_env_setting "$SETTINGS_FILE" "$PLUGIN_DIR"
+
+if [ $? -eq 0 ]; then
+  echo "Set AUTOPILOT_PLUGIN_ROOT=$PLUGIN_DIR"
+  echo "  in $SETTINGS_FILE"
+else
+  echo "Failed to write settings. See above for manual instructions."
+fi
+
 echo ""
 echo "=== Initialization Complete ==="
 echo ""

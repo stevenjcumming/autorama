@@ -23,8 +23,6 @@ A structured framework for AI-autonomous software development with human oversig
       ↕                │
     Review ────────────┘
       ↓
-    Reflect
-      ↓
     Submit
 ```
 
@@ -116,7 +114,7 @@ Execute the implementation loop autonomously for a spec using the Agent Harness 
 Autopilot uses background agents with clean handoffs between tasks:
 
 ```
-Loop Controller
+Execute Command
     ├── Load context (handoff)
     ├── Spawn Task Agent (background)
     │   └── Test → Code → Analysis → Refactor
@@ -128,7 +126,6 @@ Loop Controller
 - **Fresh context per task** - Each task agent starts clean
 - **Handoff artifacts** - Context preserved between tasks
 - **Auto-commits** - Git history tracks each task completion
-- **Pause signals** - Automatic pause on analyzer issues
 
 #### Test Phase (Write Tests + Run)
 
@@ -137,7 +134,7 @@ Loop Controller
 - Task-runner executes tests via Bash (expecting failure, then pass after coding)
 
 
-**Artifacts Generated**: Test files, `.claude/specs/<identifier>/artifacts/signals/`
+**Artifacts Generated**: Test files
 
 #### Code Phase
 
@@ -162,7 +159,6 @@ Loop Controller
 - Provides fix instructions for blocking issues
 
 
-**Artifacts Generated**: `.claude/specs/<identifier>/artifacts/signals/`
 
 #### Refactor Phase
 
@@ -180,20 +176,8 @@ Loop Controller
 - Moves to next task
 - **Pauses automatically** on:
   - Repeated analyzer violations (same rule 3+ times)
-  - High severity signals (security, breaking changes)
   - Explicit human review flags
 - Pauses for human input on repeated failures or spec gaps
-
-#### Manual Pause
-
-**Command**: `/autopilot:pause-autopilot <identifier>`
-
-Manually pause autopilot at any time to:
-- Review progress before continuing
-- Make manual changes to spec or tasks
-- Intervene in the automation loop
-
-State is saved to `artifacts/state/paused.md` and autopilot resumes from the same task.
 
 ---
 
@@ -221,31 +205,7 @@ Human checkpoint to review all changes and artifacts before finalizing.
 
 ---
 
-### 7. Reflect
-
-**Command**: `/autopilot:reflect`
-
-Analyze session signals and artifacts to propose rules for continuous improvement.
-
-**What It Does**:
-1. Reads signals from `.claude/specs/<identifier>/artifacts/signals/` (corrections, rejections, repetitions)
-2. Analyzes artifacts (decisions, assumptions) from per-spec location
-3. Proposes rules based on confidence level
-4. Presents proposals table to user
-5. Creates selected rules in `.claude/rules/`
-6. Optionally promotes valuable artifacts to `.claude/artifacts/` for long-term retention
-
-**Human Actions**:
-- Review proposed rules
-- Select which rules to create
-- Adjust rule content or paths as needed
-- Promote valuable artifacts to curated location
-
-**Output**: Modular rules that automatically apply in future sessions.
-
----
-
-### 8. Submit
+### 7. Submit
 
 **Commands**: `/autopilot:commit`, `/autopilot:sync-pr`
 
@@ -281,7 +241,5 @@ Finalize implementation by creating commits and managing pull requests.
 | Plan | `/autopilot:create-plan <id>` | Spec | `RESEARCH.md`, `PLAN.md` |
 | Tasks | `/autopilot:create-tasks <id>` | Plan | `TODO.md` |
 | Autopilot | `/autopilot:execute <id>` | Tasks | Code changes, per-spec artifacts, commits |
-| Pause | `/autopilot:pause-autopilot <id>` | Running autopilot | `paused.md` state file |
 | Review | `/autopilot:review` | Changes, per-spec artifacts | Human decision |
-| Reflect | `/autopilot:reflect` | Signals, per-spec artifacts | `.claude/rules/`, promoted artifacts |
 | Submit | `/autopilot:commit`, `/autopilot:sync-pr` | Changes | Commits, PR |

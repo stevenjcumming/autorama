@@ -25,8 +25,6 @@ Complete flow of the Autopilot workflow pipeline showing commands, agents, hooks
       ↕                │
     Review ────────────┘
       ↓
-    Reflect
-      ↓
     Submit
 ```
 
@@ -41,37 +39,31 @@ Requirements ──> [1] Spec ──> HUMAN ──> [2] Plan ──> HUMAN ─�
                                                                                 |
                ┌────────────────────────────────────────────────────────────────┘
                v
-           [4] Autopilot (/autopilot:execute) ──────────────────────────────────┐
+           [4] Autopilot (/autopilot:execute) ──────────────────────────┐
                |                                                        |
                |  ┌──────────────────────────────────────────────┐      |
-               |  │  Loop Controller (per task)                  │      |
+               |  │  Execute Command (per task, fresh context)   │      |
                |  │     Test → Code → Analysis → Refactor ─┐     │      |
                |  │      ^                                 |     │      |
                |  │      └──── if changes made ────────────┘     │      |
                |  │                                              │      |
-               |  │  Hook: save-state → auto-commit → handoff    │      |
-               |  │  Hook: check pause signals                   │      |
+               |  │  Hooks: save-state, commit                   │      |
+               |  │  Hook: on-agent-complete (handoff, context)  │      |
                |  └──────────────────────────────────────────────┘      |
                |                                                        |
-               |  (repeats for each task, or pauses for HUMAN)          |
+               |  (repeats for each task)                                |
                |                                                        |
                v                                                        |
-     HUMAN (optional between tasks / on pause)                          |
+     HUMAN (optional between tasks)                                     |
                |                                                        |
                v                                                        |
-           [5] Review (/autopilot:review) ──> HUMAN DECISION ─────────────────────┤
+           [5] Review (/autopilot:review) ──> HUMAN DECISION ───────────┤
                |          |              |                              |
            Approve    Request Changes   Reject                          |
                |          |              |                              |
                v          v              v                              |
-           [6] Reflect  [4] Autopilot  [1] Spec  <──────────────────────┘
-           (/autopilot:reflect)
-               |
-               v
-           HUMAN (select rules)
-               |
-               v
-           [7] Submit (/autopilot:commit, /autopilot:sync-pr)
+           [6] Submit   [4] Autopilot  [1] Spec  <──────────────────────┘
+           (/autopilot:commit, /autopilot:sync-pr)
                |
                v
            HUMAN (code review, merge)
@@ -173,7 +165,7 @@ HUMAN ACTION
     |
     v
 ┌──────────────────────────────────────────────────────────────────────────┐
-│ LOOP CONTROLLER (sonnet) - Sequential task queue                         │
+│ EXECUTE COMMAND - Sequential task queue (fresh context per task)         │
 │                                                                          │
 │  Parse TODO.md ──> pending_tasks queue                                   │
 │                                                                          │
@@ -192,25 +184,23 @@ HUMAN ACTION
 │  │  │                                                              │  │  │
 │  │  │   autopilot-tester (sonnet)                                  │  │  │
 │  │  │       │  Writes tests from acceptance criteria (TDD red)     │  │  │
-│  │  │       │  Generates: test files, signals                      │  │  │
+│  │  │       │  Generates: test files                                │  │  │
 │  │  │       v                                                      │  │  │
 │  │  │   Bash: run tests (expect RED — tests should fail)           │  │  │
 │  │  │       v                                                      │  │  │
 │  │  │   autopilot-coder (opus)                                     │  │  │
 │  │  │       │  Implements task                                     │  │  │
 │  │  │       │  Generates: justifications, decisions, assumptions,  │  │  │
-│  │  │       │             risks, debt, review_hints, signals       │  │  │
+│  │  │       │             risks, debt, review_hints                 │  │  │
 │  │  │       v                                                      │  │  │
 │  │  │   Bash: run tests (expect GREEN — tests should pass)         │  │  │
 │  │  │       │                                                      │  │  │
 │  │  │       v                                                      │  │  │
 │  │  │   autopilot-analyzer (sonnet)                                │  │  │
 │  │  │       │  Runs static analysis (lint, type checks)            │  │  │
-│  │  │       │  Generates: signals                                  │  │  │
 │  │  │       v                                                      │  │  │
 │  │  │   autopilot-refactorer (sonnet)                              │  │  │
 │  │  │       │  Cleanup refactoring                                 │  │  │
-│  │  │       │  Generates: signals                                  │  │  │
 │  │  │       │                                                      │  │  │
 │  │  │       ├── If changes made ──> loop back to tester + tests    │  │  │
 │  │  │       └── If no changes ──> task complete                    │  │  │
@@ -236,11 +226,6 @@ HUMAN ACTION
 │  │                          |                                         │  │
 │  │                          v                                         │  │
 │  │  ┌─── BETWEEN-TASK CHECKS ───────────────────────────────────────┐ │  │
-│  │  │  evaluate-signals.sh:                                         │ │  │
-│  │  │    ├── Repeated violation (same rule 3+ times) ──> PAUSE      │ │  │
-│  │  │    ├── High severity (security, breaking change) ──> PAUSE    │ │  │
-│  │  │    └── Human review flag ──> PAUSE                            │ │  │
-│  │  │                                                               │ │  │
 │  │  │  Context critical?                                            │ │  │
 │  │  │    └── Spawn session-summarizer (haiku)                       │ │  │
 │  │  │        └── Writes SESSION_SUMMARY.md (500-1000 tokens)        │ │  │
@@ -252,15 +237,12 @@ HUMAN ACTION
 │  │                  next task (loop)                                  │  │
 │  └────────────────────────────────────────────────────────────────────┘  │
 │                                                                          │
-│  Manual pause: /autopilot:pause-autopilot <id>                                     │
-│    └── Writes artifacts/state/paused.md (full state for resumption)      │
-│                                                                          │
 └──────────────────────────────────────────────────────────────────────────┘
 ```
 
 **Command**: `/autopilot:execute <id> [T<n>|P<n>]`
-**Agents**: `loop-controller` -> `autopilot-task-runner` -> `autopilot-tester`, `autopilot-coder`, `autopilot-analyzer`, `autopilot-refactorer`; `session-summarizer`
-**Human Action**: Optional review between tasks (single_task_mode), intervention on pause
+**Agents**: `autopilot-task-runner` (fresh per task) -> `autopilot-tester`, `autopilot-coder`, `autopilot-analyzer`, `autopilot-refactorer`; `session-summarizer`
+**Human Action**: Optional review between tasks (single_task_mode)
 
 ---
 
@@ -289,7 +271,7 @@ Present enhanced summary to HUMAN
     v
 HUMAN DECISION
     |
-    ├── APPROVE ──────────> Proceed to Reflect
+    ├── APPROVE ──────────> Proceed to Submit
     ├── REQUEST CHANGES ──> Return to Autopilot (specific fixes)
     └── REJECT ───────────> Return to Spec (fundamental issues)
 ```
@@ -300,54 +282,7 @@ HUMAN DECISION
 
 ---
 
-### [6] Reflect
-
-```
-/autopilot:reflect [id]
-    |
-    v
-reflect.sh (count signals, artifacts, existing rules)
-    |
-    v
-Analyze signals from .claude/specs/<id>/artifacts/signals/
-    |
-    ├── Corrections (high confidence) ──> propose rule
-    ├── Rejections (high confidence) ──> propose rule
-    ├── Repetitions (high confidence) ──> propose rule
-    ├── Approvals (medium confidence) ──> propose with caveats
-    ├── Clarifications (medium) ──> propose with caveats
-    └── Praise (low) ──> report only, no rule
-    |
-    v
-Analyze artifacts (decisions, assumptions)
-    |
-    v
-Generate proposals table
-    |
-    v
-HUMAN ACTION
-    ├── Review proposed rules
-    ├── Select which rules to create
-    └── Adjust content or paths as needed
-    |
-    v
-rules-builder agent (sonnet)
-    |
-    ├── Creates selected rules in .claude/rules/
-    └── Rules auto-loaded in all future sessions
-    |
-    v
-(Optional) Promote valuable per-spec artifacts to .claude/artifacts/
-```
-
-**Command**: `/autopilot:reflect [id]`
-**Agents**: `rules-builder`
-**Artifacts Generated**: `.claude/rules/*.md`
-**Human Action**: Select rules to create, adjust content, promote artifacts
-
----
-
-### [7] Submit
+### [6] Submit
 
 ```
 /autopilot:commit
@@ -386,7 +321,7 @@ HUMAN ACTION
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
 │  1. PreToolUse ─── load-context.sh (10s timeout)                │
-│     │  Matcher: Task tool (autopilot-* agents only)             │
+│     │  Matcher: Task                                            │
 │     │  Input: handoff.md, TODO.md                               │
 │     │  Output (injected into agent prompt):                     │
 │     │    <handoff-context>   Previous task summary              │
@@ -395,10 +330,14 @@ HUMAN ACTION
 │     │                                                           │
 │  2. (Agent executes task)                                       │
 │     │                                                           │
-│  3. PostToolUse ─── save-state.sh (30s timeout)                 │
-│     │  Matcher: Task tool (autopilot-* agents only)             │
+│  3a. PostToolUse ─── save-state.sh (30s timeout)                │
+│     │  Matcher: Task                                            │
 │     │  Output: artifacts/state/current.json                     │
 │     │    { last_agent, last_task, task_completed, timestamp }   │
+│     │                                                           │
+│  3b. PostToolUse ─── commit.sh (10s timeout)                    │
+│     │  Matcher: Write|Edit|Bash                                 │
+│     │  Output: <skill-invoke> for auto-commit                   │
 │     │                                                           │
 │  4. SubagentStop ─── on-agent-complete.sh (60s timeout)         │
 │     │  Matcher: None (fires for all subagents, filters inside)  │
@@ -468,16 +407,13 @@ All artifacts written to `.claude/specs/<id>/artifacts/` unless noted.
 | `risks/` | coder | Potential problem identified |
 | `debt/` | coder | Shortcut taken |
 | `review_hints/` | coder | Human judgment needed |
-| `signals/` | tester, coder, analyzer, refactorer | Notable patterns (correction, rejection, repetition, approval, clarification) |
-
 ### Generated by Hooks
 
 | Artifact | Hook | Trigger |
 |----------|------|---------|
 | `state/current.json` | save-state.sh | After each task agent completes |
 | `handoff/handoff.md` | on-agent-complete.sh | After each task completes |
-| `handoff/SESSION_SUMMARY.md` | session-summarizer (via loop-controller) | Context usage critical (>200k tokens) |
-| `state/paused.md` | /autopilot:pause-autopilot | Manual pause or signal-triggered pause |
+| `handoff/SESSION_SUMMARY.md` | session-summarizer (via execute command) | Context usage critical (>200k tokens) |
 
 ### Generated During Other Stages
 
@@ -488,7 +424,6 @@ All artifacts written to `.claude/specs/<id>/artifacts/` unless noted.
 | `RESEARCH.md` | Plan | `.claude/specs/<id>/` |
 | `PLAN.md` | Plan | `.claude/specs/<id>/` |
 | `TODO.md` | Tasks | `.claude/specs/<id>/` |
-| `.claude/rules/*.md` | Reflect | `.claude/rules/` |
 | Git commits | Submit | Git history |
 | GitHub PR | Submit | GitHub |
 
@@ -509,20 +444,8 @@ All artifacts written to `.claude/specs/<id>/artifacts/` unless noted.
 | **Plan** | Review PLAN.md, address gaps, approve | Yes |
 | **Tasks** | Review TODO.md, verify ordering, approve | Yes |
 | **Autopilot (between tasks)** | Inspect changes when single_task_mode is on | Optional |
-| **Autopilot (on pause)** | Review signals, decide to continue or intervene | When triggered |
-| **Autopilot (manual pause)** | `/autopilot:pause-autopilot` to stop and review | Optional |
 | **Review** | Review summary, checklist; approve/change/reject | Yes |
-| **Reflect** | Select which proposed rules to create | Yes |
 | **Submit** | Review commits, monitor PR, merge | Yes |
-
-### Automatic Pause Triggers (require human)
-
-| Trigger | Condition | Source |
-|---------|-----------|--------|
-| Repeated violation | Same analysis rule broken 3+ times | evaluate-signals.sh |
-| High severity | Security issue or breaking change detected | evaluate-signals.sh |
-| Human review flag | Agent flagged `human_review: required` | evaluate-signals.sh |
-| Context critical | Token usage exceeds 200k threshold | check-context.sh |
 
 ---
 
@@ -537,36 +460,16 @@ All artifacts written to `.claude/specs/<id>/artifacts/` unless noted.
 
 /autopilot:create-tasks ────── task-builder (sonnet, leaf)
 
-/autopilot:execute ───────── loop-controller (sonnet)
-                       ├── autopilot-task-runner (opus)
+/autopilot:execute (command — lightweight loop owner)
+                       ├── autopilot-task-runner (opus, fresh per task)
                        │     ├── autopilot-tester (sonnet)
                        │     ├── autopilot-coder (opus)
                        │     ├── autopilot-analyzer (sonnet)
                        │     └── autopilot-refactorer (sonnet)
                        └── session-summarizer (haiku)
 
-/autopilot:reflect ─────────── rules-builder (sonnet, leaf)
-
 (hooks) ──────────── handoff-writer (haiku, leaf)
 ```
 
 ---
 
-## Signals-to-Rules Feedback Loop
-
-```
-Phase 1: GENERATION (during Autopilot)
-    All agents ──> write signal artifacts
-
-Phase 2: ANALYSIS (/autopilot:reflect)
-    Reads all signals + artifacts
-    └── Identifies patterns across full session
-
-Phase 3: SELECTION (human)
-    Engineer reviews proposed rules
-    └── Selects which to create
-
-Phase 4: PERSISTENCE
-    rules-builder writes .claude/rules/
-    └── Auto-loaded in all future sessions
-```

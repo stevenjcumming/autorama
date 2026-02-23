@@ -5,7 +5,7 @@ A Claude Code plugin for AI-autonomous software development with structured work
 ## Workflow
 
 ```
-Requirements → Spec → Plan → Tasks → Test → Code → Analysis → Refactor → Review → Reflect → Submit
+Requirements → Spec → Plan → Tasks → Test → Code → Analysis → Refactor → Review → Submit
 ```
 
 The plugin guides you through a structured development workflow:
@@ -15,8 +15,7 @@ The plugin guides you through a structured development workflow:
 3. **Tasks** - Break plan into actionable checklist
 4. **Execute** - Execute Test/Code/Analysis/Refactor loop autonomously via Agent Harness
 5. **Review** - Human checkpoint for changes and artifacts (approve, request changes, or reject)
-6. **Reflect** - Analyze signals and propose persistent rules for `.claude/rules/`
-7. **Submit** - Commit and create pull request
+6. **Submit** - Commit and create pull request
 
 See [docs/workflow-overview.md](docs/workflow-overview.md) for detailed stage descriptions.
 
@@ -27,10 +26,13 @@ See [docs/workflow-overview.md](docs/workflow-overview.md) for detailed stage de
 /plugin marketplace add stevenjcumming/claude-code-autopilot
 /plugin install autopilot
 
-# 2. Initialize (creates config, installs yq, updates gitignore)
+# 2. See available commands and workflow
+/autopilot:help
+
+# 3. Initialize (creates config, installs yq, updates gitignore)
 /autopilot:init
 
-# 3. Start a new feature
+# 4. Start a new feature
 /autopilot:new-spec my-feature
 # Fill in REQUIREMENT.md with your requirements
 /autopilot:create-plan my-feature
@@ -41,11 +43,11 @@ See [docs/workflow-overview.md](docs/workflow-overview.md) for detailed stage de
 ## Safety Principles
 
 - **Human checkpoints** - Review stage requires approval before submission; `single_task_mode` pauses between tasks
-- **Automatic pause** - Stops on repeated violations, high-severity signals, and human review flags
+- **Automatic pause** - Stops on repeated violations and human review flags
 - **Incremental changes** - Small, reviewable tasks with auto-commits after each completion
 - **Artifact trail** - Decisions, assumptions, risks, and justifications documented per spec
 - **Context preservation** - Handoff artifacts ensure continuity between task agents
-- **Continuous improvement** - Reflect stage captures signals as rules that auto-load in future sessions
+- **Continuous improvement** - Rules in `.claude/rules/` inform future sessions
 
 ## Configuration
 
@@ -56,7 +58,6 @@ Configure via `.claude/autopilot.yml`. Run `/autopilot:init` to create from temp
 | `single_task_mode` | `true` | Pause after each task for human review |
 | `auto_commit.message_template` | conventional | Commit message format after each task |
 | `justification.categories` | (see config) | Require justification for flagged file categories |
-| `pause_signals.triggers` | (see config) | Pause on repeated violations and high-severity signals |
 | `static_analysis.commands` | `[]` | Static analysis commands to run during autopilot |
 
 Feature sections are active when present. To disable a feature, remove the section entirely.
@@ -73,7 +74,7 @@ See [docs/configuration.md](docs/configuration.md) for full reference.
 - [Hook System](docs/hook-system.md)
 - [Artifact System](docs/artifacts.md)
 - [Evaluation Pipeline](docs/evaluation_pipeline.md)
-- [Signals and Rules](docs/signals-and-rules.md)
+- [Rules](docs/rules.md)
 - [Configuration](docs/configuration.md)
 - [Justification Categories](docs/justifications.md)
 - [Human Review](docs/human_review.md)

@@ -16,7 +16,7 @@ echo "" >> "$REPORT"
 echo "| Type | Count |" >> "$REPORT"
 echo "|------|-------|" >> "$REPORT"
 
-for type in justifications decisions assumptions risks debt signals review_hints; do
+for type in justifications decisions assumptions risks debt review_hints; do
     dir="${SPEC_DIR}/artifacts/${type}"
     if [ -d "$dir" ]; then
         count=$(find "$dir" -name "*.md" 2>/dev/null | wc -l | tr -d ' ')

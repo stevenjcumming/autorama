@@ -33,18 +33,11 @@ cat > "$SPEC_DIR/TODO.md" << 'EOF'
 # TODO
 
 <!-- Task checklist generated from PLAN.md -->
-<!-- Move completed tasks to the Completed section at the bottom -->
 
 ## Phase 1: [Name]
 
 - [ ] Task description
 - [ ] Write tests for [component]
-
----
-
-## Completed
-
-<!-- Move completed tasks here with [x] -->
 EOF
 
 echo "Created tasks template at $SPEC_DIR/TODO.md"

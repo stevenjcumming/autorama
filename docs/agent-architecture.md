@@ -13,15 +13,13 @@ The autopilot plugin delegates work through a tree of specialized agents. Each a
 
 /autopilot:create-tasks ──── task-builder (sonnet, leaf)
 
-/autopilot:execute ──── loop-controller (sonnet)
-                  ├── autopilot-task-runner (opus)
+/autopilot:execute (command — lightweight loop owner)
+                  ├── autopilot-task-runner (opus, fresh per task)
                   │     ├── autopilot-tester (sonnet)
                   │     ├── autopilot-coder (opus)
                   │     ├── autopilot-analyzer (sonnet)
                   │     └── autopilot-refactorer (sonnet)
                   └── session-summarizer (haiku)
-
-/autopilot:reflect ──── rules-builder (sonnet, leaf)
 
 (hooks) ──── handoff-writer (haiku, leaf)
 ```
@@ -33,7 +31,7 @@ Agents are assigned to model tiers based on the complexity of their work.
 | Tier | Model | Agents | Role |
 |------|-------|--------|------|
 | **Heavy** | Opus | autopilot-task-runner, autopilot-coder, plan-builder | Complex reasoning, code generation, multi-step orchestration |
-| **Medium** | Sonnet | loop-controller, autopilot-tester, autopilot-analyzer, autopilot-refactorer, plan-researcher, plan-analyzer, task-builder, rules-builder | Test writing, structured analysis, pattern matching, sequential tasks |
+| **Medium** | Sonnet | autopilot-tester, autopilot-analyzer, autopilot-refactorer, plan-researcher, plan-analyzer, task-builder | Test writing, structured analysis, pattern matching, sequential tasks |
 | **Light** | Haiku | handoff-writer, session-summarizer | Template filling, text compression |
 
 The general rule: agents that write code or make architectural decisions use Opus. Agents that analyze, search, or follow structured procedures use Sonnet. Agents that produce formulaic output use Haiku.
@@ -86,21 +84,9 @@ Converts `PLAN.md` into a phased `TODO.md` checklist with task IDs, dependencies
 
 ### Autopilot Stage
 
-#### `loop-controller`
-
-Sequential queue processor. Parses `TODO.md`, spawns one task runner at a time, waits for completion, checks pause signals and context limits, then moves to the next task.
-
-| Field | Value |
-|-------|-------|
-| Model | Sonnet |
-| Tools | Read, Task, Bash, Glob |
-| Spawns | autopilot-task-runner, session-summarizer |
-
-Does not write code. Its job is sequencing and monitoring.
-
 #### `autopilot-task-runner`
 
-Executes a single task through the full test/code/analyze/refactor loop. Designed for background execution with structured XML output markers.
+Executes a single task through the full test/code/analyze/refactor loop. Spawned fresh by `execute.md` for each task, giving every task its own clean context window.
 
 | Field | Value |
 |-------|-------|
@@ -128,7 +114,7 @@ Writes tests for a task based on requirements and acceptance criteria. Handles t
 | Model | Sonnet |
 | Tools | Read, Edit, Write, Glob, Grep, Bash |
 | Spawns | (none) |
-| Produces | Test files, signals |
+| Produces | Test files |
 
 #### `autopilot-coder`
 
@@ -140,7 +126,6 @@ Implements the task. Generates audit trail artifacts (justifications, decisions,
 | Tools | Read, Edit, Write, Glob, Grep, Bash |
 | Spawns | (none) |
 | Produces | Justifications, decisions, assumptions, risks, debt, review hints |
-| Hooks | PostToolUse on Edit/Write triggers `justify.sh` |
 
 #### `autopilot-analyzer`
 
@@ -151,7 +136,7 @@ Runs configured static analysis tools and reports blocking issues.
 | Model | Sonnet |
 | Tools | Read, Write, Glob, Grep, Bash |
 | Spawns | (none) |
-| Produces | Signals |
+| Produces | Analysis report with fix instructions |
 
 #### `autopilot-refactorer`
 
@@ -162,13 +147,13 @@ Reviews recent changes and applies cleanup refactoring. If it makes changes, the
 | Model | Sonnet |
 | Tools | Read, Edit, Glob, Grep, Bash |
 | Spawns | (none) |
-| Produces | Signals |
+| Produces | Refactoring changes or no-op |
 
 ### Utility Agents
 
 #### `session-summarizer`
 
-Compresses the full session context into a 500-1000 token summary when context limits are approaching. Spawned by the loop-controller.
+Compresses the full session context into a 500-1000 token summary when context limits are approaching. Triggered by `on-agent-complete.sh` hook when context is critical.
 
 | Field | Value |
 |-------|-------|
@@ -188,19 +173,6 @@ Generates rich `handoff.md` artifacts by analyzing git diffs, artifacts, and dec
 | Spawns | (none) |
 | Output | `handoff.md` |
 
-### Reflect Stage
-
-#### `rules-builder`
-
-Creates rule files in `.claude/rules/` from proposals generated during the reflect stage. Supports both global and path-specific rules.
-
-| Field | Value |
-|-------|-------|
-| Model | Sonnet |
-| Tools | Read, Write, Glob |
-| Spawns | (none) |
-| Output | `.claude/rules/*.md` |
-
 ## Delegation Patterns
 
 ### Sequential Delegation
@@ -209,11 +181,7 @@ Used when sub-agent outputs feed into each other. The parent spawns one child, w
 
 - **plan-builder**: researcher first (gather data), then analyzer (validate plan)
 - **autopilot-task-runner**: tester → Bash(red) → coder → Bash(green) → analyzer → refactorer
-- **loop-controller**: task N must complete before task N+1 starts
-
-### Background Delegation
-
-The loop-controller can spawn task runners in background mode (`run_in_background=true`). It monitors the output file for XML completion markers (`<task-completed />` or `<task-failed />`), polling until the agent finishes.
+- **execute.md**: task N must complete before task N+1 starts
 
 ### Fire-and-Forget
 
@@ -221,7 +189,7 @@ Utility agents like session-summarizer and handoff-writer produce a file and exi
 
 ## Tool Access Principles
 
-- **Orchestrators** (loop-controller, plan-builder) get `Task` but limited file tools -- they delegate, not implement
+- **Orchestrators** (execute.md command, plan-builder) delegate work — they don't implement
 - **Implementers** (coder, refactorer) get `Edit` and `Write` -- they modify files
 - **Test writers** (tester) get `Read`, `Edit`, `Write`, `Glob`, `Grep`, `Bash` -- they create test files
 - **Analyzers** (analyzer, researcher) get `Read`, `Grep`, `Glob`, `Bash` -- they observe and report

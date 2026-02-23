@@ -176,10 +176,6 @@ This prompts Claude to invoke the `/autopilot:commit` skill automatically.
 ├── Summarize changes and artifacts
 └── Human approval
 
-/autopilot:reflect
-├── Analyze session signals
-└── Propose improvements
-
 /autopilot:commit (if not auto-committed)
 ├── Stage all changes
 └── Create conventional commit
@@ -262,4 +258,3 @@ After submitting:
 1. Monitor PR for review feedback
 2. Address review comments
 3. Merge when approved
-4. Consider running `/autopilot:reflect` on significant feedback

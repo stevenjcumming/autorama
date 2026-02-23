@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Provide a human checkpoint by summarizing code changes and artifacts generated during implementation. This stage ensures human oversight before proceeding to Reflect and Submit stages.
+Provide a human checkpoint by summarizing code changes and artifacts generated during implementation. This stage ensures human oversight before proceeding to the Submit stage.
 
 ## Command
 
@@ -116,7 +116,7 @@ The command presents this checklist for the reviewer:
 - [ ] All high-risk items reviewed and accepted
 
 ### Ready to Proceed
-- [ ] Approved to continue to Reflect stage
+- [ ] Approved to continue to Submit stage
 - [ ] Needs changes (return to implementation)
 - [ ] Fundamental issues (return to Spec)
 ```
@@ -127,7 +127,7 @@ After presenting the summary, the reviewer chooses:
 
 | Decision | Action |
 |----------|--------|
-| **Approve** | Proceed to Reflect stage |
+| **Approve** | Proceed to Submit stage |
 | **Request changes** | Return to implementation with specific fixes |
 | **Reject** | Return to Spec stage for fundamental issues |
 
@@ -181,6 +181,6 @@ The command provides:
 
 After review completes:
 
-1. If **Approved**: Run `/autopilot:reflect` to analyze session and propose improvements
+1. If **Approved**: Run `/autopilot:commit` and `/autopilot:sync-pr` to submit
 2. If **Changes needed**: Return to implementation or `/autopilot:execute`
 3. If **Rejected**: Return to `/autopilot:new-spec` or `/autopilot:create-plan` to address fundamental issues

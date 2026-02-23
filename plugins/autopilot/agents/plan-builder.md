@@ -137,7 +137,7 @@ After both agents complete, output:
 **Next Steps:**
 1. Review the plan at `PLAN.md`
 2. Address any gaps or questions identified
-3. Approve the plan before implementation
+3. When happy with the plan, create the tasks
 ```
 
 ## Rules

@@ -11,7 +11,7 @@ Autopilot is a Claude Code plugin for AI-autonomous software development. It pro
 ### Workflow Pipeline
 
 ```
-Requirements → Spec → Plan → Tasks → Write Tests → Red → Code → Green → Analysis → Refactor → Review → Reflect → Submit
+Requirements → Spec → Plan → Tasks → Write Tests → Red → Code → Green → Analysis → Refactor → Review → Submit
 ```
 
 The following stages have been implemented:
@@ -21,8 +21,7 @@ The following stages have been implemented:
 3. **Tasks** (`/autopilot:create-tasks`) - Converts plan into phased TODO.md checklist
 4. **Autopilot** (`/autopilot:execute`) - Executes TDD loop (Write Tests → Red → Code → Green → Analysis → Refactor) autonomously
 5. **Review** (`/autopilot:review`) - Generates review summary of changes and artifacts
-6. **Reflect** (`/autopilot:reflect`) - Analyzes session signals and proposes rules
-7. **Submit** (`/autopilot:commit`, `/autopilot:sync-pr`) - Creates commits and syncs with GitHub PRs
+6. **Submit** (`/autopilot:commit`, `/autopilot:sync-pr`) - Creates commits and syncs with GitHub PRs
 
 ### Directory Structure
 
@@ -51,7 +50,7 @@ Commands follow a consistent pattern:
 
 Agents can spawn sub-agents for specialized tasks:
 - `plan-builder` spawns `plan-researcher` and `plan-analyzer`
-- `loop-controller` spawns `autopilot-task-runner` for each task
+- `execute.md` (command) spawns a fresh `autopilot-task-runner` for each task
 - `autopilot-task-runner` spawns `autopilot-tester` (writes tests), then runs tests via Bash, spawns `autopilot-coder` (with test files), runs tests via Bash again, then `autopilot-analyzer` and `autopilot-refactorer`
 - `handoff-writer` generates handoff artifacts after task completion
 - `session-summarizer` compresses context when approaching limits
@@ -62,33 +61,46 @@ Agents can spawn sub-agents for specialized tasks:
 The autopilot system uses a hook-based Agent Harness architecture with TDD discipline:
 
 ```
-/autopilot:execute
-    └── Loop Controller
-            │
-            ├── PreToolUse Hook: load-context.sh
-            │   └── Loads TODO.md, handoff.md
-            │
-            ├── Task Agent (background)
-            │   └── autopilot-task-runner
-            │       ├── 1. tester (writes tests)
-            │       ├── 2. Bash: run tests → expect RED (fail)
-            │       ├── 3. coder (implements to satisfy tests)
-            │       ├── 4. Bash: run tests → expect GREEN (pass)
-            │       ├── 5. analyzer (static analysis)
-            │       └── 6. refactorer (cleanup)
-            │
-            └── PostToolUse Hook: save-state.sh
-                └── Updates TODO.md, writes handoff.md, commits
+/autopilot:execute (command — lightweight loop owner)
+    │
+    ├── Step 3: setup-artifacts.sh + build-task-queue.sh
+    │
+    ├── Step 4: Task Loop (for each task in queue)
+    │   │
+    │   ├── Spawn fresh Task(autopilot-task-runner) per task
+    │   │   │
+    │   │   ├── PreToolUse Hook: load-context.sh
+    │   │   │   └── Loads TODO.md, handoff.md
+    │   │   │
+    │   │   ├── autopilot-task-runner (clean context)
+    │   │   │   ├── 1. tester (writes tests)
+    │   │   │   ├── 2. Bash: run tests → expect RED (fail)
+    │   │   │   ├── 3. coder (implements to satisfy tests)
+    │   │   │   ├── 4. Bash: run tests → expect GREEN (pass)
+    │   │   │   ├── 5. analyzer (static analysis)
+    │   │   │   └── 6. refactorer (cleanup)
+    │   │   │
+    │   │   ├── PostToolUse Hook: save-state.sh
+    │   │   │   └── Writes current.json state tracker
+    │   │   ├── PostToolUse Hook: commit.sh
+    │   │   │   └── Triggers auto-commit on uncommitted changes
+    │   │   └── SubagentStop Hook: on-agent-complete.sh
+    │   │       └── Auto-commits, generates handoff.md, checks context
+    │   │
+    │   ├── Spawn Task(handoff-writer) for context handoff
+    │   └── Parse <task-completed> / <task-failed> status
+    │
+    └── Step 5: Present final summary
 ```
 
 Key components:
-- **loop-controller** - Orchestrates the agent loop until all tasks complete
-- **autopilot-task-runner** - Executes a single task with TDD loop (write tests → red → code → green → analyze → refactor)
+- **execute.md** - Lightweight loop owner; spawns fresh task-runners
+- **autopilot-task-runner** - Executes a single task with TDD loop (write tests → red → code → green → analyze → refactor) in a fresh context
 - **autopilot-tester** - Writes tests based on task requirements (does not run them)
 - **autopilot-coder** - Implements code to satisfy pre-written tests
 - **handoff-writer** - Generates handoff.md for context preservation
 - **session-summarizer** - Compresses context when approaching token limits
-- **Hooks** - PreToolUse loads context, PostToolUse saves state and commits
+- **Hooks** - PreToolUse loads context, PostToolUse saves state and commits, SubagentStop triggers handoff and auto-commit
 
 ## Slash Commands
 
@@ -98,9 +110,7 @@ Key components:
 | `/autopilot:create-plan <id>` | Generate implementation plan from spec |
 | `/autopilot:create-tasks <id>` | Convert plan to TODO checklist |
 | `/autopilot:execute <path>` | Execute TDD loop (Write Tests/Red/Code/Green/Analysis/Refactor) for a spec |
-| `/autopilot:pause-autopilot <id>` | Pause autopilot and save current state |
 | `/autopilot:review <id>` | Generate review summary of changes and artifacts |
-| `/autopilot:reflect <id>` | Analyze session signals and propose rules |
 | `/autopilot:commit` | Create a commit with conventional commit message |
 | `/autopilot:sync-pr` | Create or update PR for current branch |
 
@@ -112,7 +122,7 @@ Commands and agents require YAML frontmatter with specific fields:
 ```yaml
 ---
 description: Short description for command list
-allowed-tools: Bash(bash $CLAUDE_PLUGIN_ROOT/scripts/example.sh:*), Read, Task
+allowed-tools: Bash(bash $AUTOPILOT_PLUGIN_ROOT/scripts/example.sh:*), Read, Task
 argument-hint: [identifier]
 model: opus  # optional
 ---
@@ -146,4 +156,4 @@ Key differences:
 
 Artifacts are generated per spec in the user's project at `.claude/specs/<SPEC_ID>/artifacts/`. The plugin provides artifact templates at `plugins/autopilot/templates/artifacts/`.
 
-Respond immediately to any `<*-required>` XML prompts from hooks (e.g., `<justification-required>`). Follow the instructions within the prompt, then edit the output file specified.
+Artifact template files (justifications, risks, etc.) are created on disk by the PostToolUse hook. The `autopilot-task-runner` fills these in after sub-agents complete their work (Step 2.6).

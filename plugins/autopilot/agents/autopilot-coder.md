@@ -3,13 +3,6 @@ name: autopilot-coder
 description: Implements tasks with artifact generation for audit trail
 tools: Read, Edit, Write, Glob, Grep, Bash
 model: opus
-hooks:
-  PostToolUse:
-    - matcher: "Edit|Write"
-      hooks:
-        - type: command
-          command: "${CLAUDE_PLUGIN_ROOT}/hooks/artifact-prompt.sh coder"
-          timeout: 10
 ---
 
 # Autopilot Coder Agent
@@ -56,7 +49,7 @@ If `ANALYSIS_FIXES` is provided:
 1. **Prioritize analysis fixes** - These take precedence over normal task implementation
 2. **Parse fix instructions** - Extract file paths, line numbers, and issues to fix
 3. **Skip to Step 5** - Skip skill selection, proceed directly to fixing issues
-4. **Generate signal on completion** - Record that analysis issues were fixed
+4. **Return summary on completion** - Report what analysis issues were fixed
 
 When fixing analysis issues:
 - Focus only on the specific issues listed
@@ -132,7 +125,7 @@ If `TEST_FILES` is provided:
 1. Read each test file to understand expected behavior
 2. Reference test assertions to determine what the implementation must do
 3. Write the minimum code that makes all tests pass
-4. Do NOT modify test files — if a test seems wrong, flag it in a signal artifact
+4. Do NOT modify test files — if a test seems wrong, note it in the output
 
 For each file modification:
 
@@ -151,20 +144,7 @@ For each file modification:
 
 ### Step 5: Generate Artifacts
 
-#### Hook-Triggered Artifacts (respond to XML prompts)
-
-The PostToolUse hook automatically prompts for these artifacts when conditions are met:
-
-| Prompt | Trigger | Action |
-|--------|---------|--------|
-| `<justification-required>` | Any Edit/Write | Explain why the change is necessary |
-| `<dependency-required>` | Editing shared code paths | Document dependencies and impact |
-| `<risk-required>` | Editing security/migration/API files | Document risk and mitigation |
-| `<review-hint-required>` | Editing sensitive categories | Flag for human review |
-
-**Max 2 prompts per edit.** Priority: justification > dependency > risk > review_hint.
-
-For each prompt: read requirements, use Edit to append response to the output file.
+**Note:** The PostToolUse hook creates template artifact files (justifications, risks, etc.) on disk when you Edit/Write files. The task-runner fills these in after your work completes — you do not need to respond to them.
 
 #### Inline Artifacts (generate manually)
 
@@ -228,26 +208,9 @@ After completing implementation:
 {Any observations or concerns}
 ```
 
-### Step 6: Generate Signals
-
-Generate signals to capture interaction patterns for the Reflect stage.
-
-Location: `{SPEC_DIR}/artifacts/signals/{timestamp}_{type}_{description}.md`
-
-| Trigger | Signal Type | File Suffix |
-|---------|-------------|-------------|
-| Approach changed mid-implementation | `correction` | `_correction_approach_change.md` |
-| Assumption validated during implementation | `approval` | `_approval_assumption_valid.md` |
-| Missing information discovered | `clarification` | `_clarification_missing_info.md` |
-| Skill pattern worked well | `approval` | `_approval_skill_effective.md` |
-| Analysis fixes applied | `correction` | `_correction_analysis_fixed.md` |
-
-Set `source_agent: coder` for all signals from this agent.
-
 ## Rules
 
 - **Generate justifications** for all non-trivial file modifications
-- **Generate signals** - Capture patterns for the Reflect stage
 - **Be honest about risks** - don't downplay potential problems
 - **Document assumptions** when requirements are ambiguous
 - **Flag for review** when uncertain about correctness

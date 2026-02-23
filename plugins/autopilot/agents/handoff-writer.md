@@ -84,7 +84,7 @@ Analyze for potential issues:
 
 Read the template:
 ```
-Read("$CLAUDE_PLUGIN_ROOT/templates/artifacts/handoff/handoff.md")
+Read("$AUTOPILOT_PLUGIN_ROOT/templates/artifacts/handoff/handoff.md")
 ```
 
 Create handoff file:

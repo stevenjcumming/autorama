@@ -101,12 +101,6 @@ task-builder
 
 - [ ] First task
 - [ ] Second task
-
----
-
-## Completed
-
-<!-- Move completed tasks here with [x] -->
 ```
 
 ## Output

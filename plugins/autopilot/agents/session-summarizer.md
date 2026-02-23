@@ -49,7 +49,6 @@ Glob("{SPEC_DIR}/artifacts/**/*.md")
 
 Focus on:
 - Decisions (`artifacts/decisions/`)
-- Signals (`artifacts/signals/`)
 - The current handoff (`artifacts/handoff/handoff.md`)
 
 ### Step 4: Extract Key Information

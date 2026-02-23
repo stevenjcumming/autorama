@@ -15,7 +15,7 @@ Convert an implementation plan into an actionable TODO checklist.
 Run the create-tasks script:
 
 ```bash
-bash $CLAUDE_PLUGIN_ROOT/scripts/create-tasks.sh $ARGUMENTS
+bash $AUTOPILOT_PLUGIN_ROOT/scripts/create-tasks.sh $ARGUMENTS
 ```
 
 ## Step 2: Build the Task List
