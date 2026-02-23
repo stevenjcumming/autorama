@@ -66,7 +66,7 @@ Spawn a fresh `autopilot-task-runner` agent for each task. Each runner gets its 
 
 ```
 Task(
-  subagent_type="autopilot-task-runner",
+  subagent_type="autopilot:autopilot-task-runner",
   prompt="Execute task
 
   SPEC_DIR={SPEC_DIR}
@@ -84,7 +84,7 @@ After the task-runner completes, check if a `<handoff-needed>` tag was emitted (
 
 ```
 Task(
-  subagent_type="handoff-writer",
+  subagent_type="autopilot:handoff-writer",
   model="haiku",
   prompt="Generate handoff artifact
 

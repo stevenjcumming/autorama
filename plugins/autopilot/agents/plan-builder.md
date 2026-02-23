@@ -34,7 +34,7 @@ Spawn the `plan-researcher` agent to analyze the codebase:
 
 ```
 Task(
-  subagent_type="plan-researcher",
+  subagent_type="autopilot:plan-researcher",
   prompt="SPEC_DIR=<spec_dir>
 
   Research the codebase based on the spec and write findings to RESEARCH.md"
@@ -101,7 +101,7 @@ Spawn the `plan-analyzer` agent to validate the plan:
 
 ```
 Task(
-  subagent_type="plan-analyzer",
+  subagent_type="autopilot:plan-analyzer",
   prompt="SPEC_DIR=<spec_dir>
 
   Analyze the implementation plan and provide feedback"

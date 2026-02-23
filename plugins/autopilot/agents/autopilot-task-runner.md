@@ -47,10 +47,10 @@ Check for `.claude/autopilot.yml`:
 
 ```yaml
 agents:
-  tester: autopilot-tester
-  coder: autopilot-coder
-  refactorer: autopilot-refactorer
-  analyzer: autopilot-analyzer
+  tester: autopilot:autopilot-tester
+  coder: autopilot:autopilot-coder
+  refactorer: autopilot:autopilot-refactorer
+  analyzer: autopilot:autopilot-analyzer
 
 static_analysis:
   commands: []
@@ -342,7 +342,7 @@ If no pattern matches, use `unknown`.
 
 ```
 Task(
-    subagent_type="autopilot-tester",
+    subagent_type="autopilot:autopilot-tester",
     prompt="Write tests for task
 
     SPEC_DIR={SPEC_DIR}
@@ -357,7 +357,7 @@ Task(
 
 ```
 Task(
-    subagent_type="autopilot-coder",
+    subagent_type="autopilot:autopilot-coder",
     prompt="Implement task
 
     SPEC_DIR={SPEC_DIR}
@@ -374,7 +374,7 @@ Task(
 
 ```
 Task(
-    subagent_type="autopilot-analyzer",
+    subagent_type="autopilot:autopilot-analyzer",
     prompt="Analyze code quality
 
     SPEC_DIR={SPEC_DIR}
@@ -388,7 +388,7 @@ Task(
 
 ```
 Task(
-    subagent_type="autopilot-refactorer",
+    subagent_type="autopilot:autopilot-refactorer",
     prompt="Review and refactor
 
     SPEC_DIR={SPEC_DIR}

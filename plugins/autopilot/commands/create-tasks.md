@@ -24,7 +24,7 @@ Spawn the task-builder agent:
 
 ```
 Task(
-  subagent_type="task-builder",
+  subagent_type="autopilot:task-builder",
   prompt="SPEC_DIR=.claude/specs/$ARGUMENTS"
 )
 ```

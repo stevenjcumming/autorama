@@ -4,9 +4,9 @@
 # Agent overrides (optional)
 # Replace default agents with your own implementations
 agents:
-  tester: autopilot-tester        # Agent for running tests
-  coder: autopilot-coder          # Agent for implementing tasks
-  refactorer: autopilot-refactorer # Agent for cleanup/refactoring
+  tester: autopilot:autopilot-tester        # Agent for running tests
+  coder: autopilot:autopilot-coder          # Agent for implementing tasks
+  refactorer: autopilot:autopilot-refactorer # Agent for cleanup/refactoring
 
 # Coding skills (optional)
 # List skills the coder agent can choose from based on task context
