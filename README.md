@@ -34,10 +34,24 @@ See [docs/workflow-overview.md](docs/workflow-overview.md) for detailed stage de
 
 # 4. Start a new feature
 /autopilot:new-spec my-feature
-# Fill in REQUIREMENT.md with your requirements
+
+# 5. Fill in REQUIREMENT.md 
+# Copy and paste your GitHub or JIRA ticket 
+
+# 6. Fill in SPEC.md
+# Write or generate a SPEC.md based on REQUIREMENT.md 
+
+# 7. Generate the tasks
 /autopilot:create-plan my-feature
 /autopilot:create-tasks my-feature
-/autopilot:execute my-feature
+
+# 8. Start development
+/autopilot:execute my-feature T1
+
+# 9. Review and create/update PR
+/autopilot:review my-feature
+/autopilot:commit
+/autopilot:sync-pr
 ```
 
 ## Safety Principles
