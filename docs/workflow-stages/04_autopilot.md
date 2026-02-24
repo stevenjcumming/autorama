@@ -77,9 +77,6 @@ Autopilot uses an **Agent Harness** architecture where background agents complet
 Autopilot can be customized via `.claude/autopilot.yml`:
 
 ```yaml
-# Single-task mode: exit after each task for fresh context (default: true)
-single_task_mode: true   # Exit after each task for clean handoffs
-
 # Override default agents
 agents:
   tester: autopilot-tester       # Or your custom tester
@@ -152,19 +149,6 @@ commands:
 
 If a configured command is not installed, autopilot logs a warning and continues. This allows the same config to work across different environments.
 
-### Single-Task Mode
-
-When `single_task_mode: true`, autopilot:
-1. Completes **one task** from TODO.md
-2. Updates TODO.md with completion status
-3. Exits with a continuation prompt
-
-This clears the context window between tasks, which is useful for:
-- Large task lists that would exhaust context
-- Complex tasks that generate substantial artifacts
-- Maintaining fresh context for each implementation
-
-Re-run `/autopilot:execute <identifier>` to continue with the next task. TODO.md state persists, so autopilot resumes from where it left off.
 
 The coder agent dynamically selects skills based on task context. See [Skills documentation](./05_skills.md) for details.
 

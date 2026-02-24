@@ -230,8 +230,6 @@ HUMAN ACTION
 │  │  │    └── Spawn session-summarizer (haiku)                       │ │  │
 │  │  │        └── Writes SESSION_SUMMARY.md (500-1000 tokens)        │ │  │
 │  │  │                                                               │ │  │
-│  │  │  single_task_mode?                                            │ │  │
-│  │  │    └── true: exit loop, return control to HUMAN               │ │  │
 │  │  └───────────────────────────────────────────────────────────────┘ │  │
 │  │                          |                                         │  │
 │  │                  next task (loop)                                  │  │
@@ -242,7 +240,7 @@ HUMAN ACTION
 
 **Command**: `/autopilot:execute <id> [T<n>|P<n>]`
 **Agents**: `autopilot-task-runner` (fresh per task) -> `autopilot-tester`, `autopilot-coder`, `autopilot-analyzer`, `autopilot-refactorer`; `session-summarizer`
-**Human Action**: Optional review between tasks (single_task_mode)
+**Human Action**: Optional review between tasks
 
 ---
 
@@ -443,7 +441,7 @@ All artifacts written to `.claude/specs/<id>/artifacts/` unless noted.
 | **Spec** | Paste requirements, fill out SPEC.md | Yes |
 | **Plan** | Review PLAN.md, address gaps, approve | Yes |
 | **Tasks** | Review TODO.md, verify ordering, approve | Yes |
-| **Autopilot (between tasks)** | Inspect changes when single_task_mode is on | Optional |
+| **Execute (between tasks)** | Inspect changes between tasks | Optional |
 | **Review** | Review summary, checklist; approve/change/reject | Yes |
 | **Submit** | Review commits, monitor PR, merge | Yes |
 

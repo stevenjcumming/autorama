@@ -56,7 +56,7 @@ See [docs/workflow-overview.md](docs/workflow-overview.md) for detailed stage de
 
 ## Safety Principles
 
-- **Human checkpoints** - Review stage requires approval before submission; `single_task_mode` pauses between tasks
+- **Human checkpoints** - Review stage requires approval before submission
 - **Automatic pause** - Stops on repeated violations and human review flags
 - **Incremental changes** - Small, reviewable tasks with auto-commits after each completion
 - **Artifact trail** - Decisions, assumptions, risks, and justifications documented per spec
@@ -69,7 +69,6 @@ Configure via `.claude/autopilot.yml`. Run `/autopilot:init` to create from temp
 
 | Setting | Default | Description |
 |---------|---------|-------------|
-| `single_task_mode` | `true` | Pause after each task for human review |
 | `auto_commit.message_template` | conventional | Commit message format after each task |
 | `justification.categories` | (see config) | Require justification for flagged file categories |
 | `static_analysis.commands` | `[]` | Static analysis commands to run during autopilot |

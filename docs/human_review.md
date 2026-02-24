@@ -12,33 +12,17 @@ When running `/autopilot:execute`, the engineer controls which tasks are execute
 
 There is no range syntax (e.g., `T2-T5`). The options are: one task, one phase, or everything.
 
-## Single Task Mode
-
-The `single_task_mode` setting in `.claude/autopilot.yml` controls how many tasks the execute command completes before returning control to the engineer:
-
-```yaml
-single_task_mode: true   # default
-```
-
-- **`true` (default)** — The execute command exits after completing one task. The engineer sees a summary with remaining tasks listed and must run `/autopilot:execute` again to continue.
-- **`false`** — The execute command runs through all filtered tasks (or all tasks if no filter) before returning. The engineer only regains control when the entire batch is done.
-
-With the default setting, the engineer gets a natural checkpoint after every task. With it disabled, checkpoints only occur when the full run finishes.
-
 ## Initiating Review
 
 Review can happen at two levels:
 
 ### Informal Review (Between Tasks)
 
-When `single_task_mode` is enabled, the engineer regains control after each task. At this point they can:
+Between tasks, the engineer can inspect changes at any time:
 
 - Inspect the code changes and artifacts in `.claude/specs/<id>/artifacts/`
 - Read the handoff at `.claude/specs/<id>/artifacts/handoff/handoff.md`
 - Run tests or check git diffs manually
-- Decide whether to continue with `/autopilot:execute <id>` or stop
-
-This is an informal checkpoint — no structured review process runs.
 
 ### Formal Review (`/autopilot:review`)
 

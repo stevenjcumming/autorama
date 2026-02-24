@@ -15,6 +15,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Add LICENSE.md - Add MIT license
 
+### Removed
+
+- **Delete single_task_mode references** - Removed referenced to `single_task_mode` from README.md and docs
+
 ## [0.12.1] - 2026-02-23
 
 ### Fixed
