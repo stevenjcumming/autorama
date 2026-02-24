@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Updated README** - Improved "Quick Start" steps
 
+### Added
+
+- Add LICENSE.md - Add MIT license
+
 ## [0.12.1] - 2026-02-23
 
 ### Fixed
