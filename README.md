@@ -92,7 +92,6 @@ See [docs/configuration.md](docs/configuration.md) for full reference.
 - [Justification Categories](docs/justifications.md)
 - [Human Review](docs/human_review.md)
 
-
 ## License
 
 MIT
