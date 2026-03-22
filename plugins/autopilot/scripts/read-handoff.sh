@@ -1,10 +1,9 @@
 #!/bin/bash
 #
-# read-handoff.sh - Read handoff context for next agent
+# read-handoff.sh - Read condensed handoff context for next agent
 #
-# Reads and combines context from:
-# - handoff.md (previous task handoff)
-# - TODO.md (next task to execute)
+# Extracts key fields from handoff.md and outputs a compact summary
+# instead of the full file, keeping context injection under ~200 tokens.
 #
 # Usage: read-handoff.sh <spec_dir>
 #
@@ -25,13 +24,43 @@ if [ ! -d "$SPEC_DIR" ]; then
 fi
 
 # ============================================================================
-# Handoff Context
+# Condensed Handoff Context
 # ============================================================================
 
 HANDOFF_FILE="$SPEC_DIR/artifacts/handoff/handoff.md"
 if [ -f "$HANDOFF_FILE" ]; then
   echo "<handoff-context>"
-  cat "$HANDOFF_FILE"
+
+  # Extract frontmatter fields
+  TASK_ID=$(sed -n 's/^task_id:[[:space:]]*//p' "$HANDOFF_FILE" | head -1)
+  STATUS=$(sed -n 's/^status:[[:space:]]*//p' "$HANDOFF_FILE" | head -1)
+
+  echo "Previous: $TASK_ID ($STATUS)"
+
+  # Extract key decisions (lines after "## Key Decisions Made" until next heading, skip comments/table headers)
+  DECISIONS=$(sed -n '/^## Key Decisions Made/,/^## /{/^## /d;/^$/d;/^<!--/d;/^|--/d;/^| Decision/d;p;}' "$HANDOFF_FILE" | head -3)
+  if [ -n "$DECISIONS" ]; then
+    echo "Decisions: $DECISIONS"
+  fi
+
+  # Extract blockers (lines after "## Blockers" until next heading, skip comments/table headers)
+  BLOCKERS=$(sed -n '/^## Blockers/,/^## /{/^## /d;/^$/d;/^<!--/d;/^|--/d;/^| Blocker/d;p;}' "$HANDOFF_FILE" | head -3)
+  if [ -n "$BLOCKERS" ]; then
+    echo "Blockers: $BLOCKERS"
+  fi
+
+  # Extract warnings (lines after "## Warnings for Next Agent" until next heading or EOF, skip comments)
+  WARNINGS=$(sed -n '/^## Warnings for Next Agent/,/^## /{/^## /d;/^$/d;/^<!--/d;p;}' "$HANDOFF_FILE" | head -3)
+  if [ -n "$WARNINGS" ]; then
+    echo "Warnings: $WARNINGS"
+  fi
+
+  # Extract next task context (lines after "## Next Task Context" until next heading)
+  NEXT_CTX=$(sed -n '/^## Next Task Context/,/^## /{/^## /d;/^$/d;/^<!--/d;p;}' "$HANDOFF_FILE" | head -4)
+  if [ -n "$NEXT_CTX" ]; then
+    echo "$NEXT_CTX"
+  fi
+
   echo "</handoff-context>"
   echo ""
 fi
@@ -42,54 +71,17 @@ fi
 
 TODO_FILE="$SPEC_DIR/TODO.md"
 if [ -f "$TODO_FILE" ]; then
-  echo "<current-task>"
-
   # Extract first uncompleted task
   NEXT_TASK=$(grep -m1 '^- \[ \]' "$TODO_FILE" 2>/dev/null || echo "")
 
   if [ -n "$NEXT_TASK" ]; then
+    echo "<current-task>"
     echo "$NEXT_TASK"
-
-    # Try to extract task ID and find related context
-    TASK_ID=$(echo "$NEXT_TASK" | grep -oE '\[T[0-9]+\]' | head -1 || echo "")
-    if [ -n "$TASK_ID" ]; then
-      # Get any additional context for this task from TODO.md
-      # (subtasks or notes indented under the main task)
-      TASK_LINE=$(grep -n "^- \[ \] $TASK_ID" "$TODO_FILE" | head -1 | cut -d: -f1)
-      if [ -n "$TASK_LINE" ]; then
-        # Get indented lines following the task (subtasks/notes)
-        NEXT_LINE=$((TASK_LINE + 1))
-        sed -n "${NEXT_LINE},\$p" "$TODO_FILE" | while IFS= read -r line; do
-          # Stop at next task or phase header
-          if echo "$line" | grep -qE '^- \[|^## '; then
-            break
-          fi
-          # Output indented content
-          if echo "$line" | grep -qE '^[[:space:]]+'; then
-            echo "$line"
-          fi
-        done
-      fi
-    fi
-  else
-    echo "<!-- No uncompleted tasks found -->"
+    echo "</current-task>"
   fi
 
-  echo "</current-task>"
-  echo ""
-fi
-
-# ============================================================================
-# Summary
-# ============================================================================
-
-# Count remaining tasks for context
-if [ -f "$TODO_FILE" ]; then
+  # Compact progress line
   REMAINING=$(grep -c '^- \[ \]' "$TODO_FILE" 2>/dev/null || echo "0")
   COMPLETED=$(grep -c '^- \[x\]' "$TODO_FILE" 2>/dev/null || echo "0")
-
-  echo "<progress-summary>"
-  echo "Tasks completed: $COMPLETED"
-  echo "Tasks remaining: $REMAINING"
-  echo "</progress-summary>"
+  echo "<progress-summary>$COMPLETED done, $REMAINING remaining</progress-summary>"
 fi

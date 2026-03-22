@@ -1,0 +1,99 @@
+categories:
+  # Python base categories
+  dependency:
+    title: Dependency Change
+    patterns:
+      - "requirements.txt"
+      - "requirements/*.txt"
+      - "pyproject.toml"
+      - "setup.py"
+      - "setup.cfg"
+      - "Pipfile"
+      - "Pipfile.lock"
+      - "poetry.lock"
+    questions:
+      - Why is this dependency needed?
+      - What is the security and maintenance status of this package?
+      - Are there lighter alternatives?
+      - Does this require approval (e.g., license compatibility)?
+
+  configuration:
+    title: Configuration Change
+    patterns:
+      - "*.cfg"
+      - "*.ini"
+      - "*.toml"
+      - "*.env"
+      - "*.env.*"
+      - "*/config/*.py"
+      - "*/settings.py"
+      - "*/settings/*.py"
+    questions:
+      - What behavior does this change?
+      - Does this affect production?
+      - Are secrets or credentials involved?
+      - Is this environment-specific?
+
+  security:
+    title: Security-Sensitive File
+    patterns:
+      - "*auth*"
+      - "*security*"
+      - "*permission*"
+      - "*credential*"
+      - "*crypto*"
+      - "*secret*"
+      - "*token*"
+      - "*middleware*"
+    questions:
+      - What security implications does this change have?
+      - Have you verified this does not weaken access controls?
+      - Does this need security review?
+
+  spec_modification:
+    title: Test/Spec Modification
+    patterns:
+      - "test_*.py"
+      - "*_test.py"
+      - "tests/**/*.py"
+      - "conftest.py"
+    questions:
+      - Is this adding new tests for new or extracted code?
+      - Is this refactoring test structure (no assertion changes)?
+      - Are you changing assertions to make a failing test pass? **(STOP IF YES)**
+
+  # Django-specific categories
+  migration:
+    title: Database Migration
+    patterns:
+      - "*/migrations/*.py"
+      - "*/migrations/**/*.py"
+    questions:
+      - Is this a new migration?
+      - Is this editing an unmigrated migration?
+      - Is this editing a deployed migration? **(CREATE NEW MIGRATION INSTEAD)**
+      - Is this migration reversible?
+      - Could this migration cause downtime on large tables?
+
+  url_routing:
+    title: URL Routing Change
+    patterns:
+      - "*/urls.py"
+      - "*/urls/*.py"
+    questions:
+      - Does this change any existing URL patterns?
+      - Could this break existing API consumers or bookmarks?
+      - Are URL permissions configured correctly?
+
+  django_settings:
+    title: Django Settings Change
+    patterns:
+      - "*/settings/*.py"
+      - "*/settings.py"
+      - "manage.py"
+      - "wsgi.py"
+      - "asgi.py"
+    questions:
+      - Does this setting differ between environments?
+      - Could this affect application startup or performance?
+      - Are there security implications (DEBUG, ALLOWED_HOSTS, etc.)?

@@ -1,0 +1,53 @@
+categories:
+  dependency:
+    title: Dependency Change
+    patterns:
+      - "go.mod"
+      - "go.sum"
+    questions:
+      - Why is this dependency needed?
+      - What is the security and maintenance status of this module?
+      - Are there lighter alternatives?
+      - Does this require approval (e.g., license compatibility)?
+
+  configuration:
+    title: Configuration Change
+    patterns:
+      - "*.yaml"
+      - "*.yml"
+      - "*.toml"
+      - "*.env"
+      - "*.env.*"
+      - "*/config/*"
+    questions:
+      - What behavior does this change?
+      - Does this affect production?
+      - Are secrets or credentials involved?
+      - Is this environment-specific?
+
+  security:
+    title: Security-Sensitive File
+    patterns:
+      - "*auth*"
+      - "*security*"
+      - "*permission*"
+      - "*credential*"
+      - "*middleware*"
+      - "*token*"
+      - "*secret*"
+      - "*crypto*"
+    questions:
+      - What security implications does this change have?
+      - Have you verified this does not weaken access controls?
+      - Does this need security review?
+
+  spec_modification:
+    title: Test/Spec Modification
+    patterns:
+      - "*_test.go"
+      - "**/*_test.go"
+      - "testdata/**"
+    questions:
+      - Is this adding new tests for new or extracted code?
+      - Is this refactoring test structure (no assertion changes)?
+      - Are you changing assertions to make a failing test pass? **(STOP IF YES)**

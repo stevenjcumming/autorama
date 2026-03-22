@@ -1,0 +1,60 @@
+categories:
+  dependency:
+    title: Dependency Change
+    patterns:
+      - "requirements.txt"
+      - "requirements/*.txt"
+      - "pyproject.toml"
+      - "setup.py"
+      - "setup.cfg"
+      - "Pipfile"
+      - "Pipfile.lock"
+      - "poetry.lock"
+    questions:
+      - Why is this dependency needed?
+      - What is the security and maintenance status of this package?
+      - Are there lighter alternatives?
+      - Does this require approval (e.g., license compatibility)?
+
+  configuration:
+    title: Configuration Change
+    patterns:
+      - "*.cfg"
+      - "*.ini"
+      - "*.toml"
+      - "*.env"
+      - "*.env.*"
+      - "*/config/*.py"
+      - "*/settings.py"
+    questions:
+      - What behavior does this change?
+      - Does this affect production?
+      - Are secrets or credentials involved?
+      - Is this environment-specific?
+
+  security:
+    title: Security-Sensitive File
+    patterns:
+      - "*auth*"
+      - "*security*"
+      - "*permission*"
+      - "*credential*"
+      - "*crypto*"
+      - "*secret*"
+      - "*token*"
+    questions:
+      - What security implications does this change have?
+      - Have you verified this does not weaken access controls?
+      - Does this need security review?
+
+  spec_modification:
+    title: Test/Spec Modification
+    patterns:
+      - "test_*.py"
+      - "*_test.py"
+      - "tests/**/*.py"
+      - "conftest.py"
+    questions:
+      - Is this adding new tests for new or extracted code?
+      - Is this refactoring test structure (no assertion changes)?
+      - Are you changing assertions to make a failing test pass? **(STOP IF YES)**

@@ -9,13 +9,15 @@ model: sonnet
 
 Analyze the current spec and research the codebase to identify relevant files, similar patterns, and dependencies.
 
-## Context
+<input>
 
 The spec folder path is provided by the calling command (e.g., `.claude/specs/spec-123/`).
 
 Read the SPEC.md from `<spec-folder>/SPEC.md` to understand what needs to be built.
 
-## Research Steps
+</input>
+
+<process>
 
 ### 1. Extract Key Concepts
 
@@ -67,7 +69,9 @@ Estimate the scope by categorizing changes:
 - **Modified files**: Existing files that need changes
 - **Test files**: Test files to create or update
 
-## Output Format
+</process>
+
+<output-format>
 
 Create `<task-folder>/RESEARCH.md` with the following structure:
 
@@ -95,9 +99,13 @@ Create `<task-folder>/RESEARCH.md` with the following structure:
 - **Test files:** <count>
 ```
 
-## Notes
+</output-format>
+
+<rules>
 
 - Focus on understanding, not implementing
 - Prioritize finding reusable patterns over inventing new approaches
 - Flag any potential risks or blockers discovered
 - If the codebase is unfamiliar, start with a broad search then narrow down
+
+</rules>

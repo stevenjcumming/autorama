@@ -1,5 +1,5 @@
 ---
-description: Execute Test -> Code -> Refactor loop for a spec
+description: Use when the user wants to run the autonomous TDD loop (Write Tests / Red / Code / Green / Analysis / Refactor) for a spec that already has SPEC.md, PLAN.md, and TODO.md. Optionally filter by task ID (T<n>) or phase (P<n>).
 allowed-tools: Bash, Read, Edit, Write, Task, Glob, Grep
 argument-hint: <identifier> [T<n>|P<n>]
 model: sonnet
@@ -38,6 +38,20 @@ This validates:
 - If filter provided, validates it matches a task/phase in TODO.md
 
 ## Step 3: Setup
+
+Log execution start and check for relevant history from previous runs:
+
+```bash
+bash $AUTOPILOT_PLUGIN_ROOT/scripts/log-usage.sh "command" "execute" "started" "$IDENTIFIER"
+```
+
+Optionally, check for past failures on this spec to inform the run:
+
+```bash
+bash $AUTOPILOT_PLUGIN_ROOT/scripts/read-history.sh --failures --project "$(basename $(pwd))" --recent 5
+```
+
+If there are recent failures for this spec's agents, note them as context for the task loop (e.g., if the tester agent frequently fails with syntax errors, the task-runner should be aware).
 
 Run setup and build the task queue:
 
@@ -140,6 +154,12 @@ If the task failed:
 Move to the next task in the queue.
 
 ## Step 5: Present Results
+
+Log execution completion:
+
+```bash
+bash $AUTOPILOT_PLUGIN_ROOT/scripts/log-usage.sh "command" "execute" "completed" "{completed_count}/{total} tasks"
+```
 
 After all tasks in the queue have been processed, present a final summary:
 

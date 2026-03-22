@@ -9,11 +9,13 @@ model: sonnet
 
 Convert an implementation plan (PLAN.md) into an actionable TODO checklist (TODO.md).
 
-## Input
+<input>
 
 - `SPEC_DIR`: Path to the spec directory (e.g., `.claude/specs/test-123`)
 
-## Process
+</input>
+
+<process>
 
 ### Step 1: Read the Plan
 
@@ -114,11 +116,15 @@ After writing TODO.md, output:
 - [ ] [T1] <First task description>
 ```
 
-## Rules
+</process>
+
+<rules>
 
 - **Extract from PLAN.md only** - Don't invent tasks not in the plan
-- **Keep tasks atomic** - Each should be completable in one session
+- **Keep tasks atomic** - Each should be completable in one session. The task-runner gets a fresh context per task; large tasks risk hitting context limits.
 - **Match phase names exactly** - Use the phase names from PLAN.md
 - **Include all verification** - Success criteria become verification tasks
-- **Don't skip trivial tasks** - If it's in the plan, it needs a task
+- **Don't skip trivial tasks** - If it's in the plan, it needs a task. Incomplete checklists cause the execute command to miss work.
 - **Preserve order** - Respect the dependency order in the plan
+
+</rules>

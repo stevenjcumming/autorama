@@ -1,6 +1,6 @@
 ---
 allowed-tools: Bash, Read, Task
-description: Create a PLAN.md implementation plan from a spec
+description: Use when the user has a completed SPEC.md and wants to generate a detailed implementation plan. Spawns research and analysis agents to build PLAN.md with phases, risks, and testing strategy.
 argument-hint: <identifier>
 ---
 

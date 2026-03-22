@@ -1,0 +1,68 @@
+# Static Analysis Parsing Reference
+
+## Configuration Format
+
+```yaml
+static_analysis:
+  commands:                       # Commands to run
+    - rubocop                     # Simple string
+    - npm run lint
+    - eslint --format json
+    - reek -c .reek.yml --format json
+    - npm run typecheck
+  fail_on_warnings: false         # Block on warnings (default: false)
+  max_fix_attempts: 2             # Max fix attempts per issue (default: 2)
+```
+
+## Output Format Detection
+
+1. If `format: json` specified → parse as JSON
+2. If `format: text` specified → parse as text
+3. If `format: auto` or unspecified → try JSON first, fall back to text
+
+## JSON Output Structures
+
+```json
+// ESLint format
+[{"filePath": "...", "messages": [{"ruleId": "...", "severity": 1|2, "message": "...", "line": N}]}]
+
+// RuboCop format
+{"files": [{"path": "...", "offenses": [{"cop_name": "...", "severity": "...", "message": "...", "location": {"line": N}}]}]}
+```
+
+## Text Output Patterns
+
+```
+# File:line:col: message
+src/foo.ts:10:5: error: Something wrong
+
+# File:line: [severity] message
+src/bar.rb:20: [W] Unused variable
+```
+
+## Severity Mapping
+
+| Raw Value | Normalized |
+|-----------|-----------|
+| `error`, `fatal`, `E`, `2` | `error` |
+| `warning`, `warn`, `W`, `1` | `warning` |
+| `info`, `convention`, `C`, `0` | `info` |
+
+## Blocking Status
+
+An issue is **blocking** if:
+- Severity is `error`, OR
+- Severity is `warning` AND `fail_on_warnings: true`
+
+## Common Fix Suggestions
+
+| Rule | Suggested Fix |
+|------|---------------|
+| `no-unused-vars` | Remove unused variable or use it |
+| `prefer-const` | Change let to const |
+| `Metrics/MethodLength` | Extract code into smaller methods |
+| (Generic) | Fix the {rule} violation |
+
+## Issue ID Format
+
+Composite key: `{tool}:{rule}` (e.g., `eslint:no-unused-vars`). Used by the task-runner for per-rule attempt tracking.

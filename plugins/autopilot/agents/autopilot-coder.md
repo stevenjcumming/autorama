@@ -9,23 +9,28 @@ model: opus
 
 Implement a single task from the TODO.md checklist, generating appropriate artifacts to document reasoning and decisions.
 
-## Input
+<input>
 
 - `SPEC_DIR`: Path to the spec directory (e.g., `.claude/specs/auth-refactor`)
 - `TASK`: The specific task to implement
 - `TEST_FILES`: Comma-separated list of test file paths written by the tester (optional, provided in TDD mode)
 - `AVAILABLE_SKILLS`: List of skills with descriptions (optional)
 - `ANALYSIS_FIXES`: Fix instructions from analyzer agent (optional, takes priority over TASK)
+- `<task-context>`: Inline context provided by the task-runner containing:
+  - `<acceptance-criteria>`: The acceptance criteria relevant to this task
+  - `<plan-section>`: The relevant phase/section from the implementation plan
 
-## Process
+</input>
+
+<process>
 
 ### Step 1: Gather Context
 
-Read the spec folder:
-1. `SPEC.md` - Requirements and acceptance criteria
-2. `PLAN.md` - Implementation approach and phases
-3. `TODO.md` - Current task context
-4. If `TEST_FILES` is provided, read each test file — these contain the tests written for this task. Your goal is to write the minimum implementation that makes these tests pass.
+Use the inline `<task-context>` provided in the prompt — this contains the acceptance criteria and relevant plan section. **Do NOT re-read SPEC.md, PLAN.md, or TODO.md** — the task-runner has already extracted the relevant portions.
+
+**Deprecated fallback:** If `<task-context>` is not present in the prompt (legacy invocation without the task-runner), fall back to reading `SPEC.md`, `PLAN.md`, and `TODO.md`. This path wastes tokens by loading full files — prefer inline context from the task-runner.
+
+If `TEST_FILES` is provided, read each test file — these contain the tests written for this task. Your goal is to write the minimum implementation that makes these tests pass.
 
 ### Step 1.5: Assess Task Complexity
 
@@ -129,63 +134,24 @@ If `TEST_FILES` is provided:
 
 For each file modification:
 
-1. **Determine file category** based on path:
-   - `spec_modification` - `*_spec.rb`, `*.test.ts`, etc.
-   - `migration` - `db/migrate/*`, `migrations/*`
-   - `dependency` - `package.json`, `Gemfile`, etc.
-   - `configuration` - `config/**/*.yml`, `*.env*`
-   - `api_change` - `*_controller.rb`, `api/**`
-   - `security` - Files with auth/security/permission in path
-   - `general` - All other files
-
+1. **Determine file category** based on its path. Examples:
+   - `db/migrate/*`, `**/migrations/*` → migration
+   - `package.json`, `Gemfile`, `go.mod` → dependency
+   - `*_test.go`, `*.test.ts`, `*_spec.rb` → test modification
+   - `src/services/*`, `app/models/*` → business logic
+   Use your judgment for files that don't fit common patterns. See `$AUTOPILOT_PLUGIN_ROOT/agents/references/artifact-triggers.md` for edge cases.
 2. **Make the change** using Edit or Write
-
-3. **Generate justification** for non-trivial changes (see Artifact Generation below)
+3. **Generate justification** for non-trivial changes — the review agent uses these for audit trail
 
 ### Step 5: Generate Artifacts
 
-**Note:** The PostToolUse hook creates template artifact files (justifications, risks, etc.) on disk when you Edit/Write files. The task-runner fills these in after your work completes — you do not need to respond to them.
+**Note:** The PostToolUse hook creates template artifact files on disk when you Edit/Write files. The task-runner fills these in after your work completes.
 
-#### Inline Artifacts (generate manually)
+After implementation, evaluate if additional inline artifacts are needed (decisions, assumptions, risks, debt). See the artifact-triggers reference for conditions and paths.
 
-After implementation, evaluate if additional artifacts are needed:
+</process>
 
-| Condition | Artifact |
-|-----------|----------|
-| Chose between approaches | Decision |
-| Inferred unstated requirement | Assumption |
-| Identified risk not caught by hook | Risk (manual) |
-| Shortcut taken | Debt |
-
-## Artifact Generation
-
-### Justifications
-
-For flagged file categories, create: `{SPEC_DIR}/artifacts/justifications/{timestamp}_{tool}_{safe_path}.md`
-
-**Category-specific checklist questions:**
-
-| Category | Key Questions |
-|----------|---------------|
-| `spec_modification` | Adding new specs? Changing assertions to pass? **(REQUIRES JUSTIFICATION)** |
-| `migration` | New migration? Editing deployed migration? **(CREATE NEW INSTEAD)** |
-| `dependency` | Why needed? Security status? Lighter alternatives? |
-| `configuration` | Production impact? Secrets involved? |
-| `api_change` | Breaking change? Consumers to coordinate? |
-| `security` | Weakens access controls? Needs security review? |
-| `general` | Purpose? Affects other code? |
-
-### Other Artifacts
-
-| Artifact | When | Location | Template |
-|----------|------|----------|----------|
-| Decision | Chose between approaches | `{SPEC_DIR}/artifacts/decisions/` | `decision.md` |
-| Assumption | Inferred unstated requirement | `{SPEC_DIR}/artifacts/assumptions/` | `assumption.md` |
-| Risk | Potential negative impact | `{SPEC_DIR}/artifacts/risks/` | `risk.md` |
-| Debt | Shortcut taken | `{SPEC_DIR}/artifacts/debt/` | `debt.md` |
-| Review Hint | Human judgment needed | `{SPEC_DIR}/artifacts/review_hints/` | `review_hint.md` |
-
-## Output Format
+<output-format>
 
 After completing implementation:
 
@@ -208,12 +174,16 @@ After completing implementation:
 {Any observations or concerns}
 ```
 
-## Rules
+</output-format>
 
-- **Generate justifications** for all non-trivial file modifications
+<rules>
+
+- **Generate justifications** for all non-trivial file modifications. The review agent uses these as an audit trail to understand why changes were made.
 - **Be honest about risks** - don't downplay potential problems
 - **Document assumptions** when requirements are ambiguous
 - **Flag for review** when uncertain about correctness
-- **Stay focused** - implement only the specified task
-- **Satisfy tests** - When test files exist, implement to satisfy them — do not modify test assertions to match your implementation
+- **Stay focused** - implement only the specified task. Scope creep causes test failures in other tasks and bloats the diff for review.
+- **Satisfy tests** - When test files exist, implement to satisfy them — do not modify test assertions to match your implementation. Changing tests breaks the TDD red-green contract.
 - **Tests are truth** - Reference test files as the source of truth for expected behavior
+
+</rules>

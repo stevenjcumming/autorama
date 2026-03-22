@@ -9,11 +9,13 @@ model: sonnet
 
 Review code changes from the current task and apply necessary cleanup refactoring while maintaining behavior.
 
-## Input
+<input>
 
 - `SPEC_DIR`: Path to the spec directory (e.g., `.claude/specs/auth-refactor`)
 
-## Process
+</input>
+
+<process>
 
 ### Step 1: Identify Recent Changes
 
@@ -29,45 +31,11 @@ Read each modified file to understand the changes.
 
 ### Step 2: Evaluate Refactoring Need
 
-For each modified file, check for:
-
-| Issue | Pattern | Priority |
-|-------|---------|----------|
-| Duplication | Similar code blocks (3+ lines) repeated | High |
-| Long functions | Functions > 50 lines | Medium |
-| Deep nesting | > 3 levels of indentation | Medium |
-| Magic values | Hardcoded strings/numbers without constants | Low |
-| Dead code | Unused variables, unreachable code | High |
-| Naming | Unclear or inconsistent naming | Low |
-| Comments | Outdated or misleading comments | Medium |
+Read `$AUTOPILOT_PLUGIN_ROOT/agents/references/failure-categories.md` for the refactoring evaluation criteria (issue patterns and priorities) and safe refactoring types. Use those tables to assess each modified file.
 
 ### Step 3: Apply Refactoring
 
-Only apply refactoring that:
-
-1. **Preserves behavior** - No functional changes
-2. **Improves clarity** - Makes code easier to understand
-3. **Reduces duplication** - Extracts common patterns
-4. **Follows conventions** - Matches existing codebase style
-
-#### Safe Refactorings
-
-| Refactoring | When to Apply |
-|-------------|---------------|
-| Extract variable | Complex expression used multiple times |
-| Extract function | Repeated logic or overly long function |
-| Rename | Unclear or misleading names |
-| Remove dead code | Provably unused code |
-| Simplify conditional | Nested if/else that can be flattened |
-| Extract constant | Magic values used in multiple places |
-
-#### Avoid
-
-- Changing public interfaces
-- Restructuring that affects other files
-- Premature optimization
-- Style-only changes (leave to linter)
-- Adding features or capabilities
+Only apply refactoring that preserves behavior, improves clarity, reduces duplication, and follows existing conventions. Use the safe refactorings list and guardrails from the failure-categories reference.
 
 ### Step 4: Verify Changes
 
@@ -79,7 +47,9 @@ After each refactoring:
 
 If tests fail after refactoring, revert the change.
 
-## Output Format
+</process>
+
+<output-format>
 
 ### No Refactoring Needed
 
@@ -153,12 +123,16 @@ Consider creating a debt artifact for significant deferred refactoring.
 **Changes Made:** None
 ```
 
-## Rules
+</output-format>
+
+<rules>
 
 - **Behavior preservation is mandatory** - Never change what code does
 - **Small, focused changes** - One refactoring at a time
-- **Test after each change** - Revert if tests fail
-- **Respect scope** - Only refactor files modified in current task
+- **Test after each change** - Revert if tests fail. The task-runner rolls back on test failure, wasting a refactor cycle.
+- **Respect scope** - Only refactor files modified in current task. Touching unrelated files can cause merge conflicts with parallel work.
 - **Document skipped opportunities** - Note significant cleanup for later
 - **Match conventions** - Follow existing codebase patterns
-- **Be conservative** - When in doubt, don't refactor
+- **Be conservative** - When in doubt, don't refactor. The cost of a regression outweighs the benefit of cleaner code at this stage.
+
+</rules>

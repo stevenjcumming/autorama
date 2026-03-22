@@ -9,30 +9,20 @@ model: sonnet
 
 Run configured static analysis commands and report actionable issues for the coder to fix.
 
-## Input
+<input>
 
 - `SPEC_DIR`: Path to the spec directory (e.g., `.claude/specs/auth-refactor`)
 - `STATIC_ANALYSIS_CONFIG`: Configuration from autopilot.yml static_analysis section
 
-## Process
+</input>
+
+<process>
 
 ### Step 1: Parse Configuration
 
-Extract from `STATIC_ANALYSIS_CONFIG`:
+Read `$AUTOPILOT_PLUGIN_ROOT/agents/references/analysis-parsing.md` for configuration format, output parsing rules, severity mapping, and fix suggestions. Use that reference throughout this process.
 
-```yaml
-static_analysis:
-  commands:                       # Commands to run
-    - rubocop                     # Simple string
-    - npm run lint
-    - eslint --format json 
-    - reek -c .reek.yml --format json
-    - npm run typecheck
-  fail_on_warnings: false         # Block on warnings (default: false)
-  max_fix_attempts: 2             # Max fix attempts per issue (default: 2)
-```
-
-If config is empty or has no commands, return immediately with no issues.
+Extract commands, `fail_on_warnings`, and `max_fix_attempts` from `STATIC_ANALYSIS_CONFIG`. If config is empty or has no commands, return immediately with no issues.
 
 ### Step 2: Run Analysis Commands
 
@@ -68,74 +58,15 @@ Capture:
 
 #### 2.3 Parse Output
 
-Determine format:
-1. If `format: json` specified, parse as JSON
-2. If `format: text` specified, parse as text
-3. If `format: auto` or unspecified:
-   - Try JSON parsing first
-   - Fall back to text parsing if JSON fails
-
-**JSON Parsing:**
-
-Look for common structures:
-```json
-// ESLint format
-[{"filePath": "...", "messages": [{"ruleId": "...", "severity": 1|2, "message": "...", "line": N}]}]
-
-// RuboCop format
-{"files": [{"path": "...", "offenses": [{"cop_name": "...", "severity": "...", "message": "...", "location": {"line": N}}]}]}
-```
-
-**Text Parsing:**
-
-Look for common patterns:
-```
-# File:line:col: message
-src/foo.ts:10:5: error: Something wrong
-
-# File:line: [severity] message
-src/bar.rb:20: [W] Unused variable
-```
-
-Extract:
-- File path
-- Line number
-- Severity (error, warning, info)
-- Message/rule
+Parse the output using the format detection and parsing rules in the analysis-parsing reference. Extract file path, line number, severity, and message/rule from each issue.
 
 ### Step 3: Categorize Issues
 
-Normalize all issues into a common format:
-
-```
-Issue:
-  file: string
-  line: number
-  column: number (optional)
-  severity: "error" | "warning" | "info"
-  rule: string
-  message: string
-  tool: string (which command produced this)
-```
-
-Severity mapping:
-- `error`, `fatal`, `E`, `2` → `error`
-- `warning`, `warn`, `W`, `1` → `warning`
-- `info`, `convention`, `C`, `0` → `info`
+Normalize all issues into a common format with: file, line, column (optional), severity (`error`|`warning`|`info`), rule, message, tool. Use the severity mapping from the analysis-parsing reference.
 
 ### Step 4: Determine Blocking Status
 
-An issue is **blocking** if:
-- Severity is `error`, OR
-- Severity is `warning` AND `fail_on_warnings: true`
-
-```
-has_blocking_issues = any(
-    issue.severity == "error" or
-    (issue.severity == "warning" and config.fail_on_warnings)
-    for issue in all_issues
-)
-```
+Determine blocking status using the rules in the analysis-parsing reference (errors always block; warnings block only if `fail_on_warnings: true`).
 
 ### Step 5: Generate Fix Instructions
 
@@ -163,13 +94,11 @@ Format fix instructions:
 ...
 ```
 
-Fix suggestions based on common rules:
-- `no-unused-vars` → "Remove unused variable or use it"
-- `prefer-const` → "Change let to const"
-- `Metrics/MethodLength` → "Extract code into smaller methods"
-- (Generic) → "Fix the {rule} violation"
+Use the common fix suggestions from the analysis-parsing reference.
 
-## Output Format
+</process>
+
+<output-format>
 
 Return a structured analysis result:
 
@@ -225,10 +154,15 @@ Return to orchestrator:
 - `error_count`: number
 - `warning_count`: number
 - `fix_instructions`: string (markdown) or null
-## Rules
+
+</output-format>
+
+<rules>
 
 - **Check before running** - Verify command exists before execution
-- **Skip gracefully** - Missing commands are warnings, not errors
+- **Skip gracefully** - Missing commands are warnings, not errors. A missing linter shouldn't block the entire analysis pipeline.
 - **Parse flexibly** - Handle multiple output formats
 - **Provide actionable fixes** - Give the coder clear instructions
-- **Don't fix directly** - Only report issues, let coder agent handle fixes
+- **Don't fix directly** - Only report issues, let the coder agent handle fixes. Separation of concerns lets the coder weigh fixes against test stability.
+
+</rules>

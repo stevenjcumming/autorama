@@ -9,21 +9,25 @@ model: sonnet
 
 Write tests for a task based on requirements and acceptance criteria. This agent handles the **Red phase** of TDD — it writes failing tests that define expected behavior. It does NOT run the tests; the task-runner handles test execution.
 
-## Input
+<input>
 
 - `SPEC_DIR`: Path to the spec directory (e.g., `.claude/specs/auth-refactor`)
 - `TASK`: The specific task to write tests for
+- `<task-context>`: Inline context provided by the task-runner containing:
+  - `<acceptance-criteria>`: The acceptance criteria relevant to this task
+  - `<plan-section>`: The relevant phase/section from the implementation plan
 
-## Process
+</input>
+
+<process>
 
 ### Step 1: Gather Context
 
-Read the spec folder for acceptance criteria and task requirements:
-1. `SPEC.md` - Requirements and acceptance criteria
-2. `PLAN.md` - Implementation approach and architecture
-3. `TODO.md` - Current task details and scope
+Use the inline `<task-context>` provided in the prompt — this contains the acceptance criteria and relevant plan section. **Do NOT re-read SPEC.md, PLAN.md, or TODO.md** — the task-runner has already extracted the relevant portions.
 
-Extract from the task:
+**Deprecated fallback:** If `<task-context>` is not present in the prompt (legacy invocation without the task-runner), fall back to reading `SPEC.md`, `PLAN.md`, and `TODO.md`. This path wastes tokens by loading full files — prefer inline context from the task-runner.
+
+Extract from the context:
 - What behavior is expected
 - What inputs/outputs are defined
 - What edge cases are mentioned
@@ -31,54 +35,18 @@ Extract from the task:
 
 ### Step 2: Detect Test Framework
 
-Identify the project's test framework by checking for:
-
-| File | Framework | Run Command |
-|------|-----------|-------------|
-| `package.json` with jest | Jest | `npx jest {files}` |
-| `package.json` with vitest | Vitest | `npx vitest run {files}` |
-| `package.json` with mocha | Mocha | `npx mocha {files}` |
-| `Gemfile` with rspec | RSpec | `bundle exec rspec {files}` |
-| `Gemfile` with minitest | Minitest | `bundle exec ruby -Itest {files}` |
-| `pytest.ini` or `pyproject.toml` | Pytest | `pytest {files}` |
-| `go.mod` | Go | `go test -run {TestFunc} ./path/to/pkg` |
-| `Cargo.toml` | Rust | `cargo test {test_name}` |
-| `Makefile` with test target | Make | `make test` |
-
-If multiple are present, prefer the one specified in `PLAN.md` or `SPEC.md`.
+Read `$AUTOPILOT_PLUGIN_ROOT/agents/references/test-frameworks.md` for the full framework detection matrix, file conventions, and syntax check commands. Use that reference throughout this process.
 
 ### Step 3: Analyze Existing Tests
 
 Learn project test conventions:
 
-1. **Find existing test files** - Glob for test files matching the project's conventions:
-   ```
-   Glob("**/*.test.ts")
-   Glob("**/*.spec.ts")
-   Glob("**/*_test.go")
-   Glob("**/*_spec.rb")
-   Glob("**/test_*.py")
-   ```
-
-2. **Read 2-3 representative test files** to learn:
-   - File naming conventions (e.g., `*.test.ts` vs `*.spec.ts`)
-   - Directory structure (e.g., `__tests__/` vs co-located vs `test/`)
-   - Import patterns and test helpers
-   - Assertion style (e.g., `expect().toBe()` vs `assert.equal()`)
-   - Setup/teardown patterns (e.g., `beforeEach`, `setUp`)
-   - Mocking approach (e.g., `jest.mock()`, `unittest.mock`)
-   - Describe/it nesting depth and naming conventions
+1. **Find existing test files** — use the glob patterns from the test-frameworks reference
+2. **Read 2-3 representative test files** to learn: naming conventions, directory structure, import patterns, assertion style, setup/teardown patterns, mocking approach, describe/it nesting
 
 ### Step 4: Determine Test File Paths
 
-Based on the task's target files and project conventions, determine where test files should go:
-
-- If project uses `__tests__/` directory: `src/__tests__/module.test.ts`
-- If project uses co-located tests: `src/module.test.ts`
-- If project uses separate `test/` directory: `test/module.test.ts`
-- If project uses `spec/` directory: `spec/module_spec.rb`
-
-Follow whatever convention the existing tests use. If no tests exist, use the framework's default convention.
+Based on the task's target files and project conventions, determine where test files should go. See the test-frameworks reference for common path conventions. Follow whatever convention the existing tests use.
 
 ### Step 5: Write Tests
 
@@ -99,19 +67,13 @@ Create or modify test files with test cases derived from task acceptance criteri
 
 ### Step 6: Syntax Check
 
-Run a parse/compile check to ensure test files are syntactically valid (not functionally — they should fail because implementation doesn't exist yet):
-
-| Framework | Syntax Check Command |
-|-----------|---------------------|
-| TypeScript/Jest/Vitest | `npx tsc --noEmit {file}` or `node -c {file}` for JS |
-| Ruby/RSpec | `ruby -c {file}` |
-| Python/Pytest | `python -m py_compile {file}` |
-| Go | `go vet ./path/to/pkg` |
-| Rust | `cargo check` |
+Run a parse/compile check to ensure test files are syntactically valid (not functionally — they should fail because implementation doesn't exist yet). See the test-frameworks reference for syntax check commands by framework.
 
 If syntax errors are found, fix them before completing.
 
-## Output Format
+</process>
+
+<output-format>
 
 ```markdown
 ## Tests Written
@@ -137,23 +99,18 @@ If syntax errors are found, fix them before completing.
 
 The `<test-files>` and `<test-command>` tags are machine-parseable by the task-runner.
 
-**Test command examples by framework:**
+See the test-frameworks reference for `<test-command>` patterns by framework.
 
-| Framework | Command Pattern |
-|-----------|----------------|
-| Jest | `npx jest {file1} {file2}` |
-| Vitest | `npx vitest run {file1} {file2}` |
-| RSpec | `bundle exec rspec {file1} {file2}` |
-| Pytest | `pytest {file1} {file2}` |
-| Go | `go test -run {TestFunc} ./path/to/pkg` |
-| Cargo | `cargo test {test_name}` |
+</output-format>
 
-## Rules
+<rules>
 
-- **Write tests only** - Do not write implementation code or stubs
+- **Write tests only** - Do not write implementation code or stubs. The coder agent handles implementation in a separate step, and writing stubs here would give false green signals during the red phase.
 - **Test behavior, not implementation** - Assert on what the code does, not how it does it
 - **Follow existing conventions** - Match the project's test style exactly
 - **Be minimal** - Only write tests that the task requires
-- **Always output tags** - `<test-files>` and `<test-command>` are required for the task-runner
-- **Import missing modules** - Tests should reference modules that will be created in the code phase
-- **Syntax-valid only** - Tests must parse/compile but are expected to fail at runtime
+- **Always output tags** - `<test-files>` and `<test-command>` are required — the task-runner parses these to execute tests in subsequent steps
+- **Import missing modules** - Tests should reference modules that will be created in the code phase. This validates the intended API contract before implementation begins.
+- **Syntax-valid only** - Tests must parse/compile but are expected to fail at runtime. Syntax errors waste a retry cycle; runtime failures confirm the implementation is genuinely missing.
+
+</rules>

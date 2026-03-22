@@ -1,6 +1,6 @@
 ---
 allowed-tools: Bash, Read
-description: Initialize Autopilot configuration and install optional dependencies
+description: Use once per project to set up Autopilot. Creates autopilot.yml config, checks for yq dependency, adds .claude/specs/ to .gitignore, and bootstraps the AUTOPILOT_PLUGIN_ROOT env var.
 ---
 
 # Autopilot Init
@@ -36,18 +36,27 @@ fi
 
 Capture the output as `PLUGIN_PATH`. If empty, tell the user the plugin path could not be detected and ask them to provide it.
 
-## Step 2: Run Initialization
+## Step 2: Parse Arguments
+
+Check `$ARGUMENTS` for a `--justifications <template>` flag. If present, extract the template name (e.g., `python`, `rails`, `django`, `ruby`, `typescript`, `react`, `go`).
+
+## Step 3: Run Initialization
 
 ```bash
-bash {PLUGIN_PATH}/scripts/init.sh
+bash {PLUGIN_PATH}/scripts/init.sh {JUSTIFICATION_TEMPLATE}
 ```
+
+Pass the justification template name as the first argument to the init script (empty if not specified).
 
 The init script will:
 - Create `.claude/autopilot.yml` from template
 - Check for `yq` dependency
 - Add `.claude/specs/` to `.gitignore`
 - Write `AUTOPILOT_PLUGIN_ROOT` to `.claude/settings.local.json`
+- Create `.claude/justifications.yml` from the specified template (if provided)
 
-## Step 3: Inform User
+## Step 4: Inform User
 
 After the script completes, inform the user of the results. Note that `AUTOPILOT_PLUGIN_ROOT` will be available as an env var in **new** Claude Code sessions (requires restart).
+
+If no justification template was specified, mention the available templates and how to use them.

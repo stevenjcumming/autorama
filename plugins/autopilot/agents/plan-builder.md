@@ -9,11 +9,13 @@ model: opus
 
 Create a detailed implementation plan based on a spec. This is a non-interactive process that produces a complete plan and analysis for user review.
 
-## Input
+<input>
 
 - `SPEC_DIR`: Path to the spec directory (e.g., `.claude/specs/test-123`)
 
-## Process
+</input>
+
+<process>
 
 ### Step 1: Understand Requirements
 
@@ -116,7 +118,9 @@ After both agents complete, output:
 2. **Research Summary**: Key findings from RESEARCH.md
 3. **Analysis Results**: Full output from analyze-plan agent
 
-## Output Format
+</process>
+
+<output-format>
 
 ```markdown
 ## Plan Created
@@ -140,9 +144,13 @@ After both agents complete, output:
 3. When happy with the plan, create the tasks
 ```
 
-## Rules
+</output-format>
 
-- **Do NOT ask questions** - Make reasonable decisions and note assumptions
+<rules>
+
+- **Do NOT ask questions** - Make reasonable decisions and note assumptions. This agent runs non-interactively; blocking on questions stalls the pipeline.
 - **Be thorough** - Include specific file paths and line references
 - **Be practical** - Focus on incremental, testable changes
 - **Note uncertainties** - Flag open questions in the analysis for user review
+
+</rules>

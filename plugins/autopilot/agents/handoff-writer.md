@@ -9,24 +9,26 @@ model: haiku
 
 Generate handoff artifacts that capture sufficient context for the next agent to continue work seamlessly.
 
-## Input
+<input>
 
 - `SPEC_DIR`: Path to the spec directory (e.g., `.claude/specs/auth-refactor`)
 - `TASK_ID`: The completed task ID (e.g., `T1`)
 - `TASK_STATUS`: Status of the completed task (`completed`, `failed`, `paused`)
 - `TASK_OUTPUT`: Summary of work done by the previous agent (optional)
 
-## Process
+</input>
+
+<process>
 
 ### Step 1: Gather Context
 
-Read relevant files to understand what was accomplished:
+Read TODO.md for next-task identification and current progress:
 
 ```
 Read("{SPEC_DIR}/TODO.md")
-Read("{SPEC_DIR}/SPEC.md")
-Read("{SPEC_DIR}/PLAN.md")
 ```
+
+**Do NOT read SPEC.md or PLAN.md** — these are static files that don't change during execution. The `TASK_OUTPUT` input contains sufficient detail about what was done. The handoff only needs to capture what changed, what's next, and any blockers.
 
 ### Step 2: Analyze Recent Changes
 
@@ -40,24 +42,21 @@ git diff --name-only HEAD~1
 git diff --stat HEAD~1
 ```
 
-### Step 3: Collect Artifacts
+### Step 3: Collect Relevant Artifacts
 
-Find artifacts generated during the task:
+Read only the artifact subdirectories that matter for context continuity:
 
 ```
-Glob("{SPEC_DIR}/artifacts/**/*.md")
+Glob("{SPEC_DIR}/artifacts/decisions/*.md")
+Glob("{SPEC_DIR}/artifacts/assumptions/*.md")
+Glob("{SPEC_DIR}/artifacts/risks/*.md")
 ```
 
-Filter for recent artifacts (created during this task session).
+**Do NOT glob all artifacts** — justifications, debt, and review hints are useful for review but not needed for handoff context. Focus on decisions, assumptions, and risks that the next agent needs to know about.
 
 ### Step 4: Extract Key Decisions
 
-From the artifacts directory, identify:
-- Decisions made (`artifacts/decisions/`)
-- Assumptions recorded (`artifacts/assumptions/`)
-- Risks identified (`artifacts/risks/`)
-
-Summarize the most important ones for context continuity.
+From the collected artifacts, summarize the most important decisions, assumptions, and risks for context continuity.
 
 ### Step 5: Identify Next Task
 
@@ -92,7 +91,9 @@ Create handoff file:
 Write("{SPEC_DIR}/artifacts/handoff/handoff.md", filled_template)
 ```
 
-## Output Format
+</process>
+
+<output-format>
 
 ```markdown
 ## Handoff Generated
@@ -110,7 +111,11 @@ Write("{SPEC_DIR}/artifacts/handoff/handoff.md", filled_template)
 - {key_point_3}
 ```
 
-## Session Summary Guidelines
+</output-format>
+
+<guidelines>
+
+### Session Summary Guidelines
 
 Generate a concise session summary (target: 300-500 tokens) that captures:
 
@@ -122,7 +127,7 @@ Generate a concise session summary (target: 300-500 tokens) that captures:
 
 Focus on information that would be lost if the next agent started fresh. Avoid restating the spec or plan content.
 
-## Session Summary Integration
+### Session Summary Integration
 
 Check for existing session summary:
 
@@ -139,12 +144,16 @@ If no session summary exists but context is high (check via `check-context.sh`):
 1. Note in the handoff that session summarization may be needed
 2. Include additional context in the handoff itself
 
-## Rules
+</guidelines>
+
+<rules>
 
 - **Be concise** - Handoff should be scannable, not exhaustive
 - **Prioritize context** - Focus on what the next agent needs to know
-- **Flag blockers clearly** - Make blocking issues obvious
+- **Flag blockers clearly** - Make blocking issues obvious. The next agent starts with a fresh context and won't see earlier conversation.
 - **Include file paths** - Specific paths are more useful than descriptions
-- **Timestamp everything** - Enable correlation with git history
-- **Don't duplicate** - Reference artifacts by path rather than copying content
+- **Timestamp everything** - Enables correlation with git commits when debugging timing issues across tasks
+- **Don't duplicate** - Reference artifacts by path rather than copying content. Duplicated content becomes stale; references stay current.
 - **Check session summary** - Include or reference existing session summaries
+
+</rules>

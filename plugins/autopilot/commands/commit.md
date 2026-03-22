@@ -1,6 +1,6 @@
 ---
 allowed-tools: Bash(git status:*), Bash(git diff:*), Bash(git log:*), Bash(git add:*), Bash(git commit:*)
-description: Create a commit with a detailed conventional commit message
+description: Use when the user wants to commit staged or unstaged changes with a conventional commit message (feat/fix/docs/refactor/etc). Stages all changes if nothing is staged.
 ---
 
 ## Context
@@ -13,7 +13,9 @@ description: Create a commit with a detailed conventional commit message
 
 Create a commit for the above changes:
 
-1. Stage all changes with `git add -A`
+1. Check if anything is already staged: `git diff --cached --quiet`
+   - If the command **fails** (exit code 1): something is already staged — skip `git add` and commit only what's staged
+   - If the command **succeeds** (exit code 0): nothing is staged — run `git add -A` to stage all changes
 2. Create a commit with a detailed message following this format:
 
 ```

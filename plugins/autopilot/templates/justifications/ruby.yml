@@ -1,0 +1,55 @@
+categories:
+  dependency:
+    title: Dependency Change
+    patterns:
+      - "Gemfile"
+      - "Gemfile.lock"
+      - "*.gemspec"
+    questions:
+      - Why is this dependency needed?
+      - What is the security and maintenance status of this gem?
+      - Are there lighter alternatives?
+      - Does this require approval (e.g., license compatibility)?
+
+  configuration:
+    title: Configuration Change
+    patterns:
+      - "*/config/*.yml"
+      - "*/config/*.yaml"
+      - "*/config/*.rb"
+      - ".env"
+      - ".env.*"
+    questions:
+      - What behavior does this change?
+      - Does this affect production?
+      - Are secrets or credentials involved?
+      - Is this environment-specific?
+
+  security:
+    title: Security-Sensitive File
+    patterns:
+      - "*auth*"
+      - "*security*"
+      - "*permission*"
+      - "*credential*"
+      - "*policy*"
+      - "*secret*"
+      - "*token*"
+    questions:
+      - What security implications does this change have?
+      - Have you verified this does not weaken access controls?
+      - Does this need security review?
+
+  spec_modification:
+    title: Test/Spec Modification
+    patterns:
+      - "*_spec.rb"
+      - "*_test.rb"
+      - "spec/**/*.rb"
+      - "test/**/*.rb"
+      - "spec_helper.rb"
+    questions:
+      - Is this adding new specs for new or extracted code?
+      - Is this refactoring spec structure (no assertion changes)?
+      - Is this updating test doubles for extracted collaborators?
+      - Are you changing assertions to make a failing test pass? **(STOP IF YES)**

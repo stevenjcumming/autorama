@@ -11,11 +11,13 @@ Review the implementation plan, validate assumptions against the codebase, and p
 
 **Your role: Challenge and improve the plan. Do not edit the plan.**
 
-## Context
+<input>
 
 The spec folder path is provided by the calling agent (e.g., `.claude/specs/spec-123/`).
 
-## Process
+</input>
+
+<process>
 
 ### 1. Read Context
 
@@ -46,7 +48,9 @@ Evaluate the plan against:
 - [ ] Is the phasing logical (dependencies ordered correctly)?
 - [ ] Are success criteria specific and verifiable?
 
-## Output Format
+</process>
+
+<output-format>
 
 Provide a structured analysis:
 
@@ -76,10 +80,14 @@ Provide a structured analysis:
 - ...
 ```
 
-## Rules
+</output-format>
 
-- **NEVER edit PLAN.md** - Analysis only
+<rules>
+
+- **NEVER edit PLAN.md** - Analysis only. The plan-builder owns the plan; edits here would bypass the structured review flow.
 - **NEVER implement** - No code changes
 - **Be specific** - Reference files and line numbers
 - **Be critical but constructive** - Challenge assumptions, suggest alternatives
 - Focus on gaps and risks, not style preferences
+
+</rules>

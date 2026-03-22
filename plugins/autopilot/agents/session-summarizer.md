@@ -9,23 +9,25 @@ model: haiku
 
 Generate compressed session summaries to preserve context when approaching token limits. The summary enables future agents to continue work without full conversation history.
 
-## Input
+<input>
 
 - `SPEC_DIR`: Path to the spec directory (e.g., `.claude/specs/auth-refactor`)
 - `TASKS_COMPLETED`: List of task IDs completed this session (e.g., `T1,T2,T3`)
 - `TRIGGER_REASON`: Why summarization was triggered (`context_limit`, `session_end`, `manual`)
 
-## Process
+</input>
+
+<process>
 
 ### Step 1: Gather Session Context
 
-Read the current state of the spec:
+Read TODO.md for current progress and task state:
 
 ```
 Read("{SPEC_DIR}/TODO.md")
-Read("{SPEC_DIR}/SPEC.md")
-Read("{SPEC_DIR}/PLAN.md")
 ```
+
+**Do NOT read SPEC.md or PLAN.md** — these are static files that don't change during execution. The session summary should focus on what changed (TODO progress, artifacts, git diff), not restate static requirements.
 
 ### Step 2: Get Git Changes
 
@@ -125,7 +127,9 @@ Write("{SPEC_DIR}/artifacts/handoff/SESSION_SUMMARY.md", summary)
 If a previous session summary exists, archive it:
 - Move to `{SPEC_DIR}/artifacts/handoff/archive/SESSION_SUMMARY_{timestamp}.md`
 
-## Output Format
+</process>
+
+<output-format>
 
 ```markdown
 ## Session Summary Generated
@@ -145,7 +149,11 @@ If a previous session summary exists, archive it:
 <session-summary-generated path="{path}" tokens="{token_count}" />
 ```
 
-## Compression Guidelines
+</output-format>
+
+<guidelines>
+
+### Compression Guidelines
 
 When generating summaries, follow these principles:
 
@@ -172,18 +180,22 @@ When generating summaries, follow these principles:
    - Non-obvious solutions
    - Gotchas for future agents
 
-## Token Estimation
+### Token Estimation
 
 Rough estimation formula (4 chars ≈ 1 token):
 - `char_count / 4 = estimated_tokens`
 
 Target summary length: 2000-4000 characters (500-1000 tokens)
 
-## Rules
+</guidelines>
 
-- **Stay concise** - Every sentence must add value
+<rules>
+
+- **Stay concise** - Every sentence must add value. Target 500-1000 tokens; anything longer defeats the purpose of summarization.
 - **Be specific** - File paths > descriptions, task IDs > vague references
-- **Preserve decisions** - Rationale is harder to reconstruct than code
-- **Archive old summaries** - Don't lose previous context
-- **Reference don't copy** - Point to files/artifacts rather than duplicating
+- **Preserve decisions** - Rationale is harder to reconstruct than code. The "why" behind choices is easily lost across sessions.
+- **Archive old summaries** - Don't lose previous context. Earlier sessions may contain decisions not captured anywhere else.
+- **Reference don't copy** - Point to files/artifacts rather than duplicating. Copied code bloats the summary and quickly exceeds the token budget.
 - **Flag uncertainties** - If something is unclear, say so explicitly
+
+</rules>

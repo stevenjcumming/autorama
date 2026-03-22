@@ -173,6 +173,57 @@ else
   echo "Failed to write settings. See above for manual instructions."
 fi
 
+# Ensure CLAUDE_PLUGIN_DATA directory exists for persistent storage
+echo ""
+echo "=== Plugin Data Directory ==="
+
+if [ -n "${CLAUDE_PLUGIN_DATA:-}" ]; then
+  mkdir -p "$CLAUDE_PLUGIN_DATA"
+  echo "Plugin data directory: $CLAUDE_PLUGIN_DATA"
+  echo "  Usage logs, failure history, and cross-spec data are stored here."
+else
+  echo "CLAUDE_PLUGIN_DATA is not set (set automatically by Claude Code for installed plugins)."
+  echo "  Usage logging and cross-spec persistence will be available once the plugin is installed."
+fi
+
+# Create justifications.yml from template if requested
+echo ""
+echo "=== Justifications Setup ==="
+
+JUSTIFICATION_TARGET="$TARGET_DIR/justifications.yml"
+JUSTIFICATION_TEMPLATE_DIR="$PLUGIN_DIR/templates/justifications"
+
+if [ -f "$JUSTIFICATION_TARGET" ]; then
+  echo "Justifications config already exists: $JUSTIFICATION_TARGET"
+else
+  # Check if a template was specified via arguments
+  TEMPLATE_NAME="${1:-}"
+
+  if [ -n "$TEMPLATE_NAME" ]; then
+    TEMPLATE_FILE="$JUSTIFICATION_TEMPLATE_DIR/$TEMPLATE_NAME.yml"
+    if [ -f "$TEMPLATE_FILE" ]; then
+      cp "$TEMPLATE_FILE" "$JUSTIFICATION_TARGET"
+      echo "Created justifications config from template: $TEMPLATE_NAME"
+      echo "  $JUSTIFICATION_TARGET"
+    else
+      echo "WARNING: Template not found: $TEMPLATE_NAME"
+      echo "  Available templates:"
+      for t in "$JUSTIFICATION_TEMPLATE_DIR"/*.yml; do
+        [ -f "$t" ] && echo "    - $(basename "$t" .yml)"
+      done
+    fi
+  else
+    echo "No justification template specified."
+    echo "  Available templates:"
+    for t in "$JUSTIFICATION_TEMPLATE_DIR"/*.yml; do
+      [ -f "$t" ] && echo "    - $(basename "$t" .yml)"
+    done
+    echo ""
+    echo "  To use a template, run: /autopilot:init --justifications <template>"
+    echo "  Example: /autopilot:init --justifications rails"
+  fi
+fi
+
 echo ""
 echo "=== Initialization Complete ==="
 echo ""

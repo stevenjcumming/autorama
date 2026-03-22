@@ -29,7 +29,8 @@ The following stages have been implemented:
 plugins/autopilot/
 ├── commands/       # Slash command definitions (frontmatter + instructions)
 ├── agents/         # Agent instruction files (spawned via Task tool)
-├── scripts/        # Shell scripts for setup/validation
+│   └── references/ # Reference docs for progressive disclosure (read on-demand by agents)
+├── scripts/        # Shell scripts for setup/validation/persistence
 ├── hooks/          # Hook system for agent harness
 └── templates/      # Templates for generated files
     └── artifacts/
@@ -38,6 +39,23 @@ plugins/autopilot/
 docs/               # Documentation
 .claude-plugin/     # Marketplace manifest
 ```
+
+### Progressive Disclosure via References
+
+Agents use progressive disclosure to keep their initial prompt lean. Detailed reference material (framework tables, parsing rules, artifact triggers) lives in `agents/references/` and agents read these files on-demand:
+
+- `references/test-frameworks.md` — Framework detection, run commands, syntax checks, file conventions
+- `references/artifact-triggers.md` — Trigger conditions, file categories, justification questions, path patterns
+- `references/analysis-parsing.md` — Output format detection, JSON/text parsing, severity mapping, fix suggestions
+- `references/failure-categories.md` — Test failure categories, retryability, refactoring criteria, safe refactorings
+
+### Data Persistence
+
+The plugin uses `${CLAUDE_PLUGIN_DATA}` for cross-session and cross-spec persistence:
+
+- `usage.jsonl` — Event log of command/agent invocations (logged via `log-skill-usage.sh` hook)
+- `failures.jsonl` — Failure patterns for cross-spec learning (logged by task-runner on failure)
+- Scripts: `log-usage.sh`, `log-failure.sh`, `read-history.sh`
 
 ### Command Pattern
 
@@ -121,7 +139,7 @@ Commands and agents require YAML frontmatter with specific fields:
 **Commands** (`plugins/autopilot/commands/*.md`):
 ```yaml
 ---
-description: Short description for command list
+description: Trigger condition describing WHEN to use this command (not a summary)
 allowed-tools: Bash(bash $AUTOPILOT_PLUGIN_ROOT/scripts/example.sh:*), Read, Task
 argument-hint: [identifier]
 model: opus  # optional

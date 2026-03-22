@@ -1,5 +1,5 @@
 ---
-description: Generate review summary of changes and artifacts
+description: Use after autopilot execution completes to review code changes, artifacts, risks, and review hints before committing. Provides a human checkpoint with approval/reject workflow.
 allowed-tools: Bash, Read, Glob, Grep
 argument-hint: <identifier>
 ---

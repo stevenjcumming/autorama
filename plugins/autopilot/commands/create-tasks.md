@@ -1,6 +1,6 @@
 ---
 allowed-tools: Bash, Read, Task
-description: Convert implementation plan into phased TODO checklist
+description: Use when the user has a completed PLAN.md and wants to break it into actionable tasks. Generates a phased TODO.md checklist with task IDs ([T1], [T2]) for execution. Does NOT start implementation.
 argument-hint: <identifier>
 ---
 

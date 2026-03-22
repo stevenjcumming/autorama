@@ -1,6 +1,6 @@
 ---
 allowed-tools: Bash(git status:*), Bash(git diff:*), Bash(git log:*), Bash(git push:*), Bash(gh pr view:*), Bash(gh pr create:*), Bash(gh pr edit:*), Read
-description: Create or update PR description based on current changes
+description: Use when the user wants to create a new GitHub PR or update an existing PR's description for the current branch. Pushes the branch and generates a description from commits and diff.
 ---
 
 ## Arguments
