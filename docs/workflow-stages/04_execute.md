@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Execute the Test -> Code -> Analysis -> Refactor loop autonomously for a spec, generating artifacts until all tasks are complete.
+Execute the Write Tests -> Red -> Code -> Green -> Analysis -> Refactor loop autonomously for a spec, generating artifacts until all tasks are complete.
 
 ## Architecture
 
@@ -18,7 +18,7 @@ Autopilot uses an **Agent Harness** architecture where background agents complet
     │   ├── Spawn fresh Task(autopilot-task-runner) per task
     │   │   │
     │   │   ├── PreToolUse Hook: load-context.sh
-    │   │   │   └── Loads TODO.md, handoff.md
+    │   │   │   └── Loads handoff context and current task
     │   │   │
     │   │   ├── autopilot-task-runner (clean context)
     │   │   │   ├── 1. tester (writes tests)
@@ -28,12 +28,14 @@ Autopilot uses an **Agent Harness** architecture where background agents complet
     │   │   │   ├── 5. analyzer (static analysis)
     │   │   │   └── 6. refactorer (cleanup)
     │   │   │
+    │   │   ├── PreToolUse Hook: log-skill-usage.sh
+    │   │   │   └── Logs agent spawn to usage.jsonl
     │   │   ├── PostToolUse Hook: save-state.sh
     │   │   │   └── Writes current.json state tracker
     │   │   ├── PostToolUse Hook: commit.sh
-    │   │   │   └── Triggers auto-commit on uncommitted changes
+    │   │   │   └── Signals commit skill on uncommitted changes
     │   │   └── SubagentStop Hook: on-agent-complete.sh
-    │   │       └── Auto-commits, generates handoff.md, checks context
+    │   │       └── Auto-commits, signals handoff generation, checks context
     │   │
     │   └── Parse <task-completed> / <task-failed> status
     │
@@ -44,7 +46,7 @@ Autopilot uses an **Agent Harness** architecture where background agents complet
 - **Fresh context per task** - Each task agent starts with clean context
 - **Clean handoffs** - Handoff artifacts preserve decisions
 - **Automatic commits** - Git history tracks each task completion
-- **Background execution** - Task agents run in background for monitoring
+- **Background execution** - Task agents run in background via Task tool
 
 ## Command
 
@@ -79,9 +81,9 @@ Autopilot can be customized via `.claude/autopilot.yml`:
 ```yaml
 # Override default agents
 agents:
-  tester: autopilot-tester       # Or your custom tester
-  coder: autopilot-coder         # Or your custom coder
-  refactorer: autopilot-refactorer
+  tester: autopilot:autopilot-tester       # Or your custom tester
+  coder: autopilot:autopilot-coder         # Or your custom coder
+  refactorer: autopilot:autopilot-refactorer
 
 # Skills for dynamic selection (see workflows/05_skills.md)
 coding_skills:
@@ -94,7 +96,6 @@ refactoring_skills: []
 
 # Auto-commit configuration
 auto_commit:
-  enabled: true                    # Commit after each task (default: true)
   message_template: "feat({spec_id}): complete {task_id} - {task_summary}"
 
 # Static analysis configuration
@@ -154,28 +155,30 @@ The coder agent dynamically selects skills based on task context. See [Skills do
 
 ### Handoff Artifacts
 
-Autopilot generates handoff artifacts after each task:
+Autopilot generates handoff artifacts after each task via the `handoff-writer` agent. Each handoff includes:
 
-1. **Session summary** - Compressed context of what was done
-2. **Files modified** - List of changes made
-3. **Key decisions** - Important choices documented
-4. **Next task context** - Setup for the next agent
+1. **Session summary** - Compressed context of what was accomplished
+2. **Files modified** - List of changes with types and descriptions
+3. **Key decisions** - Important choices and their rationale
+4. **Next task context** - Next task ID, relevant files, and dependencies
+5. **Blockers** - Any issues preventing progress
+6. **Warnings for next agent** - Important context the next agent needs
 
 Handoff artifacts are stored at `.claude/specs/<identifier>/artifacts/handoff/handoff.md` and provide continuity between task agents.
 
 ### Auto-Commit
 
-When `auto_commit.enabled: true` (default), autopilot commits changes after each task completion:
+Autopilot commits changes at two points:
 
-1. Stages all modified files
-2. Creates commit with conventional message format
-3. Includes task ID and summary in commit message
+1. **During task execution** - The `commit.sh` PostToolUse hook detects uncommitted changes after Write/Edit/Bash operations and signals the commit skill
+2. **On task completion** - The `on-agent-complete.sh` SubagentStop hook stages all modified files and creates a commit with conventional message format including task ID and summary
 
 **Configuration:**
 
+The commit message template can be customized in `.claude/autopilot.yml`:
+
 ```yaml
 auto_commit:
-  enabled: true
   message_template: "feat({spec_id}): complete {task_id} - {task_summary}"
 ```
 
@@ -185,8 +188,6 @@ feat(auth-refactor): complete T3 - Add password validation
 
 Co-Authored-By: Claude <noreply@anthropic.com>
 ```
-
-To disable auto-commits and commit manually: `auto_commit.enabled: false`
 
 ### Justification Configuration
 
@@ -264,10 +265,12 @@ justification:
 │   ├── autopilot-coder - Implements changes with artifacts
 │   ├── autopilot-analyzer - Runs static analysis, reports issues
 │   └── autopilot-refactorer - Cleans up code
-├── Hooks on task completion:
-│   ├── save-state.sh (PostToolUse) - Writes current.json
-│   ├── commit.sh (PostToolUse) - Auto-commit trigger
-│   └── on-agent-complete.sh (SubagentStop) - Auto-commit, handoff, context check
+├── Hooks:
+│   ├── load-context.sh (PreToolUse/Task) - Loads handoff context and current task
+│   ├── log-skill-usage.sh (PreToolUse/Task) - Logs agent spawn to usage.jsonl
+│   ├── save-state.sh (PostToolUse/Task) - Writes current.json
+│   ├── commit.sh (PostToolUse/Write|Edit|Bash) - Signals commit skill
+│   └── on-agent-complete.sh (SubagentStop) - Auto-commit, handoff signal, context check
 └── Repeats until all tasks done or failure
 ```
 
@@ -288,67 +291,59 @@ justification:
 ```
 tasks = filter_tasks(TODO.md, FILTER)  # Apply T<n> or P<n> filter if provided
 
-while uncompleted_tasks exist in tasks:
-    task = get_next_task(tasks)
-    analysis_attempts_by_rule = {}  # Per-rule tracking
-    refactor_history = []
-    MAX_REFACTOR_CYCLES = 3
+for each task in tasks:
+    spawn fresh autopilot-task-runner(task):
+        analysis_attempts_by_rule = {}  # Per-rule tracking
+        refactor_history = []
+        MAX_CODE_RETRIES = 3
+        MAX_REFACTOR_CYCLES = 3
 
-    # Error category retry limits
-    ERROR_RETRY_LIMITS = {
-        "setup": 0, "timeout": 1, "runtime": 2,
-        "assertion": 3, "syntax": 3, "missing": 1, "unknown": 2
-    }
+        # Step 2: Write Tests (Red Phase)
+        tester = spawn(autopilot-tester, task)
+        test_command, test_files = parse(tester.output)
+        run(test_command)  # Expect failure
 
-    loop:
-        attempt_count++
+        # Step 3: Implement (Code → Green, max retries)
+        for attempt in 1..MAX_CODE_RETRIES:
+            coder = spawn(autopilot-coder, task, test_files)
+            test_result = run(test_command)
+            if tests_pass: break  # GREEN
+            category = categorize_failure(test_result)
+            if category == "setup": output_failure(); exit  # Not retryable
+            if attempt == MAX_CODE_RETRIES: output_failure(); exit
 
-        # Test Phase
-        test_result = run_tests()
-
-        # Code Phase
-        if task.not_implemented:
-            assess_complexity()  # SMALL/MEDIUM/LARGE
-            implement_task(task)
-            generate_justifications()
-            generate_artifacts_as_needed()
-
-        # Check test results with category-driven retries
-        if NOT tests_pass:
-            category = test_result.primary_category
-            max_for_category = ERROR_RETRY_LIMITS.get(category, 2)
-            if attempt_count >= max_for_category:
-                output_failure("max_retries_for_{category}")
-                exit
-            continue  # Retry
-
-        # Analysis Phase (after tests pass) — per-rule tracking
-        if static_analysis.enabled:
-            analysis_result = run_static_analysis()
-            if analysis_result.has_blocking_issues:
+        # Step 4: Analysis Phase (after tests pass) — per-rule tracking
+        if static_analysis.commands configured:
+            loop:
+                analyzer = spawn(autopilot-analyzer, config)
+                if no blocking_issues: break
                 for issue in blocking_issues:
                     key = "{tool}:{rule}"
                     analysis_attempts_by_rule[key] += 1
                     if over_limit: generate_debt_artifact(issue)
+                if no actionable_issues: break
+                coder = spawn(autopilot-coder, fixes=actionable_issues)
+                if tests_fail: git_checkout; break  # Rollback
+                # Re-run analysis
 
-                if actionable_issues:
-                    fix_with_context(actionable_issues, analysis_attempts_by_rule)
-                    continue  # Return to Test
+        # Step 5: Refactor Phase with stuck detection
+        for cycle in 1..MAX_REFACTOR_CYCLES:
+            refactorer = spawn(autopilot-refactorer, task)
+            if no changes: break
+            if tests_fail: git_checkout; break  # Rollback
+            refactor_history.append(changes)
+            if is_oscillating(refactor_history) or is_diminishing(refactor_history):
+                break  # Accept current state
 
-        # Refactor Phase with stuck detection
-        refactor_result = refactor_code()
-        if refactor_made_changes:
-            refactor_history.append(changes_summary)
-            if len(refactor_history) >= MAX_REFACTOR_CYCLES:
-                if is_oscillating(refactor_history) or is_diminishing(refactor_history):
-                    break  # Accept current state
-            continue  # Return to Test
-
-        # Exit Condition
+        # Step 6: Generate artifacts
+        # Step 7: Update TODO.md
         mark_task_complete()
-        break
+        output <task-completed>
 
-    update_todo_md()
+    # After task-runner completes:
+    spawn handoff-writer(task) if <handoff-needed>
+    parse result status
+    if failed: output failure, exit loop
 ```
 
 ## Exit Conditions
@@ -378,21 +373,19 @@ If a refactor cycle only produces whitespace, formatting, or comment-only change
 
 ## Error-Driven Retries (v0.11.0)
 
-Test failures are classified by category, and each category has its own retry limit:
+Test failures are classified by category using pattern matching from `agents/references/failure-categories.md`. The task-runner uses these categories to determine retryability:
 
-| Category | Max Retries | Description |
-|----------|-------------|-------------|
-| `setup` | 0 | Environment issue — pause immediately |
-| `timeout` | 1 | Increase timeout or refactor — 1 retry |
-| `runtime` | 2 | May be environmental — 2 retries |
-| `assertion` | 3 | Code change likely needed — 3 retries |
-| `syntax` | 3 | Immediate fix, high priority — 3 retries |
-| `missing` | 1 | Dependency issue — 1 retry |
-| `unknown` | 2 | Default fallback |
+| Priority | Category | Pattern Indicators | Retryable |
+|----------|----------|-------------------|-----------|
+| 1 | `setup` | `beforeEach`, `setUp`, `ENOENT`, fixture errors | No — exit immediately |
+| 2 | `syntax` | `SyntaxError`, `parse error`, `unexpected token` | Yes |
+| 3 | `timeout` | `timeout`, `exceeded`, `ETIMEDOUT` | Yes |
+| 4 | `runtime` | `TypeError`, `ReferenceError`, `NilClass` | Yes |
+| 5 | `missing` | `Cannot find module`, `ModuleNotFoundError` | Yes |
+| 6 | `assertion` | `Expected`, `AssertionError`, `to equal` | Yes |
+| 7 | `unknown` | Default if no pattern matches | Yes |
 
-**Severity hierarchy** (most severe first): `setup` > `syntax` > `timeout` > `runtime` > `assertion` > `missing`
-
-The task-runner classifies each test failure with a `Primary Category` using the most severe category when multiple apply.
+The code phase (Step 3) allows up to 3 retries. Setup errors exit immediately without retrying since they indicate environment issues that code changes cannot fix. All other categories are retried with previous error output passed to the coder for correction.
 
 ## Per-Rule Analysis Tracking (v0.11.0)
 
@@ -448,58 +441,78 @@ For LARGE tasks, the coder writes an approach document to `{SPEC_DIR}/artifacts/
 
 | Category | Pattern | Prompt |
 |----------|---------|--------|
-| Spec | `*_spec.rb`, `*_test.*` | Changing assertions? Why? |
-| Migration | `db/migrate/*` | New or editing existing? |
-| Dependency | `Gemfile`, `package.json` | Why needed? |
-| Config | `config/**/*` | Production impact? |
-| API | `*_controller.rb`, `api/**` | Breaking change? |
-| Security | `*auth*`, `*permission*` | Access implications? |
+| Spec Modification | `*_spec.rb`, `*.test.ts`, etc. | Changing assertions? Why? |
+| Migration | `db/migrate/*`, `migrations/*` | New or editing existing? |
+| Dependency | `package.json`, `Gemfile`, etc. | Why needed? |
+| Configuration | `config/**/*.yml`, `*.env*` | Production impact? |
+| API Change | `*_controller.rb`, `api/**` | Breaking change? |
+| Security | `*auth*`, `*security*`, `*permission*` | Access implications? |
 
 ## Directory Structure
 
+### Plugin Structure (in `plugins/autopilot/`)
+
+```
+plugins/autopilot/
+├── commands/
+│   └── execute.md              # Command definition
+├── agents/
+│   ├── autopilot-task-runner.md # Single-task executor (fresh per task)
+│   ├── autopilot-tester.md     # Test writing (TDD red phase)
+│   ├── autopilot-coder.md      # Implementation + artifacts
+│   ├── autopilot-analyzer.md   # Static analysis + fix instructions
+│   ├── autopilot-refactorer.md # Code cleanup
+│   ├── handoff-writer.md       # Generates handoff artifacts
+│   ├── session-summarizer.md   # Context compression
+│   └── references/             # Progressive disclosure docs
+│       ├── test-frameworks.md
+│       ├── artifact-triggers.md
+│       ├── analysis-parsing.md
+│       └── failure-categories.md
+├── scripts/
+│   ├── validate-autopilot.sh   # Prerequisite validation
+│   ├── setup-artifacts.sh      # Create artifact directories
+│   ├── build-task-queue.sh     # Parse TODO.md into task queue
+│   ├── update-task-status.sh   # Mark tasks complete in TODO.md
+│   ├── check-context.sh        # Context limit detection
+│   ├── read-handoff.sh         # Handoff reader utility
+│   ├── find-active-spec.sh     # Locate active spec directory
+│   ├── log-usage.sh            # Log command/agent usage
+│   ├── log-failure.sh          # Log failure patterns
+│   └── read-history.sh         # Read past usage/failures
+├── hooks/
+│   ├── hooks.json              # Hook definitions
+│   ├── load-context.sh         # PreToolUse context loader (Task)
+│   ├── log-skill-usage.sh      # PreToolUse agent spawn logger (Task)
+│   ├── save-state.sh           # PostToolUse state saver (Task)
+│   ├── commit.sh               # PostToolUse commit signal (Write|Edit|Bash)
+│   └── on-agent-complete.sh    # SubagentStop handler
+└── templates/
+    ├── autopilot.yml           # Config template for user projects
+    └── artifacts/
+        ├── handoff/
+        │   └── handoff.md      # Handoff template
+        └── state/              # State tracking directory
+```
+
+### User Project Structure (in `.claude/`)
+
 ```
 .claude/
-├── autopilot.yml             # Configuration (optional)
-├── commands/
-│   └── autopilot.md           # Command definition
-├── scripts/
-│   ├── validate-autopilot.sh  # Prerequisite validation
-│   ├── check-context.sh       # Context limit detection
-│   └── read-handoff.sh        # Handoff reader utility
-├── hooks/
-│   ├── hooks.json             # Hook definitions
-│   ├── load-context.sh        # PreToolUse context loader
-│   ├── save-state.sh          # PostToolUse state saver (Task)
-│   ├── commit.sh              # PostToolUse auto-commit trigger (Write|Edit|Bash)
-│   └── on-agent-complete.sh   # SubagentStop handler
-├── agents/
-│   ├── autopilot.md           # Deprecated (superseded by execute.md)
-│   ├── loop-controller.md     # Deprecated (superseded by execute.md)
-│   ├── autopilot-task-runner.md # Single-task executor (fresh per task)
-│   ├── autopilot-tester.md    # Test writing (TDD red phase)
-│   ├── autopilot-coder.md     # Implementation + artifacts
-│   ├── autopilot-analyzer.md  # Static analysis + fix instructions
-│   ├── autopilot-refactorer.md # Code cleanup
-│   ├── handoff-writer.md      # Generates handoff artifacts
-│   └── session-summarizer.md  # Context compression
-├── templates/
-│   └── artifacts/
-│       ├── handoff/
-│       │   └── handoff.md     # Handoff template
-│       └── state/      # Pause state template
+├── autopilot.yml              # Configuration (optional, copy from template)
 ├── skills/                    # Custom coding patterns (optional)
 │   └── <skill-name>/
 │       └── SKILL.md
-├── artifacts/                  # Curated/promoted artifacts (user-managed)
-│   └── ...                    # Artifacts promoted from specs
+├── artifacts/                 # Curated/promoted artifacts (user-managed)
+│   └── ...
 └── specs/
     └── <identifier>/
         ├── REQUIREMENT.md
         ├── SPEC.md
         ├── RESEARCH.md
         ├── PLAN.md
-        ├── TODO.md             # Updated by autopilot
-        └── artifacts/          # Generated during loop (gitignored)
+        ├── TODO.md            # Updated by autopilot
+        └── artifacts/         # Generated during loop
             ├── justifications/
             ├── decisions/
             ├── assumptions/
@@ -507,7 +520,7 @@ For LARGE tasks, the coder writes an approach document to `{SPEC_DIR}/artifacts/
             ├── risks/
             ├── review_hints/
             ├── debt/
-            ├── handoff/        # Handoff artifacts
+            ├── handoff/
             │   └── handoff.md
             └── state/
 ```

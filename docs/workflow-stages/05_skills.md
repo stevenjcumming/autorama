@@ -106,9 +106,9 @@ Add skills to `.claude/autopilot.yml`:
 
 ```yaml
 agents:
-  tester: autopilot-tester
-  coder: autopilot-coder
-  refactorer: autopilot-refactorer
+  tester: autopilot:autopilot-tester
+  coder: autopilot:autopilot-coder
+  refactorer: autopilot:autopilot-refactorer
 
 # Skills available to coder agent
 coding_skills:

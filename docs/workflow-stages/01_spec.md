@@ -48,12 +48,15 @@ After creating the spec:
    - Requirements summary
    - Success metrics
    - Acceptance criteria
+   - Assumptions and constraints
+   - Dependencies
    - Out of scope items
+   - Open questions
 3. Run `/autopilot:create-plan <identifier>` to generate the implementation plan
 
 ### Optional Next Step
 
-If you with to generate the contents of SPEC.md, direct Claude to 
+If you wish to generate the contents of SPEC.md, direct Claude to 
 
 > Fill out the SPEC.md based on the requirements
 

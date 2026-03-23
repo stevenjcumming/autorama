@@ -85,30 +85,38 @@ task-builder
 
 ## TODO.md Format
 
+Tasks are globally numbered with `[T1]`, `[T2]`, etc. across all phases, and phases use `P1:`, `P2:` prefixes. This enables targeted execution of individual tasks or phases.
+
 ```markdown
 # TODO
 
-## Phase 1: [Name]
+<!-- Task checklist generated from PLAN.md -->
+<!-- Run specific task: /autopilot:execute <SPEC_DIR> T3 -->
+<!-- Run specific phase: /autopilot:execute <SPEC_DIR> P1 -->
 
-- [ ] First task
-- [ ] Second task
-- [ ] Write tests for [component]
-- [ ] Run [verification command]
+## P1: [Actual Phase Name from PLAN.md]
+
+- [ ] [T1] First task
+- [ ] [T2] Second task
+- [ ] [T3] Write tests for [component]
+- [ ] [T4] Run [verification command]
 
 ---
 
-## Phase 2: [Name]
+## P2: [Actual Phase Name from PLAN.md]
 
-- [ ] First task
-- [ ] Second task
+- [ ] [T5] First task
+- [ ] [T6] Second task
+- [ ] [T7] Write tests for [component]
 ```
 
 ## Output
 
 The command returns:
 - Location of TODO.md
-- Task count per phase
+- Task count per phase (with task ID ranges, e.g., T1-T4)
 - Total task count
+- Run options for executing all tasks, a single task, or a single phase
 - First task to start with
 
 ## Next Steps
@@ -117,4 +125,6 @@ After the command completes:
 
 1. Review TODO.md for completeness
 2. Verify task ordering makes sense
-3. Engage autopilot
+3. Run all tasks: `/autopilot:execute <SPEC_DIR>`
+4. Or run a specific task: `/autopilot:execute <SPEC_DIR> T1`
+5. Or run a specific phase: `/autopilot:execute <SPEC_DIR> P1`
