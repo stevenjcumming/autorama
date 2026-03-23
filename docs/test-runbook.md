@@ -167,10 +167,10 @@ EOF
 ```
 
 **Expected Results:**
-- [ ] Task runner spawns in background
-- [ ] Output file is created and can be monitored
-- [ ] PostToolUse hook triggers on completion
-- [ ] Handoff and commit happen after background agent finishes
+- [ ] Task runner spawns via Task tool
+- [ ] PostToolUse hook (save-state.sh) triggers on Task completion
+- [ ] SubagentStop hook (on-agent-complete.sh) triggers on agent stop
+- [ ] Auto-commit and handoff directive are emitted after task completes
 
 **Verification:**
 ```bash
@@ -202,8 +202,8 @@ git log -1 --oneline | grep -q "feat(test-background)"
 
 **Test:**
 1. Run autopilot on a single task
-2. Verify `current.json` is written to `artifacts/state/`
-3. Verify commit.sh triggers on uncommitted changes
+2. Verify `current.json` is written to `artifacts/state/` by save-state.sh (Task matcher)
+3. Verify commit.sh emits `<skill-invoke skill="commit">` directive on uncommitted changes (Write|Edit|Bash matcher)
 
 ---
 
@@ -212,10 +212,10 @@ git log -1 --oneline | grep -q "feat(test-background)"
 **Purpose:** Verify on-agent-complete.sh triggers correctly.
 
 **Test:**
-1. Run task in background
-2. Wait for completion
-3. Verify handoff-writer was invoked
-4. Verify session-summarizer was invoked (if needed)
+1. Run a task to completion
+2. Verify auto-commit triggers on completed task
+3. Verify `<handoff-needed>` directive is emitted for the execute command
+4. Verify context check runs and emits `<context-warning>` or `<context-critical>` signals when appropriate
 
 ---
 

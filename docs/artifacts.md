@@ -53,13 +53,14 @@ This location is for curated artifacts that users manually move there. Examples 
 ┌─────────────────────────────────────────────────────────────────────────┐
 │                        TRIGGER CONDITIONS                               │
 ├─────────────────────────────────────────────────────────────────────────┤
-│  CODER:                                                                 │
+│  TASK-RUNNER / CODER:                                                    │
 │  • File modified     → Justification (based on file category)           │
 │  • Choice made       → Decision                                         │
 │  • Inferred req      → Assumption                                       │
 │  • Potential issue   → Risk                                             │
 │  • Shortcut taken    → Debt                                             │
 │  • Needs human eye   → Review Hint                                      │
+│  • External/internal dep → Dependency                                   │
 └─────────────────────────────────────────────────────────────────────────┘
                                    │
                                    ▼
@@ -67,7 +68,7 @@ This location is for curated artifacts that users manually move there. Examples 
 │                        ARTIFACT CREATION                                │
 ├─────────────────────────────────────────────────────────────────────────┤
 │  1. Agent identifies trigger condition                                  │
-│  2. Agent generates filename: {timestamp}_{type}_{description}.md       │
+│  2. Agent generates filename: {task_id}_{name}_{timestamp}.md           │
 │  3. Agent writes to: .claude/specs/<SPEC_ID>/artifacts/{artifact_type}/ │
 │  4. Uses template structure from plugins/autopilot/templates/artifacts/ │
 └─────────────────────────────────────────────────────────────────────────┘
@@ -115,6 +116,14 @@ This location is for curated artifacts that users manually move there. Examples 
 
 **Location**: `.claude/specs/<SPEC_ID>/artifacts/debt/`
 
+### Dependency
+
+**Trigger**: Internal or external dependency identified
+
+**Purpose**: Documents dependency relationships, coupling level, impact of changes, and migration paths if the dependency needs to be replaced.
+
+**Location**: `.claude/specs/<SPEC_ID>/artifacts/dependencies/`
+
 ### Review Hint
 
 **Trigger**: Human judgment needed
@@ -125,14 +134,17 @@ This location is for curated artifacts that users manually move there. Examples 
 
 ## File Categories Requiring Justification
 
+These categories are the built-in defaults from `agents/references/artifact-triggers.md`. They can be customized in `.claude/autopilot.yml` under `justification.categories`.
+
 | Category | File Patterns | Key Questions |
 |----------|---------------|---------------|
-| `spec_modification` | `*_spec.rb`, `*.test.ts`, `*.test.js` | Changing assertions? Adding or removing tests? |
-| `migration` | `db/migrate/*`, `migrations/*` | New migration or editing existing? |
-| `dependency` | `package.json`, `Gemfile`, `*.lock` | Why needed? Security status? |
-| `configuration` | `config/**/*`, `*.env*` | Production impact? Secrets involved? |
-| `api_change` | `*_controller.rb`, `api/**` | Breaking change? Consumer coordination? |
-| `security` | `*auth*`, `*permission*`, `*security*` | Access control implications? |
+| `spec_modification` | `*_spec.rb`, `*.test.ts`, etc. | Adding new specs? Changing assertions to pass? |
+| `migration` | `db/migrate/*`, `migrations/*` | New migration? Editing deployed migration? |
+| `dependency` | `package.json`, `Gemfile`, etc. | Why needed? Lighter alternatives? |
+| `configuration` | `config/**/*.yml`, `*.env*` | Production impact? Secrets? |
+| `api_change` | `*_controller.rb`, `api/**` | Breaking change? Consumers? |
+| `security` | Files with auth/security/permission in path | Weakens access controls? |
+| `general` | All other files | Purpose? Affects other code? |
 
 ## Directory Structure
 
@@ -149,9 +161,12 @@ This location is for curated artifacts that users manually move there. Examples 
     ├── justifications/    # Why changes were made
     ├── decisions/         # Approach choices
     ├── assumptions/       # Inferred requirements
+    ├── dependencies/      # Dependency analysis
     ├── risks/             # Potential problems
     ├── debt/              # Shortcuts taken
-    └── review_hints/      # Human review needed
+    ├── review_hints/      # Human review needed
+    ├── handoff/           # Context handoff between tasks
+    └── state/             # Task runner state tracking
 ```
 
 ### Curated Artifacts (User-Promoted)
@@ -175,9 +190,9 @@ plugins/autopilot/templates/artifacts/   # Template files for each type
 
 | Agent | Artifacts Generated |
 |-------|---------------------|
-| `autopilot-tester` | Test files |
-| `autopilot-coder` | Justification, Decision, Assumption, Risk, Debt, Review Hint |
-| `autopilot-refactorer` | (none — produces refactoring changes, not artifacts) |
+| `autopilot-task-runner` | All artifact types (fills in hook-created templates after sub-agents complete) |
+| `autopilot-coder` | Justification, Decision, Assumption, Risk, Debt, Dependency |
+| `autopilot-refactorer` | Debt (for significant deferred refactoring opportunities) |
 
 ## Using Artifacts
 

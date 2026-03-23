@@ -5,7 +5,7 @@ The autopilot plugin delegates work through a tree of specialized agents. Each a
 ## Overview
 
 ```
-/autopilot:new-spec ─────────────────────────────────────────── spec-writer (leaf)
+/autopilot:new-spec ─────────────────────────────────────────── (script only, no agent)
 
 /autopilot:create-plan ──── plan-builder (opus)
                     ├── plan-researcher (sonnet)
@@ -19,9 +19,8 @@ The autopilot plugin delegates work through a tree of specialized agents. Each a
                   │     ├── autopilot-coder (opus)
                   │     ├── autopilot-analyzer (sonnet)
                   │     └── autopilot-refactorer (sonnet)
-                  └── session-summarizer (haiku)
-
-(hooks) ──── handoff-writer (haiku, leaf)
+                  ├── handoff-writer (haiku, after each task)
+                  └── session-summarizer (haiku, on context-critical)
 ```
 
 ## Model Tiers

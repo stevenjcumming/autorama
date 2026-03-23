@@ -53,7 +53,6 @@ Create a specification folder with structured documentation of the requirements.
 1. Creates `.claude/specs/<identifier>/` directory
 2. Creates `REQUIREMENT.md` for original requirements (verbatim)
 3. Creates `SPEC.md` from template
-4. Creates `artifacts/` subdirectory for generated artifacts
 
 **Human Actions**:
 - Paste original requirements into `REQUIREMENT.md`
@@ -71,10 +70,11 @@ Generate an implementation plan from the spec using automated research and analy
 
 **What It Does**:
 1. Validates spec folder and `SPEC.md` exist
-2. Spawns `plan-researcher` agent to analyze codebase patterns and dependencies
-3. Writes `RESEARCH.md` with findings
-4. Spawns `plan-builder` agent to create `PLAN.md`
-5. Spawns `plan-analyzer` agent to validate the plan
+2. Spawns `plan-builder` agent, which:
+   - Spawns `plan-researcher` to analyze codebase patterns and dependencies
+   - Writes `RESEARCH.md` with findings
+   - Creates `PLAN.md`
+   - Spawns `plan-analyzer` to validate the plan
 
 **Human Actions**:
 - Review `PLAN.md` and analysis report
@@ -183,7 +183,7 @@ Execute Command
 
 ### 6. Review
 
-**Command**: `/autopilot:review`
+**Command**: `/autopilot:review <identifier>`
 
 Human checkpoint to review all changes and artifacts before finalizing.
 
@@ -237,9 +237,9 @@ Finalize implementation by creating commits and managing pull requests.
 
 | Stage | Command | Input | Output |
 |-------|---------|-------|--------|
-| Spec | `/autopilot:new-spec <id>` | Requirements | `REQUIREMENT.md`, `SPEC.md`, `artifacts/` |
+| Spec | `/autopilot:new-spec <id>` | Requirements | `REQUIREMENT.md`, `SPEC.md` |
 | Plan | `/autopilot:create-plan <id>` | Spec | `RESEARCH.md`, `PLAN.md` |
 | Tasks | `/autopilot:create-tasks <id>` | Plan | `TODO.md` |
 | Autopilot | `/autopilot:execute <id>` | Tasks | Code changes, per-spec artifacts, commits |
-| Review | `/autopilot:review` | Changes, per-spec artifacts | Human decision |
+| Review | `/autopilot:review <id>` | Changes, per-spec artifacts | Human decision |
 | Submit | `/autopilot:commit`, `/autopilot:sync-pr` | Changes | Commits, PR |

@@ -79,12 +79,11 @@ Requirements ──> [1] Spec ──> HUMAN ──> [2] Plan ──> HUMAN ─�
 /autopilot:new-spec <id>
     |
     v
-spec-writer agent (leaf)
+new-spec.sh script
     |
     ├── Creates .claude/specs/<id>/
     ├── Creates REQUIREMENT.md (template)
-    ├── Creates SPEC.md (template)
-    └── Creates artifacts/ directory
+    └── Creates SPEC.md (template)
     |
     v
 HUMAN ACTION
@@ -93,8 +92,8 @@ HUMAN ACTION
 ```
 
 **Command**: `/autopilot:new-spec <id>`
-**Agents**: `spec-writer`
-**Artifacts Generated**: `REQUIREMENT.md`, `SPEC.md`, `artifacts/`
+**Agents**: None (script only)
+**Artifacts Generated**: `REQUIREMENT.md`, `SPEC.md`
 **Human Action**: Fill in requirements and spec details
 
 ---
@@ -217,7 +216,7 @@ HUMAN ACTION
 │  │                          v                                         │  │
 │  │  ┌─── HOOK: SubagentStop (on-agent-complete.sh) ─────────────────┐ │  │
 │  │  │  1. Auto-commit (git add -A, commit with task summary)        │ │  │
-│  │  │  2. Generate handoff.md (git diff, next task context)         │ │  │
+│  │  │  2. Signal <handoff-needed> for execute to spawn handoff-writer│ │  │
 │  │  │  3. Check context limits (check-context.sh)                   │ │  │
 │  │  │     ├── OK (<150k tokens): continue                           │ │  │
 │  │  │     ├── WARNING (150-200k): emit <context-warning>            │ │  │
@@ -341,7 +340,7 @@ HUMAN ACTION
 │     │  Matcher: None (fires for all subagents, filters inside)  │
 │     │  Actions:                                                 │
 │     │    a) Auto-commit ──> <auto-commit>                       │
-│     │    b) Generate handoff.md ──> <handoff-generated>         │
+│     │    b) Signal handoff needed ──> <handoff-needed>           │
 │     │    c) Check context ──> <context-warning> or              │
 │     │                         <context-critical>                │
 │     │    d) Always ──> <agent-completed>                        │
@@ -362,7 +361,7 @@ save-state.sh ──> writes current.json
     v
 on-agent-complete.sh
     ├── Auto-commit (git add -A, commit)
-    ├── Generate handoff.md
+    ├── Signal <handoff-needed> (execute command spawns handoff-writer)
     │     ├── Completed Task (ID, status, timestamp)
     │     ├── Session Summary (300-500 tokens)
     │     ├── Files Modified
@@ -410,7 +409,7 @@ All artifacts written to `.claude/specs/<id>/artifacts/` unless noted.
 | Artifact | Hook | Trigger |
 |----------|------|---------|
 | `state/current.json` | save-state.sh | After each task agent completes |
-| `handoff/handoff.md` | on-agent-complete.sh | After each task completes |
+| `handoff/handoff.md` | handoff-writer agent (spawned by execute command) | After each task completes |
 | `handoff/SESSION_SUMMARY.md` | session-summarizer (via execute command) | Context usage critical (>200k tokens) |
 
 ### Generated During Other Stages
@@ -450,7 +449,7 @@ All artifacts written to `.claude/specs/<id>/artifacts/` unless noted.
 ## Agent Tree
 
 ```
-/autopilot:new-spec ────────── spec-writer (leaf)
+/autopilot:new-spec ────────── (script only, no agent)
 
 /autopilot:create-plan ─────── plan-builder (opus)
                        ├── plan-researcher (sonnet)
@@ -466,7 +465,7 @@ All artifacts written to `.claude/specs/<id>/artifacts/` unless noted.
                        │     └── autopilot-refactorer (sonnet)
                        └── session-summarizer (haiku)
 
-(hooks) ──────────── handoff-writer (haiku, leaf)
+(via execute) ─────── handoff-writer (haiku, leaf)
 ```
 
 ---

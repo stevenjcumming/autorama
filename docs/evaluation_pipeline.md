@@ -15,9 +15,10 @@ Each sub-agent generates typed artifacts as it works:
 | Agent | Produces |
 |-------|----------|
 | **Tester** | Test files |
-| **Coder** | Justifications, decisions, assumptions, risks, debt, review hints |
+| **Coder** | Implementation code (and analysis fixes when directed) |
 | **Analyzer** | Analysis report with fix instructions |
 | **Refactorer** | Refactoring changes |
+| **Task Runner** | Justifications, decisions, assumptions, risks, debt, review hints (Step 6: artifact generation) |
 
 Artifacts accumulate at `.claude/specs/<SPEC_ID>/artifacts/`.
 
@@ -87,12 +88,12 @@ The final quality gate feeds into standard code review workflows.
 - **Proactive review hints**: Agents flag what needs human judgment with specific questions and file locations
 - **Justification system**: Certain file categories (specs, migrations, dependencies, security, API changes) automatically require written justification
 - **Context preservation**: handoff.md artifacts and hooks ensure continuity between tasks so the evaluation trail is coherent across the full session
-- **Configurable thresholds**: Static analysis rules and justification categories are customizable in `autopilot.yml`
+- **Configurable thresholds**: Static analysis rules and justification categories are customizable in `.claude/autopilot.yml`
 
 ## Related Documentation
 
-- [Autopilot Workflow](workflows/04_autopilot.md)
-- [Review Workflow](workflows/06_review.md)
-- [Submit Workflow](workflow-stages/08_submit.md)
+- [Execute Workflow](workflow-stages/04_execute.md)
+- [Review Workflow](workflow-stages/06_review.md)
+- [Submit Workflow](workflow-stages/07_submit.md)
 - [Artifacts](artifacts.md)
 - [Justifications](justifications.md)

@@ -2,16 +2,17 @@
 
 This document provides examples of justification categories and questions you can configure in `.claude/autopilot.yml`.
 
-## Recommended Categories
+## Default Categories
+
+These categories are included in the default `autopilot.yml` template:
 
 - `spec_modification`
 - `migration`
 - `dependency`
 - `configuration`
-- `api_change`
 - `security`
 
-Copy the category from `.claude/templates/autopilot.yml` to your `.claude/autopilot.yml`.  Modify the new file's patterns or questions to fit your projects needs.  
+Run `/autopilot:init` to copy the default template to `.claude/autopilot.yml`, or manually copy from the plugin's `templates/autopilot.yml`. Modify the file's patterns or questions to fit your project's needs.
 
 ---
 

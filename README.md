@@ -5,7 +5,7 @@ A Claude Code plugin for AI-autonomous software development with structured work
 ## Workflow
 
 ```
-Requirements → Spec → Plan → Tasks → Test → Code → Analysis → Refactor → Review → Submit
+Requirements → Spec → Plan → Tasks → Write Tests → Red → Code → Green → Analysis → Refactor → Review → Submit
 ```
 
 The plugin guides you through a structured development workflow:
@@ -13,7 +13,7 @@ The plugin guides you through a structured development workflow:
 1. **Spec** - Define requirements and acceptance criteria
 2. **Plan** - Research codebase and create implementation plan
 3. **Tasks** - Break plan into actionable checklist
-4. **Execute** - Execute Test/Code/Analysis/Refactor loop autonomously via Agent Harness
+4. **Execute** - Execute Write Tests/Red/Code/Green/Analysis/Refactor loop autonomously via Agent Harness
 5. **Review** - Human checkpoint for changes and artifacts (approve, request changes, or reject)
 6. **Submit** - Commit and create pull request
 

@@ -18,12 +18,12 @@ Override the default agent used for each role in the autopilot loop.
 
 ```yaml
 agents:
-  tester: autopilot-tester
-  coder: autopilot-coder
-  refactorer: autopilot-refactorer
+  tester: autopilot:autopilot-tester
+  coder: autopilot:autopilot-coder
+  refactorer: autopilot:autopilot-refactorer
 ```
 
-All fields are optional. When omitted, the built-in agent is used. Use this to swap in project-specific agents that follow different conventions.
+All fields are optional. When omitted, the built-in agent is used. Values use the `namespace:agent-name` format. Use this to swap in project-specific agents that follow different conventions.
 
 ### Skills
 
@@ -47,6 +47,17 @@ testing_skills:
 refactoring_skills:
   - dry-refactor-skill
 ```
+
+### Auto-Commit
+
+Customize the commit message template used by the `on-agent-complete.sh` hook when auto-committing after task completion.
+
+```yaml
+auto_commit:
+  message_template: "feat({spec_id}): complete {task_id} - {task_summary}"
+```
+
+The template supports `{spec_id}`, `{task_id}`, and `{task_summary}` placeholders. When omitted, the default template shown above is used. Auto-commit always runs when there are uncommitted changes after a task completes.
 
 ### Justification
 
@@ -133,9 +144,9 @@ Requires `yq` for full functionality. Falls back to built-in defaults without it
 
 ```yaml
 agents:
-  tester: autopilot-tester
-  coder: autopilot-coder
-  refactorer: autopilot-refactorer
+  tester: autopilot:autopilot-tester
+  coder: autopilot:autopilot-coder
+  refactorer: autopilot:autopilot-refactorer
 
 coding_skills:
   - service-object-skill

@@ -8,13 +8,14 @@ The autopilot plugin uses Claude Code hooks to inject behavior at specific point
 Agent spawned
     │
     ├── PreToolUse (Task) ── load-context.sh ── Injects handoff context into prompt
+    ├── PreToolUse (Task) ── log-skill-usage.sh ── Logs agent spawn to usage.jsonl
     │
     ├── (agent executes)
     │
     ├── PostToolUse (Task) ── save-state.sh ── Writes current.json state tracker
     ├── PostToolUse (Write|Edit|Bash) ── commit.sh ── Triggers auto-commit prompt
     │
-    └── SubagentStop ── on-agent-complete.sh ── Auto-commits, generates handoff, checks context
+    └── SubagentStop ── on-agent-complete.sh ── Auto-commits, signals handoff, checks context
 ```
 
 ## Hook Lifecycle
@@ -24,6 +25,7 @@ Three hook types fire at different points in the tool lifecycle. Some types have
 | Hook Type | Matcher | Script | Timeout |
 |-----------|---------|--------|---------|
 | **PreToolUse** | Task | `load-context.sh` | 10s |
+| **PreToolUse** | Task | `log-skill-usage.sh` | 5s |
 | **PostToolUse** | Task | `save-state.sh` | 30s |
 | **PostToolUse** | Write\|Edit\|Bash | `commit.sh` | 10s |
 | **SubagentStop** | (none) | `on-agent-complete.sh` | 60s |
@@ -38,6 +40,7 @@ Hooks are grouped by lifecycle type. Each type contains an array of matcher/hook
 
 ```json
 {
+  "description": "Autopilot agent harness hooks for context loading, state persistence, and auto-commit",
   "hooks": {
     "PreToolUse": [
       {
@@ -47,6 +50,11 @@ Hooks are grouped by lifecycle type. Each type contains an array of matcher/hook
             "type": "command",
             "command": "${CLAUDE_PLUGIN_ROOT}/hooks/load-context.sh",
             "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/log-skill-usage.sh",
+            "timeout": 5
           }
         ]
       }
@@ -123,7 +131,20 @@ Fires before each autopilot Task agent is spawned. Loads context from the previo
 | `<current-task>` | `TODO.md` | Next uncompleted task with subtasks |
 | `<progress-summary>` | `TODO.md` | Completed/remaining counts |
 
-**Dependencies:** Prefers `jq` for config parsing, `yq` for YAML. Falls back gracefully without either.
+**Dependencies:** Requires `jq` for JSON parsing. Exits silently without it.
+
+### `log-skill-usage.sh` (PreToolUse)
+
+Fires alongside `load-context.sh` before each Task agent is spawned. Logs agent spawn events to `${CLAUDE_PLUGIN_DATA}/usage.jsonl` for cross-session analytics.
+
+**Activation guard:** Only runs for `autopilot:*` subagent types. Requires `CLAUDE_PLUGIN_DATA` to be set. Exits silently otherwise.
+
+**Process:**
+1. Extracts subagent type from JSON input
+2. Strips the `autopilot:` prefix
+3. Delegates to `scripts/log-usage.sh` to append a JSONL entry
+
+**Dependencies:** Requires `jq` for JSON parsing and `CLAUDE_PLUGIN_DATA` environment variable.
 
 ### `save-state.sh` (PostToolUse)
 
@@ -157,18 +178,17 @@ Fires when a subagent finishes. Handles the heavier post-task operations.
 
 #### 1. Auto-Commit
 
-If `auto_commit` section is present in `.claude/autopilot.yml`:
+Always auto-commits when there are uncommitted changes:
 - Reads task summary from `TODO.md`
-- Builds commit message from template (default: `feat({spec_id}): complete {task_id} - {task_summary}`)
+- Builds commit message from template (default: `feat({spec_id}): complete {task_id} - {task_summary}`, configurable via `auto_commit.message_template` in `.claude/autopilot.yml`)
 - Stages all changes with `git add -A`
 - Creates commit with `Co-Authored-By: Claude` footer
 - Emits `<auto-commit>`
 
-#### 2. Generate Handoff
+#### 2. Signal Handoff Generation
 
-- Creates `{SPEC_DIR}/artifacts/handoff/handoff.md`
-- Includes task metadata, files modified (from `git diff HEAD~1`), next task context, blockers
-- Emits `<handoff-generated>`
+- Emits `<handoff-needed>` directive with spec directory, task ID, status, and agent name
+- The execute command uses this signal to spawn the `handoff-writer` agent, which produces the actual `handoff.md` file
 
 #### 3. Check Context Limits
 
