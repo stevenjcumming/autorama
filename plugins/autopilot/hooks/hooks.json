@@ -28,7 +28,7 @@
             "timeout": 30
           }
         ]
-      },
+      }
     ],
     "SubagentStop": [
       {

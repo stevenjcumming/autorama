@@ -17,8 +17,7 @@
     "./commands/code-review.md",
     "./commands/commit.md",
     "./commands/sync-pr.md",
-    "./commands/spec-archive.md",
-    "./commands/oneshot.md"
+    "./commands/spec-archive.md"
   ],
   "agents": [
     "./agents/plan-builder.md",
@@ -29,8 +28,7 @@
     "./agents/autopilot-refactorer.md",
     "./agents/autopilot-analyzer.md",
     "./agents/autopilot-task-runner.md",
-    "./agents/session-summarizer.md",
-    "./agents/oneshot-decomposer.md"
+    "./agents/session-summarizer.md"
   ],
   "hooks": "./hooks/hooks.json"
 }

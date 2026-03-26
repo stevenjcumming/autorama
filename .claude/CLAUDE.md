@@ -73,7 +73,6 @@ Agents can spawn sub-agents for specialized tasks:
 - `autopilot-task-runner` spawns `autopilot-tester` (writes tests), then runs tests via Bash, spawns `autopilot-coder` (with test files), runs tests via Bash again, then `autopilot-analyzer` and `autopilot-refactorer`. It also writes `handoff.md` directly before exiting.
 - `session-summarizer` compresses context when approaching limits
 - `create-tasks` command converts PLAN.md to TODO.md inline (no subagent)
-- `oneshot-decomposer` handles both blueprint decomposition and clarifying question generation
 - Agents use `model: opus`, `model: sonnet`, or `model: haiku` in frontmatter
 
 ### Agent Harness Architecture

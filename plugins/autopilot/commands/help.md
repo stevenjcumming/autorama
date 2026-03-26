@@ -25,7 +25,6 @@ Display the available Autopilot commands in the order they should be used.
 | Command | Purpose |
 |---------|---------|
 | `/autopilot:spec-archive <id>` | Archive spec files to `~/.autopilot/specs/` |
-| `/autopilot:oneshot <blueprint>` | Full-autonomy mode — decompose a blueprint and execute all specs |
 
 ## Typical Workflow
 
@@ -37,15 +36,5 @@ Display the available Autopilot commands in the order they should be used.
 6. **Review** — Inspect the changes and generated artifacts
 7. **Code Review** — Run a structured code review against a checklist (optional)
 8. **Submit** — Commit and open/update a PR
-
-## Oneshot Mode
-
-For fully autonomous execution of a blueprint document:
-
-```
-/autopilot:oneshot <blueprint> [--no-questions] [--no-human] [--dry-run] [--resume]
-```
-
-This decomposes the blueprint into specs and executes each through the full pipeline.
 
 Print the table and workflow summary above to the user.
