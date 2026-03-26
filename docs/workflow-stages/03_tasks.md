@@ -25,12 +25,12 @@ Convert an implementation plan into a phased TODO checklist. This marks the end 
 
 1. Validates spec folder and `PLAN.md` exist
 2. Creates `TODO.md` from template
-3. Spawns `task-builder` agent to populate tasks
+3. Reads `PLAN.md` and writes `TODO.md` directly (inline, no separate agent)
 
-## Agent Pipeline
+## Pipeline
 
 ```
-task-builder
+create-tasks command (inline)
 ├── Reads PLAN.md
 ├── Extracts phases and changes
 ├── Converts each change to atomic task
@@ -38,11 +38,7 @@ task-builder
 └── Writes TODO.md
 ```
 
-### Agents
-
-| Agent | Purpose | Output |
-|-------|---------|--------|
-| `task-builder` | Converts plan to actionable tasks | TODO.md |
+No separate agent is spawned — the command handles task extraction inline.
 
 ## Directory Structure
 
@@ -54,7 +50,7 @@ task-builder
         ├── SPEC.md
         ├── RESEARCH.md
         ├── PLAN.md
-        └── TODO.md       <-- Created by task-builder
+        └── TODO.md       <-- Created by create-tasks command
 ```
 
 ## Task Conversion Rules

@@ -13,9 +13,8 @@ Agent spawned
     ├── (agent executes)
     │
     ├── PostToolUse (Task) ── save-state.sh ── Writes current.json state tracker
-    ├── PostToolUse (Write|Edit|Bash) ── commit.sh ── Triggers auto-commit prompt
     │
-    └── SubagentStop ── on-agent-complete.sh ── Auto-commits, signals handoff, checks context
+    └── SubagentStop ── on-agent-complete.sh ── Auto-commits, checks context limits
 ```
 
 ## Hook Lifecycle
@@ -27,7 +26,6 @@ Three hook types fire at different points in the tool lifecycle. Some types have
 | **PreToolUse** | Task | `load-context.sh` | 10s |
 | **PreToolUse** | Task | `log-skill-usage.sh` | 5s |
 | **PostToolUse** | Task | `save-state.sh` | 30s |
-| **PostToolUse** | Write\|Edit\|Bash | `commit.sh` | 10s |
 | **SubagentStop** | (none) | `on-agent-complete.sh` | 60s |
 
 All hooks are defined in `plugins/autopilot/hooks/hooks.json` and referenced from `plugin.json`.
@@ -69,16 +67,6 @@ Hooks are grouped by lifecycle type. Each type contains an array of matcher/hook
             "timeout": 30
           }
         ]
-      },
-      {
-        "matcher": "Write|Edit|Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/commit.sh",
-            "timeout": 10
-          }
-        ]
       }
     ],
     "SubagentStop": [
@@ -107,7 +95,6 @@ Hooks are grouped by lifecycle type. Each type contains an array of matcher/hook
 
 - PreToolUse and PostToolUse hooks use matchers to scope which tools trigger them
 - The `Task` matcher fires for Task tool invocations. Within the scripts, further filtering narrows to `autopilot-*` subagent types -- the hooks silently exit for non-autopilot agents
-- The `Write|Edit|Bash` matcher fires for file modification tools, enabling auto-commits during agent execution
 - SubagentStop has no matcher and fires for all subagent completions. The script checks the agent type internally
 
 ## Hook Scripts
@@ -174,43 +161,22 @@ Fires after each autopilot Task agent completes. Writes lightweight state to dis
 
 Fires when a subagent finishes. Handles the heavier post-task operations.
 
-**Three responsibilities:**
+**Two responsibilities:**
 
 #### 1. Auto-Commit
 
 Always auto-commits when there are uncommitted changes:
 - Reads task summary from `TODO.md`
-- Builds commit message from template (default: `feat({spec_id}): complete {task_id} - {task_summary}`, configurable via `auto_commit.message_template` in `.claude/autopilot.yml`)
+- Builds conventional commit message: `<type>(<spec_id>): <task_summary>` with body containing task ID and file count. The type is parsed from the task-runner's `<task-completed type="...">` tag (defaults to `feat`)
 - Stages all changes with `git add -A`
-- Creates commit with `Co-Authored-By: Claude` footer
 - Emits `<auto-commit>`
 
-#### 2. Signal Handoff Generation
-
-- Emits `<handoff-needed>` directive with spec directory, task ID, status, and agent name
-- The execute command uses this signal to spawn the `handoff-writer` agent, which produces the actual `handoff.md` file
-
-#### 3. Check Context Limits
+#### 2. Check Context Limits
 
 - Calls `check-context.sh` to estimate token usage
 - Emits `<context-warning>` if approaching limit
 - Emits `<context-critical>` if over critical threshold
 - Always emits `<agent-completed>` as final signal
-
-### `commit.sh` (PostToolUse — Write|Edit|Bash)
-
-Fires after Write, Edit, or Bash tool calls. Detects uncommitted changes and triggers the `/autopilot:commit` skill.
-
-**Activation guard:** Skips git commands, read-only Bash commands, and changes only in `.claude/` directories. Exits silently if not in a git repo or no uncommitted changes exist.
-
-**Process:**
-1. Filters tool calls — only continues for file-modifying operations
-2. Checks for uncommitted changes (staged, unstaged, or untracked) outside `.claude/`
-3. Emits a `<skill-invoke>` directive to trigger the commit skill
-
-**Output:** `<skill-invoke skill="commit">` when uncommitted changes are detected.
-
-**Dependencies:** Requires `jq` and `git`.
 
 ## Supporting Scripts
 
@@ -245,7 +211,6 @@ Hooks read their configuration from `.claude/autopilot.yml`:
 
 | Key | Default | Used By |
 |-----|---------|---------|
-| `auto_commit.message_template` | conventional | `on-agent-complete.sh` |
 Feature sections are active when present. To disable a feature, remove the section entirely.
 
 ## Adding New Hooks

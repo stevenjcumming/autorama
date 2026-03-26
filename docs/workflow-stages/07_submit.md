@@ -154,47 +154,19 @@ If no template file exists, the command falls back to a minimal format:
 <Checklist of requirements that must be met>
 ```
 
-## Automatic Commit Hook
-
-The `commit.sh` hook can trigger automatic commits after file modifications:
-
-### Trigger Conditions
-
-- After `Write` or `Edit` tools modify files
-- After `Bash` commands that may modify files
-- Only when uncommitted changes exist outside `.claude/` directory
-
-### Skipped Operations
-
-- Git commands (handled separately)
-- Read-only commands (cat, ls, grep, etc.)
-- Changes only in `.claude/` directory (internal operations)
-
-### Hook Output
-
-When triggered, the hook outputs:
-
-```xml
-<skill-invoke skill="commit">
-Uncommitted changes detected. Create a commit for the changes made.
-</skill-invoke>
-```
-
-This prompts Claude to invoke the `/autopilot:commit` skill automatically.
-
 ## Workflow Integration
 
 ```
 /autopilot:execute
 ├── Test → Code → Refactor loop
 ├── Changes accumulate
-└── (Optional) commit.sh hook triggers /autopilot:commit
+└── on-agent-complete.sh auto-commits per task
 
 /autopilot:review
 ├── Summarize changes and artifacts
 └── Human approval
 
-/autopilot:commit (if not auto-committed)
+/autopilot:commit (for manual commits outside autopilot)
 ├── Stage changes (or use existing staging)
 └── Create conventional commit
 
@@ -211,8 +183,6 @@ This prompts Claude to invoke the `/autopilot:commit` skill automatically.
 ├── commands/
 │   ├── commit.md               # Commit command
 │   └── sync-pr.md              # PR sync command
-├── hooks/
-│   └── commit.sh               # Auto-commit hook
 └── templates/
     └── pr_description.md       # PR template
 ```

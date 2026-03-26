@@ -203,7 +203,6 @@ git log -1 --oneline | grep -q "feat(test-background)"
 **Test:**
 1. Run autopilot on a single task
 2. Verify `current.json` is written to `artifacts/state/` by save-state.sh (Task matcher)
-3. Verify commit.sh emits `<skill-invoke skill="commit">` directive on uncommitted changes (Write|Edit|Bash matcher)
 
 ---
 
@@ -221,16 +220,17 @@ git log -1 --oneline | grep -q "feat(test-background)"
 
 ## Configuration Tests
 
-### C1: Custom Commit Message Template
+### C1: Auto-Commit Format
 
-**Configuration:**
-```yaml
-# .claude/autopilot.yml
-auto_commit:
-  message_template: "chore({spec_id}): {task_id} - {task_summary}"
+**Expected:** Auto-commits use conventional commit format with body:
 ```
+<type>(<spec_id>): <task_summary>
 
-**Expected:** Commits use the custom template instead of the default `feat({spec_id}): complete {task_id} - {task_summary}`.
+Complete [T<n>] for spec <spec_id>.
+
+Files changed: <count>
+Task: [T<n>]
+```
 
 ### C2: Custom Agent Overrides
 

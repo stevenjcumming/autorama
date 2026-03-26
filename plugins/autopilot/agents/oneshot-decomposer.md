@@ -51,9 +51,21 @@ Determine the dependency relationships:
 - Specs that build on other specs' output should declare dependencies
 - Maximize parallelism where possible (independent specs can run in any order)
 
-### Step 5: Output
+### Step 5: Identify Ambiguities
 
-Output the spec list in this structured format:
+Analyze the blueprint and spec list for:
+1. **Unclear requirements** — Vague language, missing details, undefined terms
+2. **Scope boundaries** — What's in scope vs. out of scope
+3. **Priority conflicts** — Multiple specs competing for the same areas
+4. **Technical assumptions** — Implicit choices about technology, patterns, or approaches
+5. **Missing acceptance criteria** — Specs without clear "done" definitions
+6. **Dependency risks** — Circular or fragile dependency chains
+
+Categorize questions into: Scope, Priority, Technical, Requirements, Risk.
+
+### Step 6: Output
+
+Output both the spec list and clarifying questions in this structured format:
 
 ```
 <oneshot-specs>
@@ -72,6 +84,17 @@ Output the spec list in this structured format:
   }
 ]
 </oneshot-specs>
+
+<oneshot-questions>
+[
+  {
+    "category": "scope",
+    "question": "The blueprint mentions 'user management' — does this include password reset flows or just registration and login?",
+    "context": "This affects spec 'user-auth' scope and may require an additional spec.",
+    "default": "Include only registration and login; defer password reset to a follow-up."
+  }
+]
+</oneshot-questions>
 ```
 
 </process>
@@ -84,5 +107,9 @@ Output the spec list in this structured format:
 - Keep specs focused — one concern per spec
 - Include enough detail in descriptions for the plan-builder agent to work from
 - Do not create specs for trivial changes that don't warrant the full pipeline
+- Ask only questions that would change the implementation approach or spec structure
+- Provide a sensible default answer for each question (used if `--no-questions` is set)
+- Keep questions concise and specific — avoid open-ended "what do you think?" questions
+- Limit to 5-10 high-impact questions — don't overwhelm the user
 
 </rules>

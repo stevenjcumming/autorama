@@ -48,6 +48,7 @@ Agents use progressive disclosure to keep their initial prompt lean. Detailed re
 - `references/artifact-triggers.md` — Trigger conditions, file categories, justification questions, path patterns
 - `references/analysis-parsing.md` — Output format detection, JSON/text parsing, severity mapping, fix suggestions
 - `references/failure-categories.md` — Test failure categories, retryability, refactoring criteria, safe refactorings
+- `references/conventional-commits.md` — Commit message format, types, scope, body guidelines, examples
 
 ### Data Persistence
 
@@ -69,9 +70,10 @@ Commands follow a consistent pattern:
 Agents can spawn sub-agents for specialized tasks:
 - `plan-builder` spawns `plan-researcher` and `plan-analyzer`
 - `execute.md` (command) spawns a fresh `autopilot-task-runner` for each task
-- `autopilot-task-runner` spawns `autopilot-tester` (writes tests), then runs tests via Bash, spawns `autopilot-coder` (with test files), runs tests via Bash again, then `autopilot-analyzer` and `autopilot-refactorer`
-- `handoff-writer` generates handoff artifacts after task completion
+- `autopilot-task-runner` spawns `autopilot-tester` (writes tests), then runs tests via Bash, spawns `autopilot-coder` (with test files), runs tests via Bash again, then `autopilot-analyzer` and `autopilot-refactorer`. It also writes `handoff.md` directly before exiting.
 - `session-summarizer` compresses context when approaching limits
+- `create-tasks` command converts PLAN.md to TODO.md inline (no subagent)
+- `oneshot-decomposer` handles both blueprint decomposition and clarifying question generation
 - Agents use `model: opus`, `model: sonnet`, or `model: haiku` in frontmatter
 
 ### Agent Harness Architecture
@@ -96,16 +98,14 @@ The autopilot system uses a hook-based Agent Harness architecture with TDD disci
     │   │   │   ├── 3. coder (implements to satisfy tests)
     │   │   │   ├── 4. Bash: run tests → expect GREEN (pass)
     │   │   │   ├── 5. analyzer (static analysis)
-    │   │   │   └── 6. refactorer (cleanup)
+    │   │   │   ├── 6. refactorer (cleanup)
+    │   │   │   └── 7. writes handoff.md directly
     │   │   │
     │   │   ├── PostToolUse Hook: save-state.sh
     │   │   │   └── Writes current.json state tracker
-    │   │   ├── PostToolUse Hook: commit.sh
-    │   │   │   └── Triggers auto-commit on uncommitted changes
     │   │   └── SubagentStop Hook: on-agent-complete.sh
-    │   │       └── Auto-commits, generates handoff.md, checks context
+    │   │       └── Auto-commits, checks context
     │   │
-    │   ├── Spawn Task(handoff-writer) for context handoff
     │   └── Parse <task-completed> / <task-failed> status
     │
     └── Step 5: Present final summary
@@ -113,12 +113,11 @@ The autopilot system uses a hook-based Agent Harness architecture with TDD disci
 
 Key components:
 - **execute.md** - Lightweight loop owner; spawns fresh task-runners
-- **autopilot-task-runner** - Executes a single task with TDD loop (write tests → red → code → green → analyze → refactor) in a fresh context
+- **autopilot-task-runner** - Executes a single task with TDD loop (write tests → red → code → green → analyze → refactor → handoff) in a fresh context
 - **autopilot-tester** - Writes tests based on task requirements (does not run them)
 - **autopilot-coder** - Implements code to satisfy pre-written tests
-- **handoff-writer** - Generates handoff.md for context preservation
 - **session-summarizer** - Compresses context when approaching token limits
-- **Hooks** - PreToolUse loads context, PostToolUse saves state and commits, SubagentStop triggers handoff and auto-commit
+- **Hooks** - PreToolUse loads context, PostToolUse saves state, SubagentStop auto-commits and checks context
 
 ## Slash Commands
 

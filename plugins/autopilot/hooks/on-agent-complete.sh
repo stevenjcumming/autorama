@@ -94,6 +94,15 @@ if [ -z "$TASK_ID" ] && [ -n "$AGENT_OUTPUT" ]; then
   fi
 fi
 
+# Extract commit type from task-completed tag (default: feat)
+COMMIT_TYPE="feat"
+if [ -n "$AGENT_OUTPUT" ]; then
+  PARSED_TYPE=$(echo "$AGENT_OUTPUT" | grep -oE '<task-completed[^>]*type="[^"]*"' | grep -oE 'type="[^"]*"' | head -1 | sed 's/type="//;s/"//' || echo "")
+  if [ -n "$PARSED_TYPE" ]; then
+    COMMIT_TYPE="$PARSED_TYPE"
+  fi
+fi
+
 # Only proceed if task was completed
 if [ "$TASK_COMPLETED" != "true" ]; then
   exit 0
@@ -103,24 +112,9 @@ fi
 SPEC_ID=$(basename "$SPEC_DIR")
 
 # ============================================================================
-# Load configuration
+# Auto-commit if there are changes
 # ============================================================================
 
-COMMIT_TEMPLATE="feat({spec_id}): complete {task_id} - {task_summary}"
-
-if command -v yq &> /dev/null && [ -f ".claude/autopilot.yml" ]; then
-  # Read commit message template
-  TEMPLATE=$(yq -r '.auto_commit.message_template // empty' .claude/autopilot.yml 2>/dev/null)
-  if [ -n "$TEMPLATE" ]; then
-    COMMIT_TEMPLATE="$TEMPLATE"
-  fi
-fi
-
-# ============================================================================
-# Auto-commit if enabled
-# ============================================================================
-
-# Always auto-commit changes
 {
   # Check if there are changes to commit (staged, unstaged, or untracked)
   UNTRACKED=$(git ls-files --others --exclude-standard 2>/dev/null | head -1 || true)
@@ -137,37 +131,31 @@ fi
       TASK_SUMMARY="task completion"
     fi
 
-    # Build commit message from template
-    COMMIT_MSG="$COMMIT_TEMPLATE"
-    COMMIT_MSG="${COMMIT_MSG//\{spec_id\}/$SPEC_ID}"
-    COMMIT_MSG="${COMMIT_MSG//\{task_id\}/$TASK_ID}"
-    COMMIT_MSG="${COMMIT_MSG//\{task_summary\}/$TASK_SUMMARY}"
+    # Build conventional commit message with body
+    COMMIT_HEADER="${COMMIT_TYPE}(${SPEC_ID}): ${TASK_SUMMARY}"
+
+    # Body: long-term context with task and file details
+    CHANGED_FILES=$(git diff --cached --name-only 2>/dev/null || git diff --name-only 2>/dev/null || echo "")
+    if [ -z "$CHANGED_FILES" ]; then
+      CHANGED_FILES=$(git ls-files --others --exclude-standard 2>/dev/null | head -20 || echo "")
+    fi
+    FILE_COUNT=$(echo "$CHANGED_FILES" | grep -c . 2>/dev/null || echo "0")
+
+    COMMIT_BODY="Complete ${TASK_ID} for spec ${SPEC_ID}.
+
+Files changed: ${FILE_COUNT}
+Task: ${TASK_ID}"
 
     # Stage and commit
     git add -A
 
-    # Create commit with Co-Authored-By
-    git commit -m "$COMMIT_MSG
+    git commit -m "${COMMIT_HEADER}
 
-Co-Authored-By: Claude <noreply@anthropic.com>" 2>/dev/null || true
+${COMMIT_BODY}" 2>/dev/null || true
 
     echo "<auto-commit spec=\"$SPEC_ID\" task=\"$TASK_ID\" />"
   fi
 }
-
-# ============================================================================
-# Signal handoff generation needed
-# ============================================================================
-
-# Output directive for the execute command to spawn handoff-writer agent.
-# The handoff-writer agent produces richer context-aware handoffs than
-# inline shell generation.
-TASK_DESC=""
-if [ -n "$TASK_ID" ] && [ -f "$SPEC_DIR/TODO.md" ]; then
-  TASK_DESC=$(grep -F "$TASK_ID" "$SPEC_DIR/TODO.md" | sed 's/.*\] //' | head -1 || echo "task completion")
-fi
-
-echo "<handoff-needed spec_dir=\"$SPEC_DIR\" task_id=\"$TASK_ID\" task_status=\"completed\" agent=\"$AGENT_NAME\" task_desc=\"$TASK_DESC\" />"
 
 # ============================================================================
 # Check context limits and trigger session summary if needed

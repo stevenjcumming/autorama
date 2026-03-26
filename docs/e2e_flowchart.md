@@ -48,7 +48,7 @@ Requirements ──> [1] Spec ──> HUMAN ──> [2] Plan ──> HUMAN ─�
                |  │      └──── if changes made ────────────┘     │      |
                |  │                                              │      |
                |  │  Hooks: save-state, commit                   │      |
-               |  │  Hook: on-agent-complete (handoff, context)  │      |
+               |  │  Hook: on-agent-complete (commit, context)    │      |
                |  └──────────────────────────────────────────────┘      |
                |                                                        |
                |  (repeats for each task)                                |
@@ -136,7 +136,7 @@ HUMAN ACTION
 /autopilot:create-tasks <id>
     |
     v
-task-builder (sonnet, leaf)
+create-tasks command (inline)
     |
     ├── Reads PLAN.md
     └── Creates TODO.md (phased, atomic tasks with IDs)
@@ -151,7 +151,7 @@ HUMAN ACTION
 ```
 
 **Command**: `/autopilot:create-tasks <id>`
-**Agents**: `task-builder`
+**Agents**: None (command writes TODO.md inline)
 **Artifacts Generated**: `TODO.md`
 **Human Action**: Review tasks, verify ordering, approve
 
@@ -216,8 +216,7 @@ HUMAN ACTION
 │  │                          v                                         │  │
 │  │  ┌─── HOOK: SubagentStop (on-agent-complete.sh) ─────────────────┐ │  │
 │  │  │  1. Auto-commit (git add -A, commit with task summary)        │ │  │
-│  │  │  2. Signal <handoff-needed> for execute to spawn handoff-writer│ │  │
-│  │  │  3. Check context limits (check-context.sh)                   │ │  │
+│  │  │  2. Check context limits (check-context.sh)                   │ │  │
 │  │  │     ├── OK (<150k tokens): continue                           │ │  │
 │  │  │     ├── WARNING (150-200k): emit <context-warning>            │ │  │
 │  │  │     └── CRITICAL (>200k): emit <context-critical>             │ │  │
@@ -238,7 +237,7 @@ HUMAN ACTION
 ```
 
 **Command**: `/autopilot:execute <id> [T<n>|P<n>]`
-**Agents**: `autopilot-task-runner` (fresh per task) -> `autopilot-tester`, `autopilot-coder`, `autopilot-analyzer`, `autopilot-refactorer`; `session-summarizer`
+**Agents**: `autopilot-task-runner` (fresh per task) -> `autopilot-tester`, `autopilot-coder`, `autopilot-analyzer`, `autopilot-refactorer`; `session-summarizer` (on context-critical)
 **Human Action**: Optional review between tasks
 
 ---
@@ -327,23 +326,18 @@ HUMAN ACTION
 │     │                                                           │
 │  2. (Agent executes task)                                       │
 │     │                                                           │
-│  3a. PostToolUse ─── save-state.sh (30s timeout)                │
+│  3. PostToolUse ─── save-state.sh (30s timeout)                 │
 │     │  Matcher: Task                                            │
 │     │  Output: artifacts/state/current.json                     │
 │     │    { last_agent, last_task, task_completed, timestamp }   │
-│     │                                                           │
-│  3b. PostToolUse ─── commit.sh (10s timeout)                    │
-│     │  Matcher: Write|Edit|Bash                                 │
-│     │  Output: <skill-invoke> for auto-commit                   │
 │     │                                                           │
 │  4. SubagentStop ─── on-agent-complete.sh (60s timeout)         │
 │     │  Matcher: None (fires for all subagents, filters inside)  │
 │     │  Actions:                                                 │
 │     │    a) Auto-commit ──> <auto-commit>                       │
-│     │    b) Signal handoff needed ──> <handoff-needed>           │
-│     │    c) Check context ──> <context-warning> or              │
+│     │    b) Check context ──> <context-warning> or              │
 │     │                         <context-critical>                │
-│     │    d) Always ──> <agent-completed>                        │
+│     │    c) Always ──> <agent-completed>                        │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
 ```
@@ -356,20 +350,14 @@ HUMAN ACTION
 Task N completes
     |
     v
+autopilot-task-runner ──> writes handoff.md (Step 8)
+    |
+    v
 save-state.sh ──> writes current.json
     |
     v
 on-agent-complete.sh
     ├── Auto-commit (git add -A, commit)
-    ├── Signal <handoff-needed> (execute command spawns handoff-writer)
-    │     ├── Completed Task (ID, status, timestamp)
-    │     ├── Session Summary (300-500 tokens)
-    │     ├── Files Modified
-    │     ├── Key Decisions
-    │     ├── Next Task Context
-    │     ├── Blockers
-    │     ├── Warnings
-    │     └── Artifacts Generated
     └── Check context limits
           |
           ├── CRITICAL ──> session-summarizer ──> SESSION_SUMMARY.md
@@ -409,7 +397,7 @@ All artifacts written to `.claude/specs/<id>/artifacts/` unless noted.
 | Artifact | Hook | Trigger |
 |----------|------|---------|
 | `state/current.json` | save-state.sh | After each task agent completes |
-| `handoff/handoff.md` | handoff-writer agent (spawned by execute command) | After each task completes |
+| `handoff/handoff.md` | autopilot-task-runner (Step 8) | After each task completes |
 | `handoff/SESSION_SUMMARY.md` | session-summarizer (via execute command) | Context usage critical (>200k tokens) |
 
 ### Generated During Other Stages
@@ -455,7 +443,7 @@ All artifacts written to `.claude/specs/<id>/artifacts/` unless noted.
                        ├── plan-researcher (sonnet)
                        └── plan-analyzer (sonnet)
 
-/autopilot:create-tasks ────── task-builder (sonnet, leaf)
+/autopilot:create-tasks ────── (inline, no agent — command writes TODO.md directly)
 
 /autopilot:execute (command — lightweight loop owner)
                        ├── autopilot-task-runner (opus, fresh per task)
@@ -464,8 +452,6 @@ All artifacts written to `.claude/specs/<id>/artifacts/` unless noted.
                        │     ├── autopilot-analyzer (sonnet)
                        │     └── autopilot-refactorer (sonnet)
                        └── session-summarizer (haiku)
-
-(via execute) ─────── handoff-writer (haiku, leaf)
 ```
 
 ---

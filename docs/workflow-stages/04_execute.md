@@ -32,10 +32,8 @@ Autopilot uses an **Agent Harness** architecture where background agents complet
     │   │   │   └── Logs agent spawn to usage.jsonl
     │   │   ├── PostToolUse Hook: save-state.sh
     │   │   │   └── Writes current.json state tracker
-    │   │   ├── PostToolUse Hook: commit.sh
-    │   │   │   └── Signals commit skill on uncommitted changes
     │   │   └── SubagentStop Hook: on-agent-complete.sh
-    │   │       └── Auto-commits, signals handoff generation, checks context
+    │   │       └── Auto-commits, checks context limits
     │   │
     │   └── Parse <task-completed> / <task-failed> status
     │
@@ -94,10 +92,6 @@ coding_skills:
 testing_skills: []
 refactoring_skills: []
 
-# Auto-commit configuration
-auto_commit:
-  message_template: "feat({spec_id}): complete {task_id} - {task_summary}"
-
 # Static analysis configuration
 static_analysis:
   enabled: true                   # Master switch (default: true)
@@ -155,7 +149,7 @@ The coder agent dynamically selects skills based on task context. See [Skills do
 
 ### Handoff Artifacts
 
-Autopilot generates handoff artifacts after each task via the `handoff-writer` agent. Each handoff includes:
+Autopilot generates handoff artifacts after each task. The `autopilot-task-runner` writes `handoff.md` directly as its final step (Step 8). Each handoff includes:
 
 1. **Session summary** - Compressed context of what was accomplished
 2. **Files modified** - List of changes with types and descriptions
@@ -168,25 +162,18 @@ Handoff artifacts are stored at `.claude/specs/<identifier>/artifacts/handoff/ha
 
 ### Auto-Commit
 
-Autopilot commits changes at two points:
+Autopilot auto-commits on task completion via the `on-agent-complete.sh` SubagentStop hook, which stages all modified files and creates a commit with conventional message format including task ID and summary.
 
-1. **During task execution** - The `commit.sh` PostToolUse hook detects uncommitted changes after Write/Edit/Bash operations and signals the commit skill
-2. **On task completion** - The `on-agent-complete.sh` SubagentStop hook stages all modified files and creates a commit with conventional message format including task ID and summary
+Auto-commits follow [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) format with a body for long-term context. The commit type (feat, fix, refactor, test, etc.) is chosen by the task-runner based on the nature of the changes. See `agents/references/conventional-commits.md` for the full reference.
 
-**Configuration:**
-
-The commit message template can be customized in `.claude/autopilot.yml`:
-
-```yaml
-auto_commit:
-  message_template: "feat({spec_id}): complete {task_id} - {task_summary}"
+Example auto-commit:
 ```
+feat(auth-refactor): add password validation
 
-Example commit message:
-```
-feat(auth-refactor): complete T3 - Add password validation
+Complete [T3] for spec auth-refactor.
 
-Co-Authored-By: Claude <noreply@anthropic.com>
+Files changed: 4
+Task: [T3]
 ```
 
 ### Justification Configuration
@@ -269,8 +256,7 @@ justification:
 │   ├── load-context.sh (PreToolUse/Task) - Loads handoff context and current task
 │   ├── log-skill-usage.sh (PreToolUse/Task) - Logs agent spawn to usage.jsonl
 │   ├── save-state.sh (PostToolUse/Task) - Writes current.json
-│   ├── commit.sh (PostToolUse/Write|Edit|Bash) - Signals commit skill
-│   └── on-agent-complete.sh (SubagentStop) - Auto-commit, handoff signal, context check
+│   └── on-agent-complete.sh (SubagentStop) - Auto-commit, context check
 └── Repeats until all tasks done or failure
 ```
 
@@ -283,7 +269,6 @@ justification:
 | `autopilot-coder` | Implement task with justifications | Code changes, artifacts |
 | `autopilot-analyzer` | Run static analysis tools | Issue reports, fix instructions |
 | `autopilot-refactorer` | Clean up after implementation | Refactored code |
-| `handoff-writer` | Generate handoff artifacts | handoff.md with context |
 | `session-summarizer` | Compress session context | Summary for next agent |
 
 ## Main Loop Logic
@@ -338,10 +323,11 @@ for each task in tasks:
         # Step 6: Generate artifacts
         # Step 7: Update TODO.md
         mark_task_complete()
+        # Step 8: Write handoff.md directly
+        write_handoff(task)
         output <task-completed>
 
     # After task-runner completes:
-    spawn handoff-writer(task) if <handoff-needed>
     parse result status
     if failed: output failure, exit loop
 ```
@@ -462,7 +448,6 @@ plugins/autopilot/
 │   ├── autopilot-coder.md      # Implementation + artifacts
 │   ├── autopilot-analyzer.md   # Static analysis + fix instructions
 │   ├── autopilot-refactorer.md # Code cleanup
-│   ├── handoff-writer.md       # Generates handoff artifacts
 │   ├── session-summarizer.md   # Context compression
 │   └── references/             # Progressive disclosure docs
 │       ├── test-frameworks.md
@@ -485,7 +470,6 @@ plugins/autopilot/
 │   ├── load-context.sh         # PreToolUse context loader (Task)
 │   ├── log-skill-usage.sh      # PreToolUse agent spawn logger (Task)
 │   ├── save-state.sh           # PostToolUse state saver (Task)
-│   ├── commit.sh               # PostToolUse commit signal (Write|Edit|Bash)
 │   └── on-agent-complete.sh    # SubagentStop handler
 └── templates/
     ├── autopilot.yml           # Config template for user projects

@@ -11,7 +11,7 @@ The autopilot plugin delegates work through a tree of specialized agents. Each a
                     ├── plan-researcher (sonnet)
                     └── plan-analyzer (sonnet)
 
-/autopilot:create-tasks ──── task-builder (sonnet, leaf)
+/autopilot:create-tasks ──── (inline, no agent — command writes TODO.md directly)
 
 /autopilot:execute (command — lightweight loop owner)
                   ├── autopilot-task-runner (opus, fresh per task)
@@ -19,7 +19,6 @@ The autopilot plugin delegates work through a tree of specialized agents. Each a
                   │     ├── autopilot-coder (opus)
                   │     ├── autopilot-analyzer (sonnet)
                   │     └── autopilot-refactorer (sonnet)
-                  ├── handoff-writer (haiku, after each task)
                   └── session-summarizer (haiku, on context-critical)
 ```
 
@@ -30,8 +29,8 @@ Agents are assigned to model tiers based on the complexity of their work.
 | Tier | Model | Agents | Role |
 |------|-------|--------|------|
 | **Heavy** | Opus | autopilot-task-runner, autopilot-coder, plan-builder | Complex reasoning, code generation, multi-step orchestration |
-| **Medium** | Sonnet | autopilot-tester, autopilot-analyzer, autopilot-refactorer, plan-researcher, plan-analyzer, task-builder | Test writing, structured analysis, pattern matching, sequential tasks |
-| **Light** | Haiku | handoff-writer, session-summarizer | Template filling, text compression |
+| **Medium** | Sonnet | autopilot-tester, autopilot-analyzer, autopilot-refactorer, plan-researcher, plan-analyzer | Test writing, structured analysis, pattern matching, sequential tasks |
+| **Light** | Haiku | session-summarizer | Text compression |
 
 The general rule: agents that write code or make architectural decisions use Opus. Agents that analyze, search, or follow structured procedures use Sonnet. Agents that produce formulaic output use Haiku.
 
@@ -71,15 +70,7 @@ Reviews and validates the draft plan against the spec, checking for gaps, risks,
 
 ### Task Stage
 
-#### `task-builder`
-
-Converts `PLAN.md` into a phased `TODO.md` checklist with task IDs, dependencies, and acceptance criteria.
-
-| Field | Value |
-|-------|-------|
-| Model | Sonnet |
-| Tools | Read, Edit |
-| Spawns | (none) |
+The `create-tasks` command reads `PLAN.md` and writes `TODO.md` directly (inline) without spawning a separate agent.
 
 ### Autopilot Stage
 
@@ -101,6 +92,8 @@ tester → Bash(red) → coder → Bash(green) → analyzer → refactorer
 ```
 
 The tester writes tests, the task-runner executes them via Bash (expecting failure — red phase), the coder implements, the task-runner runs tests again via Bash (expecting pass — green phase), then analysis and refactoring.
+
+After completing the inner loop, the task-runner writes `handoff.md` directly (Step 8) to preserve context for the next task.
 
 Exit conditions: task passes all checks with no refactoring changes (success), or category-specific retry limit exceeded (failure).
 
@@ -161,17 +154,6 @@ Compresses the full session context into a 500-1000 token summary when context l
 | Spawns | (none) |
 | Output | `SESSION_SUMMARY.md` |
 
-#### `handoff-writer`
-
-Generates rich `handoff.md` artifacts by analyzing git diffs, artifacts, and decisions. Invoked by hooks or manually when deeper context preservation is needed.
-
-| Field | Value |
-|-------|-------|
-| Model | Haiku |
-| Tools | Read, Write, Glob, Bash |
-| Spawns | (none) |
-| Output | `handoff.md` |
-
 ## Delegation Patterns
 
 ### Sequential Delegation
@@ -184,7 +166,7 @@ Used when sub-agent outputs feed into each other. The parent spawns one child, w
 
 ### Fire-and-Forget
 
-Utility agents like session-summarizer and handoff-writer produce a file and exit. The caller doesn't need their return value beyond confirming the file was written.
+Utility agents like session-summarizer produce a file and exit. The caller doesn't need their return value beyond confirming the file was written.
 
 ## Tool Access Principles
 
@@ -192,7 +174,7 @@ Utility agents like session-summarizer and handoff-writer produce a file and exi
 - **Implementers** (coder, refactorer) get `Edit` and `Write` -- they modify files
 - **Test writers** (tester) get `Read`, `Edit`, `Write`, `Glob`, `Grep`, `Bash` -- they create test files
 - **Analyzers** (analyzer, researcher) get `Read`, `Grep`, `Glob`, `Bash` -- they observe and report
-- **Generators** (handoff-writer, session-summarizer) get `Write` for their specific output files
+- **Generators** (session-summarizer) get `Write` for their specific output files
 - No agent gets tools it doesn't need
 
 ## Related Documentation

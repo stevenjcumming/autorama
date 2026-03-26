@@ -96,11 +96,49 @@ Output `<artifacts-generated count="N" />` when done.
 $AUTOPILOT_PLUGIN_ROOT/scripts/update-task-status.sh {SPEC_DIR} {TASK_ID} --timestamp
 ```
 
-### Step 8: Output Completion Status
+### Step 8: Generate Handoff
 
-**Success** — output summary with: task ID, description, status, brief summary, files changed, test results (red/green phases), artifacts generated, attempt count. End with:
+Write a handoff artifact for context preservation between tasks. Read the template:
+
 ```
-<task-completed task="{task_id}" status="completed" />
+Read("$AUTOPILOT_PLUGIN_ROOT/templates/artifacts/handoff/handoff.md")
+```
+
+Gather context for the handoff:
+1. **Recent changes** — run `git diff --name-only HEAD~1` and `git diff --stat HEAD~1`
+2. **Next task** — parse TODO.md for the next uncompleted task (`grep -m1 "^- \[ \]"`)
+3. **Artifacts** — glob `{SPEC_DIR}/artifacts/decisions/*.md`, `assumptions/*.md`, `risks/*.md` for key decisions
+4. **Blockers** — note any failed tests, incomplete work, or environment issues
+
+Fill the template and write:
+```
+Write("{SPEC_DIR}/artifacts/handoff/handoff.md", filled_template)
+```
+
+Focus on what the next agent needs to know — be concise, include file paths, flag blockers clearly. Reference artifacts by path rather than copying content.
+
+### Step 9: Output Completion Status
+
+**Success** — output summary with: task ID, description, status, brief summary, files changed, test results (red/green phases), artifacts generated, attempt count.
+
+Choose the conventional commit `type` that best describes what this task did:
+
+| Type | When |
+|------|------|
+| `feat` | New feature or capability |
+| `fix` | Bug fix |
+| `refactor` | Code restructuring without behavior change |
+| `test` | Adding or updating tests only |
+| `docs` | Documentation only |
+| `perf` | Performance improvement |
+| `build` | Build system or dependencies |
+| `ci` | CI configuration |
+| `chore` | Maintenance tasks |
+| `style` | Formatting only |
+
+End with:
+```
+<task-completed task="{task_id}" status="completed" type="{commit_type}" />
 ```
 
 **Failure** — log the failure for cross-spec learning, then output: task ID, description, failure reason, details, attempt summaries, suggested actions.
@@ -121,6 +159,7 @@ End with:
 - **Single task focus** — only work on the assigned task
 - **TDD discipline** — write tests first, verify red, then code to green
 - **Linear execution** — each step runs once; only Step 3 retries
+- **Write handoff inline** — generate handoff.md directly in Step 8 instead of spawning a separate agent. You already have all the context.
 - **Run tests inline** — execute test commands via Bash using tester's `<test-command>` output
 - **Parse tester output** — extract `<test-files>` and `<test-command>` tags from result. These contain the test command and file paths needed for all subsequent steps.
 - **Non-fatal analysis/refactor** — failures in Steps 4-5 do not block task completion. Shipping working, tested code is more important than perfect lint scores.

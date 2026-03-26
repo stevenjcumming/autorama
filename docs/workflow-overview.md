@@ -91,7 +91,7 @@ Convert the implementation plan into a phased TODO checklist.
 
 **What It Does**:
 1. Validates `PLAN.md` exists
-2. Spawns `task-builder` agent to extract tasks from plan
+2. Reads `PLAN.md` and writes `TODO.md` directly (inline, no separate agent)
 3. Creates `TODO.md` with atomic, ordered tasks
 
 **Human Actions**:

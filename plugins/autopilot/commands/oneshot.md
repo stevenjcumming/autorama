@@ -66,29 +66,16 @@ Task(
 ```
 
 Parse the decomposer output to extract:
-- Spec list with IDs, titles, descriptions, and acceptance criteria
+- Spec list with IDs, titles, descriptions, and acceptance criteria (from `<oneshot-specs>`)
 - Dependency graph (which specs depend on which)
 - Execution order (topological sort of dependency graph)
+- Clarifying questions (from `<oneshot-questions>`)
 
 ## Step 3: Questions (unless --no-questions)
 
-If `--no-questions` is NOT set, spawn the `oneshot-questioner` agent:
+If `--no-questions` is NOT set, present the clarifying questions from the decomposer output to the user and await answers. After receiving answers, refine the spec list if needed based on the responses.
 
-```
-Task(
-  subagent_type="autopilot:oneshot-questioner",
-  prompt="Generate clarifying questions
-
-  BLUEPRINT_PATH={BLUEPRINT_PATH}
-  BLUEPRINT_CONTENT={blueprint_content}
-  SPEC_LIST={decomposed_spec_list}
-
-  Identify ambiguities, priorities, constraints, and scope questions.
-  Output structured question list."
-)
-```
-
-Present questions to the user and await answers. After receiving answers, refine the spec list if needed based on the responses.
+If `--no-questions` IS set, use the default answers provided with each question.
 
 ## Step 4: Generate Roadmap
 
@@ -178,15 +165,11 @@ Task(
 bash $AUTOPILOT_PLUGIN_ROOT/scripts/create-tasks.sh {spec_id}
 ```
 
-Then spawn the task-builder agent:
-```
-Task(
-  subagent_type="autopilot:task-builder",
-  prompt="Convert plan to tasks
-  SPEC_DIR=.claude/specs/{spec_id}
-  ..."
-)
-```
+Then read `PLAN.md` and convert it to `TODO.md` directly:
+1. Read `.claude/specs/{spec_id}/PLAN.md` to extract phases and changes
+2. Convert each change into an actionable task (one per file modification)
+3. Order tasks by dependency within each phase
+4. Write the complete task list to `TODO.md` with `[T1]`, `[T2]` IDs and `## P1:`, `## P2:` phase headers
 
 **d) Execute**
 

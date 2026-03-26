@@ -9,15 +9,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- **Updated README** - Improved "Quick Start" steps
+- **Updated README** — Improved "Quick Start" steps
+- **handoff-writer agent removed** — `handoff.md` is now written directly by `autopilot-task-runner` (Step 8) instead of spawning a separate agent; `on-agent-complete.sh` no longer emits `<handoff-needed>` signals
+- **task-builder agent removed** — The `create-tasks` command now reads `PLAN.md` and writes `TODO.md` directly (inline) instead of spawning a `task-builder` subagent
+- **oneshot-questioner agent removed** — Clarifying question generation is now part of `oneshot-decomposer`, which outputs both `<oneshot-specs>` and `<oneshot-questions>` tags; the `oneshot` command parses questions from decomposer output instead of spawning a separate questioner agent
+- **Conventional commits for auto-commits** — `on-agent-complete.sh` now generates commits following the [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) spec with a required body for long-term context. The commit type (feat, fix, refactor, test, etc.) is chosen by the task-runner and passed via the `type` attribute on `<task-completed>` tags
+- **Task-runner outputs commit type** — `<task-completed>` tag now includes `type="{commit_type}"` attribute; the task-runner evaluates what the task did and selects the appropriate conventional commit type
+- **`/autopilot:commit` reads conventional commits reference** — The commit command now reads `agents/references/conventional-commits.md` before creating commits, ensuring consistent format with required body
 
 ### Added
 
-- Add LICENSE.md - Add MIT license
+- **`conventional-commits.md` reference** — Progressive disclosure reference at `agents/references/` with commit structure, type table, scope rules, body guidelines, and examples. Used by the commit command and task-runner
+- Add LICENSE.md — Add MIT license
 
 ### Removed
 
-- **Delete single_task_mode references** - Removed referenced to `single_task_mode` from README.md and docs
+- **`commit.sh` hook removed** — The PostToolUse hook on `Write|Edit|Bash` that emitted `<skill-invoke skill="commit">` directives has been deleted. It was counterproductive: subagents couldn't act on skill invocations, wasting context tokens. Auto-commits are handled solely by `on-agent-complete.sh` (SubagentStop)
+- **`auto_commit.message_template` config removed** — The configurable commit template in `autopilot.yml` has been replaced by the standardized conventional commits format. Removed from `on-agent-complete.sh`, docs, and config references
+- **Co-Authored-By trailer removed** — Auto-commits no longer append `Co-Authored-By: Claude` footer; users can configure this via their git config and Claude settings
+- **Delete single_task_mode references** — Removed references to `single_task_mode` from README.md and docs
 
 ## [0.12.1] - 2026-02-23
 
@@ -41,7 +51,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - **`/autopilot:help` command** — Displays all available commands in workflow order with a typical workflow summary
-- **`commit.sh` hook registered** — Added as a PostToolUse hook on `Write|Edit|Bash` in `hooks.json`
 - **`generate-report.sh` integrated** — Called by `/autopilot:review` to produce a `SUMMARY.md` with artifact counts, deferred issues, and review hints
 
 ### Removed

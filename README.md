@@ -69,7 +69,6 @@ Configure via `.claude/autopilot.yml`. Run `/autopilot:init` to create from temp
 
 | Setting | Default | Description |
 |---------|---------|-------------|
-| `auto_commit.message_template` | conventional | Commit message format after each task |
 | `justification.categories` | (see config) | Require justification for flagged file categories |
 | `static_analysis.commands` | `[]` | Static analysis commands to run during autopilot |
 

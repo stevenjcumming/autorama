@@ -25,7 +25,7 @@ On completion, it marks the task `[x]` in TODO.md and outputs structured XML tha
 
 When Task 1 finishes and Task 2 starts, continuity is maintained via:
 
-- **handoff.md** — the `on-agent-complete.sh` hook emits a `<handoff-needed>` signal, then the execute command spawns the `handoff-writer` agent to generate it; loaded by the next task runner at initialization
+- **handoff.md** — written directly by the `autopilot-task-runner` as its final step (Step 8) before completing; loaded by the next task runner at initialization
 - **TODO.md** — the shared state file; completed tasks are checked off, so the execute command knows where to pick up
 - **SESSION_SUMMARY.md** — if context limits are hit, the `session-summarizer` compresses context
 

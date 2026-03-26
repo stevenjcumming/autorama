@@ -92,29 +92,10 @@ Task(
 )
 ```
 
-### 4.2: Generate Handoff
-
-After the task-runner completes, check if a `<handoff-needed>` tag was emitted (from the on-agent-complete hook). If so, spawn the `handoff-writer` agent to generate a rich handoff artifact:
-
-```
-Task(
-  subagent_type="autopilot:handoff-writer",
-  model="haiku",
-  prompt="Generate handoff artifact
-
-  SPEC_DIR={spec_dir from tag}
-  TASK_ID={task_id from tag}
-  TASK_STATUS={task_status from tag}
-  TASK_OUTPUT={task_desc from tag}
-
-  Generate handoff for context preservation between tasks."
-)
-```
-
-### 4.3: Parse Result
+### 4.2: Parse Result
 
 Inspect the task-runner result for status tags:
-- `<task-completed task="{task_id}" status="completed" />` — task succeeded
+- `<task-completed task="{task_id}" status="completed" type="{commit_type}" />` — task succeeded (type is the conventional commit type chosen by the task-runner)
 - `<task-completed task="{task_id}" status="failed" reason="{reason}" />` — task failed
 
 Also check for the artifact generation tag:
@@ -127,7 +108,7 @@ If the task succeeded (`status="completed"`) but the `<artifacts-generated>` tag
 
 This is an observability signal, not a hard gate — do not fail the task or spawn a fallback agent. The task-runner is opus and should reliably execute artifact generation as a numbered step.
 
-### 4.4: Handle Failure
+### 4.3: Handle Failure
 
 If the task failed:
 1. Output failure message:
@@ -149,7 +130,7 @@ If the task failed:
    ```
 2. Exit the loop
 
-### 4.5: Continue
+### 4.4: Continue
 
 Move to the next task in the queue.
 

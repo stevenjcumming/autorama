@@ -24,16 +24,13 @@
     "./agents/plan-builder.md",
     "./agents/plan-analyzer.md",
     "./agents/plan-researcher.md",
-    "./agents/task-builder.md",
     "./agents/autopilot-tester.md",
     "./agents/autopilot-coder.md",
     "./agents/autopilot-refactorer.md",
     "./agents/autopilot-analyzer.md",
     "./agents/autopilot-task-runner.md",
-    "./agents/handoff-writer.md",
     "./agents/session-summarizer.md",
-    "./agents/oneshot-decomposer.md",
-    "./agents/oneshot-questioner.md"
+    "./agents/oneshot-decomposer.md"
   ],
   "hooks": "./hooks/hooks.json"
 }
