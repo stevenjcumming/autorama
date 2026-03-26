@@ -5,14 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.13.0] - 2026-03-26
 
 ### Changed
 
 - **Updated README** — Improved "Quick Start" steps
 - **handoff-writer agent removed** — `handoff.md` is now written directly by `autopilot-task-runner` (Step 8) instead of spawning a separate agent; `on-agent-complete.sh` no longer emits `<handoff-needed>` signals
 - **task-builder agent removed** — The `create-tasks` command now reads `PLAN.md` and writes `TODO.md` directly (inline) instead of spawning a `task-builder` subagent
-- **oneshot-questioner agent removed** — Clarifying question generation is now part of `oneshot-decomposer`, which outputs both `<oneshot-specs>` and `<oneshot-questions>` tags; the `oneshot` command parses questions from decomposer output instead of spawning a separate questioner agent
 - **Conventional commits for auto-commits** — `on-agent-complete.sh` now generates commits following the [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) spec with a required body for long-term context. The commit type (feat, fix, refactor, test, etc.) is chosen by the task-runner and passed via the `type` attribute on `<task-completed>` tags
 - **Task-runner outputs commit type** — `<task-completed>` tag now includes `type="{commit_type}"` attribute; the task-runner evaluates what the task did and selects the appropriate conventional commit type
 - **`/autopilot:commit` reads conventional commits reference** — The commit command now reads `agents/references/conventional-commits.md` before creating commits, ensuring consistent format with required body

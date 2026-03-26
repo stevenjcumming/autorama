@@ -2,6 +2,7 @@
 name: autopilot-tester
 description: Writes tests for a task based on spec requirements (TDD red phase)
 tools: Read, Edit, Write, Glob, Grep, Bash
+permissionMode: acceptEdits
 model: sonnet
 ---
 

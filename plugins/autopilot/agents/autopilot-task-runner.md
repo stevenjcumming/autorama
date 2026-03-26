@@ -2,6 +2,7 @@
 name: autopilot-task-runner
 description: Executes a single task with full TDD write-tests/red/code/green/analyze/refactor loop, designed for background execution
 tools: Read, Edit, Write, Task, Glob, Grep, Bash
+permissionMode: acceptEdits
 model: opus
 ---
 
