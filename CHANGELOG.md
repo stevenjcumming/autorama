@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- **`/autopilot:sync-pr` detects default branch dynamically** — Context now detects the default branch via `git remote show origin` instead of hardcoding `main`
+- **`/autopilot:sync-pr` detects default branch dynamically** — Context now detects the default branch via `gh repo view` instead of hardcoding `main`; added `Bash(gh repo view:*)` to allowed-tools
 - **Commits and diff gathered at execution time** — Commits and diff are no longer in the context section (which would fail before the command runs); they're now gathered in step 5 using the detected default branch
 - **PR targets correct branch** — `gh pr create` explicitly sets `--base <default-branch>` so the PR targets the right branch
 
