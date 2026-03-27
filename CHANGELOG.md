@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.14.1] - 2026-03-27
+
+### Fixed
+
+- **`/autopilot:sync-pr` detects default branch dynamically** — Context now detects the default branch via `git remote show origin` instead of hardcoding `main`
+- **Commits and diff gathered at execution time** — Commits and diff are no longer in the context section (which would fail before the command runs); they're now gathered in step 5 using the detected default branch
+- **PR targets correct branch** — `gh pr create` explicitly sets `--base <default-branch>` so the PR targets the right branch
+
 ## [0.14.0] - 2026-03-27
 
 ### Added
