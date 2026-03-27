@@ -38,12 +38,32 @@ Sync the pull request for the current branch (create if it doesn't exist, update
 1. Check if `.claude/templates/pr_description.md` exists and read it for the template format
 2. Use the default branch from the Context section above as the base branch for all comparisons
 3. If on the default branch, create a new feature branch first based on the changes
-4. Push the current branch to origin with `git push -u origin HEAD`
-5. Get commits (`git log <default-branch>..HEAD --oneline`) and diff stats (`git diff <default-branch>...HEAD --stat`) for the PR description
-6. Check if a PR already exists for this branch using `gh pr view`
+4. Check if a PR already exists for this branch using `gh pr view`
+
+### If no PR exists (create flow):
+
+5. Push the current branch to origin with `git push -u origin HEAD`
+6. Get commits (`git log <default-branch>..HEAD --oneline`) and diff stats (`git diff <default-branch>...HEAD --stat`) for the PR description
 7. Analyze the commits and changes to generate a PR description following the template
-8. If no PR exists: create one using `gh pr create --base <default-branch>`
-9. If PR exists: update it using `gh pr edit --body "..."` (use PR number from arguments if provided)
+8. Create the PR using `gh pr create --base <default-branch>`
+
+### If PR exists (update flow):
+
+The goal is to **preserve the existing PR description** and only incorporate information from new unpushed commits. Do NOT rewrite or regenerate the entire description.
+
+5. Get the existing PR description using `gh pr view --json body -q .body`
+6. Determine which commits are not yet on the remote: `git log origin/<branch>..HEAD --oneline`
+7. If there are no unpushed commits, just report that the PR is up to date — do not edit the description
+8. If there are unpushed commits:
+   a. Push the current branch with `git push -u origin HEAD`
+   b. Get the diff stats for the new commits: `git diff origin/<branch>..HEAD --stat` (run this before pushing)
+   c. Generate a short summary of only the new changes based on the new commits and their diffs
+   d. Append the new summary to the **end of the existing `## Summary` section** (before the next `##` heading). If there is no `## Summary` section, append it to the end of the existing body
+   e. Update the PR using `gh pr edit --body "..."` with the merged description
+
+**Important**: Never remove or rewrite content that was already in the PR description (e.g., issue links, manual notes, custom sections).
+
+### General
 
 Use a HEREDOC to pass the body to gh pr create/edit.
 
