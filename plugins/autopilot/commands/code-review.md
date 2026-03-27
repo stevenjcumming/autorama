@@ -1,6 +1,6 @@
 ---
 description: Use when the user wants a structured code review of recent changes against a quality checklist (security, testing, error handling, performance). Works standalone or scoped to a spec. Outputs severity-bucketed findings.
-allowed-tools: Bash, Read, Write, Glob
+allowed-tools: Bash, Read, Write, Glob, Task
 argument-hint: [identifier] [--ref <ref>]
 ---
 
@@ -46,71 +46,37 @@ Load the code review checklist in this priority order:
 
 Read the checklist file.
 
-## Step 3: Perform Review
+## Step 3: Resolve Reviewer Agent
 
-Analyze the diff against each checklist item. For each violation found, create a finding with:
+Read `.claude/autopilot.yml` and check for `agents.reviewer`.
 
-- **Severity**: CRITICAL / HIGH / MEDIUM / LOW
-- **Title**: Short description of the finding
-- **Description**: What was found, with specific file paths and line numbers
-- **Impact**: What could go wrong if this isn't addressed
-- **Fix**: Suggested resolution
-- **Checklist Reference**: Which checklist item this relates to
+- If configured, use the specified agent name (e.g., `my-custom-reviewer`)
+- If not configured (or no config file), use the built-in default: `autopilot:autopilot-reviewer`
 
-### Severity Definitions
+## Step 4: Determine Output Path
 
-- **CRITICAL**: Security vulnerabilities, data loss risks, authentication/authorization bypasses, injection flaws
-- **HIGH**: Bugs causing incorrect behavior, significant regressions, race conditions, resource leaks
-- **MEDIUM**: Code quality issues — missing error handling, poor naming, insufficient validation, duplicated logic
-- **LOW**: Style issues, minor improvements, documentation gaps, non-idiomatic patterns
-
-## Step 4: Write Output
-
-Format the findings as a structured markdown report:
-
-```markdown
-# Code Review
-
-**Date:** {date}
-**Ref:** {diff_ref}
-**Files Changed:** {file_count}
-
-## Summary
-
-- CRITICAL: {count}
-- HIGH: {count}
-- MEDIUM: {count}
-- LOW: {count}
-
-## CRITICAL
-
-### {finding_title}
-**File:** `{file_path}:{line}`
-**Description:** {description}
-**Impact:** {impact}
-**Fix:** {fix}
-**Checklist:** {checklist_item}
-
-## HIGH
-...
-
-## MEDIUM
-...
-
-## LOW
-...
-
-## Checklist Coverage
-
-Items checked with no findings:
-- {item_1}
-- {item_2}
-```
-
-Write the output to:
 - **Spec mode** (identifier provided): `{SPEC_DIR}/artifacts/CODE_REVIEW.md`
 - **Standalone mode** (no identifier): `.claude/CODE_REVIEW.md`
 
-## Step 5: Present Results
+## Step 5: Spawn Reviewer Agent
 
-Display the review summary to the user with finding counts per severity level and highlight any CRITICAL or HIGH findings.
+Spawn the resolved agent via Task, passing all inputs:
+
+```
+Task({agent_name},
+  "Review code changes against checklist.
+  SPEC_DIR={SPEC_DIR} OUTPUT_PATH={OUTPUT_PATH}
+  <diff>{DIFF}</diff>
+  <diff-stat>{DIFF_STAT}</diff-stat>
+  <checklist>{CHECKLIST}</checklist>
+  Evaluate every checklist item against the diff. Write the review report to OUTPUT_PATH.")
+```
+
+The agent is responsible for:
+- Analyzing the diff against the checklist
+- Exploring codebase context as needed
+- Writing the structured report to `OUTPUT_PATH`
+
+## Step 6: Present Results
+
+Read `OUTPUT_PATH` and display the review summary to the user with finding counts per severity level. Highlight any CRITICAL or HIGH findings.

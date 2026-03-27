@@ -26,6 +26,7 @@
     "./agents/autopilot-tester.md",
     "./agents/autopilot-coder.md",
     "./agents/autopilot-refactorer.md",
+    "./agents/autopilot-reviewer.md",
     "./agents/autopilot-analyzer.md",
     "./agents/autopilot-task-runner.md",
     "./agents/session-summarizer.md"
