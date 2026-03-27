@@ -94,6 +94,7 @@ The final quality gate feeds into standard code review workflows.
 
 - [Execute Workflow](workflow-stages/04_execute.md)
 - [Review Workflow](workflow-stages/06_review.md)
-- [Submit Workflow](workflow-stages/07_submit.md)
+- [Code Review Workflow](workflow-stages/07_code_review.md)
+- [Submit Workflow](workflow-stages/08_submit.md)
 - [Artifacts](artifacts.md)
 - [Justifications](justifications.md)

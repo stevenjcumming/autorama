@@ -21,9 +21,12 @@ agents:
   tester: autopilot:autopilot-tester
   coder: autopilot:autopilot-coder
   refactorer: autopilot:autopilot-refactorer
+  reviewer: autopilot:autopilot-reviewer
 ```
 
 All fields are optional. When omitted, the built-in agent is used. Values use the `namespace:agent-name` format. Use this to swap in project-specific agents that follow different conventions.
+
+The `reviewer` agent is used by `/autopilot:code-review`. It receives the diff, diff stat, checklist, and output path. Override it to use a custom agent with domain-specific risk models, escalation routing, or project standards.
 
 ### Skills
 
@@ -140,6 +143,7 @@ agents:
   tester: autopilot:autopilot-tester
   coder: autopilot:autopilot-coder
   refactorer: autopilot:autopilot-refactorer
+  reviewer: autopilot:autopilot-reviewer
 
 coding_skills:
   - service-object-skill

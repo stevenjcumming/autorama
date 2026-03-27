@@ -7,6 +7,8 @@ agents:
   tester: autopilot:autopilot-tester        # Agent for running tests
   coder: autopilot:autopilot-coder          # Agent for implementing tasks
   refactorer: autopilot:autopilot-refactorer # Agent for cleanup/refactoring
+  reviewer: autopilot:autopilot-reviewer    # Agent for code review
+  # Override with your own: reviewer: my-custom-reviewer
 
 # Coding skills (optional)
 # List skills the coder agent can choose from based on task context
