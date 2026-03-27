@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.14.0] - 2026-03-27
+
+### Added
+
+- **Code review workflow docs** (`docs/workflow-stages/07_code_review.md`) — Covers command usage with all argument combinations, full review process flow (diff → checklist → agent → report), severity level definitions with examples, checklist configuration (3-tier priority resolution), custom reviewer agent section (why, how, input contract, example), and comparison table between `/autopilot:code-review` vs `/autopilot:review`
+
+### Changed
+
+- **Renumbered submit docs** — `07_submit.md` → `08_submit.md` to accommodate the new code review stage
+- **Updated evaluation pipeline docs** (`docs/evaluation_pipeline.md`) — Fixed submit link and added code review doc reference
+
 ## [0.13.0] - 2026-03-26
 
 ### Changed

@@ -1,6 +1,6 @@
 {
   "name": "autopilot",
-  "version": "0.13.0",
+  "version": "0.14.0",
   "description": "AI-autonomous software development toolkit with safety guardrails",
   "author": {
     "name": "Steven Cumming"
