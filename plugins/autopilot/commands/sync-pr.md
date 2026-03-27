@@ -1,5 +1,5 @@
 ---
-allowed-tools: Bash(git status:*), Bash(git diff:*), Bash(git log:*), Bash(git push:*), Bash(gh pr view:*), Bash(gh pr create:*), Bash(gh pr edit:*), Read
+allowed-tools: Bash(git status:*), Bash(git diff:*), Bash(git log:*), Bash(git push:*), Bash(git remote show:*), Bash(gh repo view:*), Bash(gh pr view:*), Bash(gh pr create:*), Bash(gh pr edit:*), Read
 description: Use when the user wants to create a new GitHub PR or update an existing PR's description for the current branch. Pushes the branch and generates a description from commits and diff.
 ---
 
@@ -11,8 +11,7 @@ $ARGUMENTS
 
 - Current branch: !`git branch --show-current`
 - Git status: !`git status`
-- Commits on this branch: !`git log main..HEAD --oneline`
-- Changes from main: !`git diff main...HEAD --stat`
+- Default branch: !`gh repo view --json defaultBranchRef -q .defaultBranchRef.name`
 
 ## Template
 
@@ -37,12 +36,14 @@ Use the PR description template from `.claude/templates/pr_description.md` if it
 Sync the pull request for the current branch (create if it doesn't exist, update if it does):
 
 1. Check if `.claude/templates/pr_description.md` exists and read it for the template format
-2. If on main/master branch, create a new feature branch first based on the changes
-3. Push the current branch to origin with `git push -u origin HEAD`
-4. Check if a PR already exists for this branch using `gh pr view`
-5. Analyze the commits and changes to generate a PR description following the template
-6. If no PR exists: create one using `gh pr create`
-7. If PR exists: update it using `gh pr edit --body "..."` (use PR number from arguments if provided)
+2. Use the default branch from the Context section above as the base branch for all comparisons
+3. If on the default branch, create a new feature branch first based on the changes
+4. Push the current branch to origin with `git push -u origin HEAD`
+5. Get commits (`git log <default-branch>..HEAD --oneline`) and diff stats (`git diff <default-branch>...HEAD --stat`) for the PR description
+6. Check if a PR already exists for this branch using `gh pr view`
+7. Analyze the commits and changes to generate a PR description following the template
+8. If no PR exists: create one using `gh pr create --base <default-branch>`
+9. If PR exists: update it using `gh pr edit --body "..."` (use PR number from arguments if provided)
 
 Use a HEREDOC to pass the body to gh pr create/edit.
 
