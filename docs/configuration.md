@@ -51,10 +51,6 @@ refactoring_skills:
   - dry-refactor-skill
 ```
 
-### Auto-Commit
-
-Auto-commits use [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) format with a body for long-term context. The format is `<type>(<spec_id>): <task_summary>` with task ID and file count in the body. The commit type (feat, fix, refactor, test, etc.) is chosen by the task-runner based on the nature of the changes. Auto-commit always runs when there are uncommitted changes after a task completes.
-
 ### Justification
 
 Require written justifications when modifying certain file categories.

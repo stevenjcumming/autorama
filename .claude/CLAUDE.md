@@ -100,10 +100,8 @@ The autopilot system uses a hook-based Agent Harness architecture with TDD disci
     │   │   │   ├── 6. refactorer (cleanup)
     │   │   │   └── 7. writes handoff.md directly
     │   │   │
-    │   │   ├── PostToolUse Hook: save-state.sh
-    │   │   │   └── Writes current.json state tracker
     │   │   └── SubagentStop Hook: on-agent-complete.sh
-    │   │       └── Auto-commits, checks context
+    │   │       └── Checks context limits
     │   │
     │   └── Parse <task-completed> / <task-failed> status
     │
@@ -116,7 +114,7 @@ Key components:
 - **autopilot-tester** - Writes tests based on task requirements (does not run them)
 - **autopilot-coder** - Implements code to satisfy pre-written tests
 - **session-summarizer** - Compresses context when approaching token limits
-- **Hooks** - PreToolUse loads context, PostToolUse saves state, SubagentStop auto-commits and checks context
+- **Hooks** - PreToolUse loads context, SubagentStop checks context limits
 
 ## Slash Commands
 

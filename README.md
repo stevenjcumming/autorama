@@ -58,7 +58,7 @@ See [docs/workflow-overview.md](docs/workflow-overview.md) for detailed stage de
 
 - **Human checkpoints** - Review stage requires approval before submission
 - **Automatic pause** - Stops on repeated violations and human review flags
-- **Incremental changes** - Small, reviewable tasks with auto-commits after each completion
+- **Incremental changes** - Small, reviewable tasks with clean handoffs between each completion
 - **Artifact trail** - Decisions, assumptions, risks, and justifications documented per spec
 - **Context preservation** - Handoff artifacts ensure continuity between task agents
 - **Continuous improvement** - Rules in `.claude/rules/` inform future sessions

@@ -9,9 +9,7 @@ Task N completes
     ↓
 autopilot-task-runner → Writes handoff.md directly (Step 8)
     ↓
-save-state.sh (PostToolUse) → Writes current.json with task status
-    ↓
-on-agent-complete.sh (SubagentStop) → Auto-commits, checks context limits
+on-agent-complete.sh (SubagentStop) → Checks context limits
     ↓  (if critical)
 session-summarizer → Writes SESSION_SUMMARY.md
     ↓
@@ -47,7 +45,7 @@ The template lives at `plugins/autopilot/templates/artifacts/handoff/handoff.md`
 
 ## 2. Hook Pipeline
 
-Three hooks coordinate the handoff lifecycle. They are defined in `plugins/autopilot/hooks/hooks.json` and execute automatically during the autopilot loop.
+Two hooks coordinate the handoff lifecycle. They are defined in `plugins/autopilot/hooks/hooks.json` and execute automatically during the autopilot loop.
 
 ### `load-context.sh` (PreToolUse)
 
@@ -63,39 +61,21 @@ Fires before each `autopilot-*` Task agent is spawned. Loads context from the pr
 
 The hook delegates to `read-handoff.sh` when available, falling back to manual file reads if the script is missing.
 
-### `save-state.sh` (PostToolUse)
-
-Fires after each `autopilot-*` Task agent completes. Writes lightweight state tracking to `{SPEC_DIR}/artifacts/state/current.json`.
-
-**State tracked:**
-
-```json
-{
-  "last_agent": "autopilot-task-runner",
-  "last_task": "T1",
-  "task_completed": true,
-  "timestamp": "2025-01-15T10:30:00Z",
-  "spec_dir": ".claude/specs/my-feature"
-}
-```
-
-This file is a quick-reference for the execute command and other hooks to determine what just happened without parsing agent output.
-
 ### `on-agent-complete.sh` (SubagentStop)
 
-Fires when a subagent finishes. Handles the heavier post-task work:
+Fires when a subagent finishes. Checks context limits and signals completion.
 
-1. **Auto-commit** -- stages all changes, creates a commit with the task summary as the message
-2. **Check context limits** -- calls `check-context.sh` and emits `<context-warning>` or `<context-critical>` tags
+1. **Check context limits** -- calls `check-context.sh` and emits `<context-warning>` or `<context-critical>` tags
 
 **Output tags:**
 
 | Tag | Meaning |
 |-----|---------|
-| `<auto-commit>` | Commit was created |
 | `<context-warning>` | Context usage is high |
 | `<context-critical>` | Context usage is critical, summarization needed |
 | `<agent-completed>` | Agent finished (always emitted) |
+
+Use `/autopilot:commit` to commit changes after tasks complete.
 
 ## 3. Session Summarization
 

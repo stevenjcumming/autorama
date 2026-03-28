@@ -118,14 +118,13 @@ Execute Command
     ├── Load context (handoff)
     ├── Spawn Task Agent (background)
     │   └── Test → Code → Analysis → Refactor
-    ├── Save state (handoff, commit)
+    ├── Save handoff context
     └── Continue to next task
 ```
 
 **Key features**:
 - **Fresh context per task** - Each task agent starts clean
 - **Handoff artifacts** - Context preserved between tasks
-- **Auto-commits** - Git history tracks each task completion
 
 #### Test Phase (Write Tests + Run)
 
@@ -170,7 +169,6 @@ Execute Command
 #### Loop Behavior
 
 - Continues Test → Code → Analysis → Refactor until tests pass and no refactoring needed
-- **Auto-commits** after each task completion (configurable)
 - **Generates handoff** with session summary for next task
 - Marks task complete in `TODO.md`
 - Moves to next task
