@@ -164,7 +164,7 @@ After all tasks in the queue have been processed, present a final summary:
 
 - **Minimal context per iteration** — The execute command never reads SPEC.md, PLAN.md, or config files. It only reads script output and task-runner status tags. This keeps per-iteration context growth minimal.
 - **Fresh context per task** — Each task-runner is a fresh agent with its own clean context window, preventing context accumulation across tasks.
-- **Hooks still fire** — Hooks trigger on Task tool usage, so auto-commit, handoff generation, and state saving all work as before.
+- **Hooks still fire** — Hooks trigger on Task tool usage, so handoff generation and context checks all work as before.
 
 ## Notes
 

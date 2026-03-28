@@ -11,9 +11,9 @@ Each test requires:
 
 ## Test Scenarios
 
-### T1: Single Task Completion with Auto-Commit
+### T1: Single Task Completion
 
-**Purpose:** Verify that a single task completes and auto-commits correctly.
+**Purpose:** Verify that a single task completes correctly.
 
 **Setup:**
 ```bash
@@ -33,14 +33,12 @@ echo "- [ ] [T1] Create hello.js with hello() function" > .claude/specs/test-sin
 **Expected Results:**
 - [ ] Task T1 is marked complete in TODO.md
 - [ ] hello.js file is created
-- [ ] Git commit exists with message matching `feat(test-single-task): complete T1 - *`
 - [ ] handoff.md is generated at `artifacts/handoff/handoff.md`
 
 **Verification Commands:**
 ```bash
 grep -q "\[x\] \[T1\]" .claude/specs/test-single-task/TODO.md
 test -f hello.js
-git log -1 --oneline | grep -q "feat(test-single-task)"
 test -f .claude/specs/test-single-task/artifacts/handoff/handoff.md
 ```
 
@@ -69,14 +67,12 @@ EOF
 
 **Expected Results:**
 - [ ] All 3 tasks are marked complete
-- [ ] 3 separate git commits exist (one per task)
 - [ ] handoff.md updated after each task
 - [ ] Session summaries included in handoffs
 
 **Verification:**
 ```bash
 grep -c "\[x\]" .claude/specs/test-multi-task/TODO.md  # Should be 3
-git log --oneline | head -3 | grep -c "feat(test-multi-task)"  # Should be 3
 ```
 
 ---
@@ -168,15 +164,13 @@ EOF
 
 **Expected Results:**
 - [ ] Task runner spawns via Task tool
-- [ ] PostToolUse hook (save-state.sh) triggers on Task completion
 - [ ] SubagentStop hook (on-agent-complete.sh) triggers on agent stop
-- [ ] Auto-commit and handoff directive are emitted after task completes
+- [ ] Context check and completion signal are emitted after task completes
 
 **Verification:**
 ```bash
 # Verify hook artifacts
 test -f .claude/specs/test-background/artifacts/handoff/handoff.md
-git log -1 --oneline | grep -q "feat(test-background)"
 ```
 
 ---
@@ -196,43 +190,20 @@ git log -1 --oneline | grep -q "feat(test-background)"
 
 ---
 
-### H2: PostToolUse Hook - State Saving
-
-**Purpose:** Verify state is saved after task completion.
-
-**Test:**
-1. Run autopilot on a single task
-2. Verify `current.json` is written to `artifacts/state/` by save-state.sh (Task matcher)
-
----
-
-### H3: SubagentStop Hook - Agent Complete
+### H2: SubagentStop Hook - Agent Complete
 
 **Purpose:** Verify on-agent-complete.sh triggers correctly.
 
 **Test:**
 1. Run a task to completion
-2. Verify auto-commit triggers on completed task
-3. Verify `<handoff-needed>` directive is emitted for the execute command
-4. Verify context check runs and emits `<context-warning>` or `<context-critical>` signals when appropriate
+2. Verify `<agent-completed>` signal is emitted
+3. Verify context check runs and emits `<context-warning>` or `<context-critical>` signals when appropriate
 
 ---
 
 ## Configuration Tests
 
-### C1: Auto-Commit Format
-
-**Expected:** Auto-commits use conventional commit format with body:
-```
-<type>(<spec_id>): <task_summary>
-
-Complete [T<n>] for spec <spec_id>.
-
-Files changed: <count>
-Task: [T<n>]
-```
-
-### C2: Custom Agent Overrides
+### C1: Custom Agent Overrides
 
 **Configuration:**
 ```yaml
@@ -289,11 +260,11 @@ done
 ## Success Criteria
 
 All scenarios must pass:
-- [ ] T1: Single task completion with auto-commit
+- [ ] T1: Single task completion
 - [ ] T2: Multi-task loop with handoffs
 - [ ] T3: Resume from incomplete state
 - [ ] T4: Context limit handling
 - [ ] T5: Background agent completion
-- [ ] H1-H3: Hook integration tests
-- [ ] C1-C2: Configuration tests
+- [ ] H1-H2: Hook integration tests
+- [ ] C1: Configuration tests
 - [ ] E1-E4: Error handling tests

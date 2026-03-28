@@ -145,7 +145,7 @@ Reviews recent changes and applies cleanup refactoring. If it makes changes, the
 
 #### `session-summarizer`
 
-Compresses the full session context into a 500-1000 token summary when context limits are approaching. Triggered by `on-agent-complete.sh` hook when context is critical.
+Compresses the full session context into a 500-1000 token summary when context limits are approaching. Triggered when `on-agent-complete.sh` hook emits `<context-critical>`.
 
 | Field | Value |
 |-------|-------|

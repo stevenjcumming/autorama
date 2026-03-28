@@ -38,7 +38,6 @@ mkdir -p \
   "$ARTIFACTS_DIR/risks" \
   "$ARTIFACTS_DIR/review_hints" \
   "$ARTIFACTS_DIR/debt" \
-  "$ARTIFACTS_DIR/handoff" \
-  "$ARTIFACTS_DIR/state"
+  "$ARTIFACTS_DIR/handoff"
 
 echo "CREATED:$ARTIFACTS_DIR"

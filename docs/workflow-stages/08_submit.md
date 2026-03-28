@@ -159,8 +159,7 @@ If no template file exists, the command falls back to a minimal format:
 ```
 /autopilot:execute
 ├── Test → Code → Refactor loop
-├── Changes accumulate
-└── on-agent-complete.sh auto-commits per task
+└── Changes accumulate
 
 /autopilot:review
 ├── Summarize changes and artifacts

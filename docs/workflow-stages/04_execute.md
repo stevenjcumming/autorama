@@ -30,10 +30,8 @@ Autopilot uses an **Agent Harness** architecture where background agents complet
     │   │   │
     │   │   ├── PreToolUse Hook: log-skill-usage.sh
     │   │   │   └── Logs agent spawn to usage.jsonl
-    │   │   ├── PostToolUse Hook: save-state.sh
-    │   │   │   └── Writes current.json state tracker
     │   │   └── SubagentStop Hook: on-agent-complete.sh
-    │   │       └── Auto-commits, checks context limits
+    │   │       └── Checks context limits
     │   │
     │   └── Parse <task-completed> / <task-failed> status
     │
@@ -43,7 +41,7 @@ Autopilot uses an **Agent Harness** architecture where background agents complet
 **Key benefits:**
 - **Fresh context per task** - Each task agent starts with clean context
 - **Clean handoffs** - Handoff artifacts preserve decisions
-- **Automatic commits** - Git history tracks each task completion
+- **Manual commits** - Use `/autopilot:commit` after tasks complete
 - **Background execution** - Task agents run in background via Task tool
 
 ## Command
@@ -160,22 +158,6 @@ Autopilot generates handoff artifacts after each task. The `autopilot-task-runne
 
 Handoff artifacts are stored at `.claude/specs/<identifier>/artifacts/handoff/handoff.md` and provide continuity between task agents.
 
-### Auto-Commit
-
-Autopilot auto-commits on task completion via the `on-agent-complete.sh` SubagentStop hook, which stages all modified files and creates a commit with conventional message format including task ID and summary.
-
-Auto-commits follow [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) format with a body for long-term context. The commit type (feat, fix, refactor, test, etc.) is chosen by the task-runner based on the nature of the changes. See `agents/references/conventional-commits.md` for the full reference.
-
-Example auto-commit:
-```
-feat(auth-refactor): add password validation
-
-Complete [T3] for spec auth-refactor.
-
-Files changed: 4
-Task: [T3]
-```
-
 ### Justification Configuration
 
 Customize when and how justifications are required for file modifications:
@@ -255,8 +237,7 @@ justification:
 ├── Hooks:
 │   ├── load-context.sh (PreToolUse/Task) - Loads handoff context and current task
 │   ├── log-skill-usage.sh (PreToolUse/Task) - Logs agent spawn to usage.jsonl
-│   ├── save-state.sh (PostToolUse/Task) - Writes current.json
-│   └── on-agent-complete.sh (SubagentStop) - Auto-commit, context check
+│   └── on-agent-complete.sh (SubagentStop) - Context limit check
 └── Repeats until all tasks done or failure
 ```
 
@@ -469,14 +450,12 @@ plugins/autopilot/
 │   ├── hooks.json              # Hook definitions
 │   ├── load-context.sh         # PreToolUse context loader (Task)
 │   ├── log-skill-usage.sh      # PreToolUse agent spawn logger (Task)
-│   ├── save-state.sh           # PostToolUse state saver (Task)
 │   └── on-agent-complete.sh    # SubagentStop handler
 └── templates/
     ├── autopilot.yml           # Config template for user projects
     └── artifacts/
-        ├── handoff/
-        │   └── handoff.md      # Handoff template
-        └── state/              # State tracking directory
+        └── handoff/
+            └── handoff.md      # Handoff template
 ```
 
 ### User Project Structure (in `.claude/`)
@@ -504,9 +483,8 @@ plugins/autopilot/
             ├── risks/
             ├── review_hints/
             ├── debt/
-            ├── handoff/
-            │   └── handoff.md
-            └── state/
+            └── handoff/
+                └── handoff.md
 ```
 
 ## Output

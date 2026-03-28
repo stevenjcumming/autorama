@@ -47,8 +47,7 @@ Requirements ──> [1] Spec ──> HUMAN ──> [2] Plan ──> HUMAN ─�
                |  │      ^                                 |     │      |
                |  │      └──── if changes made ────────────┘     │      |
                |  │                                              │      |
-               |  │  Hooks: save-state, commit                   │      |
-               |  │  Hook: on-agent-complete (commit, context)    │      |
+               |  │  Hook: on-agent-complete (context check)       │      |
                |  └──────────────────────────────────────────────┘      |
                |                                                        |
                |  (repeats for each task)                                |
@@ -209,14 +208,8 @@ HUMAN ACTION
 │  │  └──────────────────────────────────────────────────────────────┘  │  │
 │  │                          |                                         │  │
 │  │                          v                                         │  │
-│  │  ┌─── HOOK: PostToolUse (save-state.sh) ─────────────────────────┐ │  │
-│  │  │  Writes artifacts/state/current.json (task status tracker)    │ │  │
-│  │  └───────────────────────────────────────────────────────────────┘ │  │
-│  │                          |                                         │  │
-│  │                          v                                         │  │
 │  │  ┌─── HOOK: SubagentStop (on-agent-complete.sh) ─────────────────┐ │  │
-│  │  │  1. Auto-commit (git add -A, commit with task summary)        │ │  │
-│  │  │  2. Check context limits (check-context.sh)                   │ │  │
+│  │  │  1. Check context limits (check-context.sh)                   │ │  │
 │  │  │     ├── OK (<150k tokens): continue                           │ │  │
 │  │  │     ├── WARNING (150-200k): emit <context-warning>            │ │  │
 │  │  │     └── CRITICAL (>200k): emit <context-critical>             │ │  │
@@ -326,18 +319,12 @@ HUMAN ACTION
 │     │                                                           │
 │  2. (Agent executes task)                                       │
 │     │                                                           │
-│  3. PostToolUse ─── save-state.sh (30s timeout)                 │
-│     │  Matcher: Task                                            │
-│     │  Output: artifacts/state/current.json                     │
-│     │    { last_agent, last_task, task_completed, timestamp }   │
-│     │                                                           │
-│  4. SubagentStop ─── on-agent-complete.sh (60s timeout)         │
+│  3. SubagentStop ─── on-agent-complete.sh (60s timeout)         │
 │     │  Matcher: None (fires for all subagents, filters inside)  │
 │     │  Actions:                                                 │
-│     │    a) Auto-commit ──> <auto-commit>                       │
-│     │    b) Check context ──> <context-warning> or              │
+│     │    a) Check context ──> <context-warning> or              │
 │     │                         <context-critical>                │
-│     │    c) Always ──> <agent-completed>                        │
+│     │    b) Always ──> <agent-completed>                        │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
 ```
@@ -353,11 +340,7 @@ Task N completes
 autopilot-task-runner ──> writes handoff.md (Step 8)
     |
     v
-save-state.sh ──> writes current.json
-    |
-    v
 on-agent-complete.sh
-    ├── Auto-commit (git add -A, commit)
     └── Check context limits
           |
           ├── CRITICAL ──> session-summarizer ──> SESSION_SUMMARY.md
@@ -396,7 +379,6 @@ All artifacts written to `.claude/specs/<id>/artifacts/` unless noted.
 
 | Artifact | Hook | Trigger |
 |----------|------|---------|
-| `state/current.json` | save-state.sh | After each task agent completes |
 | `handoff/handoff.md` | autopilot-task-runner (Step 8) | After each task completes |
 | `handoff/SESSION_SUMMARY.md` | session-summarizer (via execute command) | Context usage critical (>200k tokens) |
 
