@@ -7,7 +7,7 @@
   "plugins": [
     {
       "name": "autopilot",
-      "version": "0.14.2",
+      "version": "0.14.3",
       "source": "./plugins/autopilot",
       "description": "AI-autonomous software development toolkit with structured workflows",
       "tags": ["automation", "workflows", "safety", "development", "testing"]
