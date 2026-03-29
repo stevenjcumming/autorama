@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.15.0] - 2026-03-29
+
+### Removed
+
+- **Agent overrides and skills removed from configuration** — `agents:` and `*_skills:` keys are no longer supported in `autopilot.yml`. The built-in agents are now fixed; `AVAILABLE_SKILLS` and skill selection logic removed from `autopilot-coder` and `autopilot-task-runner`. Custom reviewer agent support removed from `/autopilot:code-review`.
+
+### Added
+
+- **Static Analysis documented in configuration reference** — `docs/configuration.md` now includes a full `### Static Analysis` section covering the config schema, format options (`auto`/`json`/`text`), blocking behavior, per-rule fix attempt tracking, and debt artifact generation.
+
 ## [0.14.3] - 2026-03-28
 
 ### Removed
