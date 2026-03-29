@@ -6,7 +6,7 @@ Execute the Write Tests -> Red -> Code -> Green -> Analysis -> Refactor loop aut
 
 ## Architecture
 
-Autopilot uses an **Agent Harness** architecture where background agents complete individual tasks with clean handoffs between them:
+Autopilot uses an **Agent Harness** inspired architecture where background agents complete individual tasks with clean handoffs between them:
 
 ```
 /autopilot:execute (command — lightweight loop owner)
@@ -19,6 +19,8 @@ Autopilot uses an **Agent Harness** architecture where background agents complet
     │   │   │
     │   │   ├── PreToolUse Hook: load-context.sh
     │   │   │   └── Loads handoff context and current task
+    │   │   ├── PreToolUse Hook: log-skill-usage.sh
+    │   │   │   └── Logs agent spawn to usage.jsonl
     │   │   │
     │   │   ├── autopilot-task-runner (clean context)
     │   │   │   ├── 1. tester (writes tests)
@@ -28,8 +30,6 @@ Autopilot uses an **Agent Harness** architecture where background agents complet
     │   │   │   ├── 5. analyzer (static analysis)
     │   │   │   └── 6. refactorer (cleanup)
     │   │   │
-    │   │   ├── PreToolUse Hook: log-skill-usage.sh
-    │   │   │   └── Logs agent spawn to usage.jsonl
     │   │   └── SubagentStop Hook: on-agent-complete.sh
     │   │       └── Checks context limits
     │   │
@@ -75,21 +75,6 @@ Autopilot uses an **Agent Harness** architecture where background agents complet
 Autopilot can be customized via `.claude/autopilot.yml`:
 
 ```yaml
-# Override default agents
-agents:
-  tester: autopilot:autopilot-tester       # Or your custom tester
-  coder: autopilot:autopilot-coder         # Or your custom coder
-  refactorer: autopilot:autopilot-refactorer
-
-# Skills for dynamic selection (see workflows/05_skills.md)
-coding_skills:
-  - service-object-skill         # .claude/skills/service-object-skill/SKILL.md
-  - controller-skill
-  - react-component-skill
-
-testing_skills: []
-refactoring_skills: []
-
 # Static analysis configuration
 static_analysis:
   enabled: true                   # Master switch (default: true)
@@ -142,8 +127,6 @@ commands:
 
 If a configured command is not installed, autopilot logs a warning and continues. This allows the same config to work across different environments.
 
-
-The coder agent dynamically selects skills based on task context. See [Skills documentation](./05_skills.md) for details.
 
 ### Handoff Artifacts
 
@@ -463,9 +446,6 @@ plugins/autopilot/
 ```
 .claude/
 ├── autopilot.yml              # Configuration (optional, copy from template)
-├── skills/                    # Custom coding patterns (optional)
-│   └── <skill-name>/
-│       └── SKILL.md
 ├── artifacts/                 # Curated/promoted artifacts (user-managed)
 │   └── ...
 └── specs/

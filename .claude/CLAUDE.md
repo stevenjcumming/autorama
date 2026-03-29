@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Autopilot is a Claude Code plugin for AI-autonomous software development. It provides a structured framework with workflows, slash commands, and specialized agents for running safe development loops with human oversight.
+Autopilot is a Claude Code plugin for semi-autonomous software development. It provides a structured framework with workflows, slash commands, and specialized agents for running safe development loops with human oversight.
 
 ## Architecture
 

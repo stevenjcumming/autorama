@@ -165,7 +165,7 @@ If no template file exists, the command falls back to a minimal format:
 ├── Summarize changes and artifacts
 └── Human approval
 
-/autopilot:commit (for manual commits outside autopilot)
+/autopilot:commit
 ├── Stage changes (or use existing staging)
 └── Create conventional commit
 

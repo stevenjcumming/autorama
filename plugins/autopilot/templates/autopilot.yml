@@ -1,43 +1,24 @@
 # Autopilot Configuration
 # Copy this file to .claude/autopilot.yml and customize for your project
+# Requires `yq` to be installed; falls back to built-in defaults without it
 
-# Agent overrides (optional)
-# Replace default agents with your own implementations
-agents:
-  tester: autopilot:autopilot-tester        # Agent for running tests
-  coder: autopilot:autopilot-coder          # Agent for implementing tasks
-  refactorer: autopilot:autopilot-refactorer # Agent for cleanup/refactoring
-  reviewer: autopilot:autopilot-reviewer    # Agent for code review
-  # Override with your own: reviewer: my-custom-reviewer
-
-# Coding skills (optional)
-# List skills the coder agent can choose from based on task context
-# The agent will dynamically select the most appropriate skill(s)
-# Skills are loaded from .claude/skills/<skill-name>/SKILL.md
-coding_skills: []
-  # Examples:
-  # - service-object-skill      # For business logic 
-  # - controller-skill          # For Rails controllers
-  # - react-component-skill     # For React components
-  # - api-endpoint-skill        # For API routes
-
-# Testing skills (optional)
-# Skills available to the tester agent
-testing_skills: []
-  # Examples:
-  # - rspec-skill               # For RSpec test patterns
-  # - jest-skill                # For Jest/React testing
-
-# Refactoring skills (optional)
-# Skills available to the refactorer agent
-refactoring_skills: []
-  # Examples:
-  # - dry-refactor-skill        # For DRY principle refactoring
-  # - performance-skill         # For performance optimizations
+# Static analysis configuration (optional)
+# Customize what static analysis is run during TDD loop
+static_analysis:
+  enabled: true                   # Master switch (default: true)
+  commands:                       # Commands to run
+    - rubocop                     # Simple string form
+    - npm run lint
+    - command: eslint --format json src/
+      format: json                # auto, json, text (default: auto)
+    - command: reek -c .reek.yml --format json
+      format: json
+    - npm run typecheck
+  fail_on_warnings: false         # Block on warnings (default: false)
+  max_fix_attempts: 2             # Max fix attempts per issue (default: 2)
 
 # Justification configuration (optional)
 # Customize when and how justifications are required for file modifications
-# Requires `yq` to be installed; falls back to built-in defaults without it
 justification:
   # Custom categories for file pattern matching
   # Each category defines patterns (glob) and prompting questions

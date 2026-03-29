@@ -12,45 +12,6 @@ cp plugins/autopilot/templates/autopilot.yml .claude/autopilot.yml
 
 ## Reference
 
-### Agent Overrides
-
-Override the default agent used for each role in the autopilot loop.
-
-```yaml
-agents:
-  tester: autopilot:autopilot-tester
-  coder: autopilot:autopilot-coder
-  refactorer: autopilot:autopilot-refactorer
-  reviewer: autopilot:autopilot-reviewer
-```
-
-All fields are optional. When omitted, the built-in agent is used. Values use the `namespace:agent-name` format. Use this to swap in project-specific agents that follow different conventions.
-
-The `reviewer` agent is used by `/autopilot:code-review`. It receives the diff, diff stat, checklist, and output path. Override it to use a custom agent with domain-specific risk models, escalation routing, or project standards.
-
-### Skills
-
-Load skill files into agent context for domain-specific knowledge.
-
-```yaml
-coding_skills: []
-testing_skills: []
-refactoring_skills: []
-```
-
-Skills are loaded from `.claude/skills/{skill-name}/SKILL.md`. The coder agent dynamically selects appropriate skills per task based on file types and patterns.
-
-Example:
-```yaml
-coding_skills:
-  - service-object-skill
-  - react-component-skill
-testing_skills:
-  - jest-skill
-refactoring_skills:
-  - dry-refactor-skill
-```
-
 ### Justification
 
 Require written justifications when modifying certain file categories.
@@ -135,20 +96,6 @@ Requires `yq` for full functionality. Falls back to built-in defaults without it
 ## Full Example
 
 ```yaml
-agents:
-  tester: autopilot:autopilot-tester
-  coder: autopilot:autopilot-coder
-  refactorer: autopilot:autopilot-refactorer
-  reviewer: autopilot:autopilot-reviewer
-
-coding_skills:
-  - service-object-skill
-  - react-component-skill
-testing_skills:
-  - jest-skill
-refactoring_skills:
-  - dry-refactor-skill
-
 justification:
   categories:
     spec_modification:

@@ -1,6 +1,6 @@
 # Autopilot Workflow Stages
 
-A structured framework for AI-autonomous software development with human oversight.
+A structured framework for semi-autonomous software development with human oversight.
 
 ## Workflow Structure
 

@@ -20,7 +20,7 @@ Create a new spec folder with `REQUIREMENT.md` and `SPEC.md` files to begin the 
 
 - `{ticket_id}` - e.g., `PROJ-123`
 - `{N}` - e.g., `001`
-- `{date}-{slug}` - e.g., `2026-01-15-auth-refactor`
+- `{slug}` - e.g., `auth-refactor`
 
 ## What It Does
 

@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Create a `PLAN.md` implementation plan from an existing spec folder using automated research and analysis.
+Create a `PLAN.md` implementation plan from the contents of the specified spec folder using automated research and analysis.
 
 ## Command
 
