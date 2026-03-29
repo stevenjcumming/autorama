@@ -12,6 +12,39 @@ cp plugins/autopilot/templates/autopilot.yml .claude/autopilot.yml
 
 ## Reference
 
+### Static Analysis
+
+Run static analysis tools after tests pass and automatically fix blocking issues.
+
+```yaml
+static_analysis:
+  enabled: true                   # Master switch (default: true)
+  commands:
+    - rubocop                     # Simple string form
+    - npm run lint
+    - command: eslint --format json src/
+      format: json                # auto, json, text (default: auto)
+  fail_on_warnings: false         # Block on warnings (default: false)
+  max_fix_attempts: 2             # Max fix attempts per rule (default: 2)
+```
+
+Commands can be specified as a simple string or as an object with an explicit `format` field:
+
+| Format | Behavior |
+|--------|----------|
+| `auto` | Auto-detect JSON or text output (default) |
+| `json` | Parse as structured JSON |
+| `text` | Parse as plain text |
+
+**Blocking behavior:**
+- Errors always block (must be fixed before task completes)
+- Warnings block only if `fail_on_warnings: true`
+- Info-level issues are logged but don't block
+
+**Fix attempts:** Each blocking issue is tracked by `{tool}:{rule}` key. Issues exceeding `max_fix_attempts` generate a debt artifact instead of retrying.
+
+**Missing commands:** If a configured command is not installed, autopilot logs a warning and continues. Remove the `static_analysis` section entirely to disable.
+
 ### Justification
 
 Require written justifications when modifying certain file categories.
@@ -96,6 +129,15 @@ Requires `yq` for full functionality. Falls back to built-in defaults without it
 ## Full Example
 
 ```yaml
+static_analysis:
+  enabled: true
+  commands:
+    - rubocop
+    - command: eslint --format json src/
+      format: json
+  fail_on_warnings: false
+  max_fix_attempts: 2
+
 justification:
   categories:
     spec_modification:
