@@ -201,23 +201,6 @@ test -f .claude/specs/test-background/artifacts/handoff/handoff.md
 
 ---
 
-## Configuration Tests
-
-### C1: Custom Agent Overrides
-
-**Configuration:**
-```yaml
-# .claude/autopilot.yml
-agents:
-  tester: my-custom-tester
-  coder: my-custom-coder
-  refactorer: my-custom-refactorer
-```
-
-**Expected:** Custom agents are spawned instead of defaults.
-
----
-
 ## Error Handling Tests
 
 ### E1: Missing Prerequisites

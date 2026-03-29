@@ -112,7 +112,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.10.0] - 2025-02-19
 
-Initial public release of Autopilot -- a Claude Code plugin for AI-autonomous software development with structured workflows and human oversight guardrails.
+Initial public release of Autopilot
 
 > **Note:** This is version 0.10.0 (not 1.0.0) because the plugin has not been fully tested.
 

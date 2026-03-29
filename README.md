@@ -1,6 +1,6 @@
 # Autopilot
 
-A Claude Code plugin for AI-autonomous software development with structured workflows and safety guardrails.
+A Claude Code plugin for semi-autonomous software development with structured workflows and safety guardrails. Autonomous execution. Human-gated submission. 
 
 ## Workflow
 
@@ -71,8 +71,6 @@ Configure via `.claude/autopilot.yml`. Run `/autopilot:init` to create from temp
 |---------|---------|-------------|
 | `justification.categories` | (see config) | Require justification for flagged file categories |
 | `static_analysis.commands` | `[]` | Static analysis commands to run during autopilot |
-
-Feature sections are active when present. To disable a feature, remove the section entirely.
 
 See [docs/configuration.md](docs/configuration.md) for full reference.
 

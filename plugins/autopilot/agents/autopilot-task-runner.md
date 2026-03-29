@@ -32,7 +32,7 @@ These are passed inline to sub-agents so they don't re-read these files.
 
 Load `{SPEC_DIR}/artifacts/handoff/handoff.md` and `SESSION_SUMMARY.md` if they exist.
 
-Load `.claude/autopilot.yml` for agent names, `static_analysis` config, and skill lists (`coding_skills`, `testing_skills`, `refactoring_skills`). For each configured skill, read `.claude/skills/{name}/SKILL.md` and pass descriptions to the relevant sub-agent as `AVAILABLE_SKILLS`. Skip if no config or empty lists.
+Load `.claude/autopilot.yml` for `static_analysis` config. Skip if no config.
 
 Run `$AUTOPILOT_PLUGIN_ROOT/scripts/setup-artifacts.sh {SPEC_DIR}` to create directories.
 
@@ -42,7 +42,7 @@ Spawn tester:
 ```
 Task(autopilot:autopilot-tester,
   "Write tests for task
-  SPEC_DIR={SPEC_DIR} TASK={TASK} AVAILABLE_SKILLS={testing_skills}
+  SPEC_DIR={SPEC_DIR} TASK={TASK}
   <task-context>
     <acceptance-criteria>{TASK_ACCEPTANCE_CRITERIA}</acceptance-criteria>
     <plan-section>{TASK_PLAN_SECTION}</plan-section>
@@ -56,7 +56,7 @@ Parse `<test-command>` and `<test-files>` from result. Run `Bash(test_command)` 
 ### Step 3: Implement (Code → Green, max 3 retries)
 
 Loop up to 3 times:
-1. Spawn coder with `SPEC_DIR`, `TASK`, `TEST_FILES`, `AVAILABLE_SKILLS={coding_skills}`, `TASK_ACCEPTANCE_CRITERIA`, and `TASK_PLAN_SECTION`. Instruct: read test files, write minimum implementation to pass tests.
+1. Spawn coder with `SPEC_DIR`, `TASK`, `TEST_FILES`, `TASK_ACCEPTANCE_CRITERIA`, and `TASK_PLAN_SECTION`. Instruct: read test files, write minimum implementation to pass tests.
 2. Run `Bash(test_command)`. If exit 0 → break (GREEN).
 3. Categorize failure. If `setup` error → output failure and exit (environment issue, not retryable). Otherwise increment retry count; if exhausted → output failure and exit.
 
@@ -78,7 +78,7 @@ Loop:
 ### Step 5: Refactor (max 3 cycles, regression rollback)
 
 Loop up to 3 cycles:
-1. Spawn refactorer with `SPEC_DIR`, `TASK`, `AVAILABLE_SKILLS={refactoring_skills}`.
+1. Spawn refactorer with `SPEC_DIR`, `TASK`.
 2. If no changes made → break.
 3. Run `Bash(test_command)`. If tests fail → `git checkout -- .`, log warning, break.
 4. Track changes per cycle. Detect oscillation (same files modified with similar diffs across cycles) or diminishing returns (whitespace/comment-only changes) → break.

@@ -42,9 +42,8 @@ Perform a structured code review of recent changes against a configurable checkl
 
 1. **Gathers diff**: Runs `git diff` and `git diff --stat` for the changes to review
 2. **Loads checklist**: Resolves the checklist from config, project file, or built-in default
-3. **Resolves reviewer agent**: Reads `agents.reviewer` from `.claude/autopilot.yml`, falling back to the built-in `autopilot:autopilot-reviewer`
-4. **Spawns reviewer**: Passes the diff, diff stat, checklist, and output path to the agent
-5. **Presents results**: Reads the generated report and displays findings to the user
+3. **Spawns reviewer**: Passes the diff, diff stat, checklist, and output path to the agent
+4. **Presents results**: Reads the generated report and displays findings to the user
 
 ## Review Process
 
@@ -52,7 +51,6 @@ Perform a structured code review of recent changes against a configurable checkl
 /autopilot:code-review [identifier]
 ├── Gather diff (git diff + git diff --stat)
 ├── Load checklist (config → project → default)
-├── Resolve reviewer agent (config → autopilot:autopilot-reviewer)
 ├── Spawn reviewer agent
 │   ├── Understand changes from diff
 │   ├── Explore codebase context (Read, Grep, Glob)
@@ -138,90 +136,6 @@ Or point to a custom path in config:
 # .claude/autopilot.yml
 code_review:
   checklist: .claude/my-team-checklist.md
-```
-
-## Custom Reviewer Agent
-
-The built-in `autopilot:autopilot-reviewer` agent provides a generic, checklist-driven review. For projects with domain-specific standards, you can replace it with a custom agent.
-
-### Why Use a Custom Agent?
-
-A custom reviewer agent is valuable when your project needs:
-
-- **Domain-specific risk models** — e.g., "adding a non-null column in one step is CRITICAL because of blue/green deployments" vs the generic "validate database changes"
-- **Conditional review sections** — e.g., Sidekiq rules only when Sidekiq files change, migration rules only when migrations exist
-- **Escalation routing** — e.g., "flag for Identity team" or "requires Platform team review"
-- **Merge recommendations** — aggregating findings into APPROVE/REQUEST_CHANGES/BLOCK
-- **Institutional knowledge** — deployment models, compliance requirements, team conventions
-
-A custom checklist alone can't do codebase exploration, conditional logic, or escalation routing. Those require agent-level control.
-
-### Configuration
-
-Override the reviewer in `.claude/autopilot.yml`:
-
-```yaml
-agents:
-  reviewer: my-custom-reviewer
-```
-
-The agent can be:
-- A project-local agent in `.claude/agents/my-custom-reviewer.md`
-- A plugin agent using `namespace:agent-name` format
-
-### Agent Contract
-
-Your custom agent receives these inputs:
-
-| Input | Description |
-|-------|-------------|
-| `DIFF` | Full git diff of the changes to review |
-| `DIFF_STAT` | Diff stat summary (files changed, insertions, deletions) |
-| `CHECKLIST` | The resolved checklist content |
-| `SPEC_DIR` | Path to spec directory (empty if standalone mode) |
-| `OUTPUT_PATH` | Where to write the review report |
-
-Your agent **must**:
-- Write a review report to `OUTPUT_PATH`
-- Include a summary with finding counts per severity
-
-Your agent **may**:
-- Use its own severity model and risk framework
-- Explore the codebase with Read, Grep, Glob
-- Add sections beyond the standard format (e.g., merge recommendation, specialist routing)
-- Reference its own checklist instead of (or in addition to) the provided one
-
-### Example Custom Agent Structure
-
-```yaml
----
-name: my-custom-reviewer
-description: Domain-specific code reviewer for my-project
-tools: Read, Glob, Grep, Bash
-model: sonnet
----
-```
-
-```markdown
-# My Custom Reviewer
-
-<input>
-- DIFF, DIFF_STAT, CHECKLIST, SPEC_DIR, OUTPUT_PATH
-</input>
-
-<process>
-### Step 1: Classify changed files
-Map file paths to review sections (migrations, jobs, auth, etc.)
-
-### Step 2: Apply domain rules
-Check for domain-specific violations beyond the generic checklist
-
-### Step 3: Explore context
-Read related files to assess impact
-
-### Step 4: Write report
-Include findings, merge recommendation, and escalation routing
-</process>
 ```
 
 ## Comparison: Code Review vs Review

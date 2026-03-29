@@ -9,7 +9,7 @@
       "name": "autopilot",
       "version": "0.14.3",
       "source": "./plugins/autopilot",
-      "description": "AI-autonomous software development toolkit with structured workflows",
+      "description": "semi-autonomous software development toolkit with structured workflows and safety guardrails",
       "tags": ["automation", "workflows", "safety", "development", "testing"]
     }
   ]

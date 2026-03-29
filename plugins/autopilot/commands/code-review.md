@@ -46,24 +46,17 @@ Load the code review checklist in this priority order:
 
 Read the checklist file.
 
-## Step 3: Resolve Reviewer Agent
-
-Read `.claude/autopilot.yml` and check for `agents.reviewer`.
-
-- If configured, use the specified agent name (e.g., `my-custom-reviewer`)
-- If not configured (or no config file), use the built-in default: `autopilot:autopilot-reviewer`
-
-## Step 4: Determine Output Path
+## Step 3: Determine Output Path
 
 - **Spec mode** (identifier provided): `{SPEC_DIR}/artifacts/CODE_REVIEW.md`
 - **Standalone mode** (no identifier): `.claude/CODE_REVIEW.md`
 
-## Step 5: Spawn Reviewer Agent
+## Step 4: Spawn Reviewer Agent
 
-Spawn the resolved agent via Task, passing all inputs:
+Spawn the reviewer agent via Task, passing all inputs:
 
 ```
-Task({agent_name},
+Task(autopilot:autopilot-reviewer,
   "Review code changes against checklist.
   SPEC_DIR={SPEC_DIR} OUTPUT_PATH={OUTPUT_PATH}
   <diff>{DIFF}</diff>
@@ -77,6 +70,6 @@ The agent is responsible for:
 - Exploring codebase context as needed
 - Writing the structured report to `OUTPUT_PATH`
 
-## Step 6: Present Results
+## Step 5: Present Results
 
 Read `OUTPUT_PATH` and display the review summary to the user with finding counts per severity level. Highlight any CRITICAL or HIGH findings.

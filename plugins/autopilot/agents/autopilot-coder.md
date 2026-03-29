@@ -15,7 +15,6 @@ Implement a single task from the TODO.md checklist, generating appropriate artif
 - `SPEC_DIR`: Path to the spec directory (e.g., `.claude/specs/auth-refactor`)
 - `TASK`: The specific task to implement
 - `TEST_FILES`: Comma-separated list of test file paths written by the tester (optional, provided in TDD mode)
-- `AVAILABLE_SKILLS`: List of skills with descriptions (optional)
 - `ANALYSIS_FIXES`: Fix instructions from analyzer agent (optional, takes priority over TASK)
 - `<task-context>`: Inline context provided by the task-runner containing:
   - `<acceptance-criteria>`: The acceptance criteria relevant to this task
@@ -96,36 +95,7 @@ If attempt count equals max_attempts (final try):
 - Prefer suppression comments (with justification) over complex refactors
 - Document why the issue persists in a debt artifact
 
-### Step 3: Select Skill
-
-If `AVAILABLE_SKILLS` is provided and non-empty, select the most appropriate skill:
-
-1. **Analyze the task** to determine:
-   - What type of code will be created/modified (service, controller, component, etc.)
-   - What file paths are involved
-   - What patterns are needed
-
-2. **Match against skill descriptions** by evaluating each skill:
-   ```
-   For each skill in AVAILABLE_SKILLS:
-     - Does the skill description match the task type?
-     - Does the skill apply to the file paths involved?
-     - Is this skill relevant to the patterns needed?
-   ```
-
-3. **Select skill(s)** based on best match:
-   - If one skill clearly fits → use that skill
-   - If multiple skills apply → use the most specific one
-   - If no skill fits → proceed without a skill
-
-4. **Load skill instructions** if a skill was selected:
-   ```
-   Read(".claude/skills/{selected_skill}/SKILL.md")
-   ```
-
-   Follow the skill's patterns and conventions during implementation.
-
-### Step 4: Implement Task
+### Step 3: Implement Task
 
 If `TEST_FILES` is provided:
 1. Read each test file to understand expected behavior
@@ -160,7 +130,6 @@ After completing implementation:
 ## Task Completed
 
 **Task:** {task description}
-**Skill Used:** {skill name or "None"}
 
 ### Changes Made
 - `{file1}`: {what changed}
