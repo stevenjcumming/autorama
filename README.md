@@ -23,7 +23,7 @@ See [docs/workflow-overview.md](docs/workflow-overview.md) for detailed stage de
 
 ```bash
 # 1. Install the plugin
-/plugin marketplace add stevenjcumming/claude-code-autopilot
+/plugin marketplace add stevenjcumming/autopilot
 /plugin install autopilot
 
 # 2. See available commands and workflow

@@ -29,7 +29,7 @@ else
     # Fallback: create minimal config if template not found
     cat > "$CONFIG_TARGET" << 'EOF'
 # Autopilot Configuration
-# See docs for full options: https://github.com/stevenjcumming/claude-code-autopilot
+# See docs for full options: https://github.com/stevenjcumming/autopilot
 
 justification:
   enabled: true
