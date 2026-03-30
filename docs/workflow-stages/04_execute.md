@@ -15,14 +15,14 @@ Autopilot uses an **Agent Harness** inspired architecture where background agent
     │
     ├── Step 4: Task Loop (for each task in queue)
     │   │
-    │   ├── Spawn fresh Task(autopilot-task-runner) per task
+    │   ├── Spawn fresh Task(task-runner) per task
     │   │   │
     │   │   ├── PreToolUse Hook: load-context.sh
     │   │   │   └── Loads handoff context and current task
     │   │   ├── PreToolUse Hook: log-skill-usage.sh
     │   │   │   └── Logs agent spawn to usage.jsonl
     │   │   │
-    │   │   ├── autopilot-task-runner (clean context)
+    │   │   ├── task-runner (clean context)
     │   │   │   ├── 1. tester (writes tests)
     │   │   │   ├── 2. Bash: run tests → expect RED (fail)
     │   │   │   ├── 3. coder (implements to satisfy tests)
@@ -130,7 +130,7 @@ If a configured command is not installed, autopilot logs a warning and continues
 
 ### Handoff Artifacts
 
-Autopilot generates handoff artifacts after each task. The `autopilot-task-runner` writes `handoff.md` directly as its final step (Step 8). Each handoff includes:
+Autopilot generates handoff artifacts after each task. The `task-runner` writes `handoff.md` directly as its final step (Step 8). Each handoff includes:
 
 1. **Session summary** - Compressed context of what was accomplished
 2. **Files modified** - List of changes with types and descriptions
@@ -198,9 +198,9 @@ justification:
    - `T<n>`: only the specified task
    - `P<n>`: all uncompleted tasks in the specified phase
 3. For each filtered task, executes the Write Tests -> Red -> Code -> Green -> Analysis -> Refactor loop:
-   - **Write Tests**: Write failing tests from acceptance criteria via `autopilot-tester`
+   - **Write Tests**: Write failing tests from acceptance criteria via `tester`
    - **Red**: Run tests via Bash, expect failure (tests define expected behavior)
-   - **Code**: Implement changes with artifact generation via `autopilot-coder`
+   - **Code**: Implement changes with artifact generation via `coder`
    - **Green**: Run tests via Bash, expect pass (implementation satisfies tests)
    - **Analysis**: Run static analysis tools, fix blocking issues
    - **Refactor**: Clean up code if needed
@@ -212,11 +212,11 @@ justification:
 ```
 /autopilot:execute <identifier>
 ├── Validates prerequisites (TODO.md, PLAN.md, SPEC.md)
-├── Spawns fresh autopilot-task-runner per task (clean context)
-│   ├── autopilot-tester - Writes tests from acceptance criteria (TDD red phase)
-│   ├── autopilot-coder - Implements changes with artifacts
-│   ├── autopilot-analyzer - Runs static analysis, reports issues
-│   └── autopilot-refactorer - Cleans up code
+├── Spawns fresh task-runner per task (clean context)
+│   ├── tester - Writes tests from acceptance criteria (TDD red phase)
+│   ├── coder - Implements changes with artifacts
+│   ├── analyzer - Runs static analysis, reports issues
+│   └── refactorer - Cleans up code
 ├── Hooks:
 │   ├── load-context.sh (PreToolUse/Task) - Loads handoff context and current task
 │   ├── log-skill-usage.sh (PreToolUse/Task) - Logs agent spawn to usage.jsonl
@@ -228,11 +228,11 @@ justification:
 
 | Agent | Purpose | Output |
 |-------|---------|--------|
-| `autopilot-task-runner` | Executes single task with full loop (fresh context per task) | Task completion status |
-| `autopilot-tester` | Write tests from acceptance criteria (TDD red phase) | Test files |
-| `autopilot-coder` | Implement task with justifications | Code changes, artifacts |
-| `autopilot-analyzer` | Run static analysis tools | Issue reports, fix instructions |
-| `autopilot-refactorer` | Clean up after implementation | Refactored code |
+| `task-runner` | Executes single task with full loop (fresh context per task) | Task completion status |
+| `tester` | Write tests from acceptance criteria (TDD red phase) | Test files |
+| `coder` | Implement task with justifications | Code changes, artifacts |
+| `analyzer` | Run static analysis tools | Issue reports, fix instructions |
+| `refactorer` | Clean up after implementation | Refactored code |
 | `session-summarizer` | Compress session context | Summary for next agent |
 
 ## Main Loop Logic
@@ -241,20 +241,20 @@ justification:
 tasks = filter_tasks(TODO.md, FILTER)  # Apply T<n> or P<n> filter if provided
 
 for each task in tasks:
-    spawn fresh autopilot-task-runner(task):
+    spawn fresh task-runner(task):
         analysis_attempts_by_rule = {}  # Per-rule tracking
         refactor_history = []
         MAX_CODE_RETRIES = 3
         MAX_REFACTOR_CYCLES = 3
 
         # Step 2: Write Tests (Red Phase)
-        tester = spawn(autopilot-tester, task)
+        tester = spawn(tester, task)
         test_command, test_files = parse(tester.output)
         run(test_command)  # Expect failure
 
         # Step 3: Implement (Code → Green, max retries)
         for attempt in 1..MAX_CODE_RETRIES:
-            coder = spawn(autopilot-coder, task, test_files)
+            coder = spawn(coder, task, test_files)
             test_result = run(test_command)
             if tests_pass: break  # GREEN
             category = categorize_failure(test_result)
@@ -264,20 +264,20 @@ for each task in tasks:
         # Step 4: Analysis Phase (after tests pass) — per-rule tracking
         if static_analysis.commands configured:
             loop:
-                analyzer = spawn(autopilot-analyzer, config)
+                analyzer = spawn(analyzer, config)
                 if no blocking_issues: break
                 for issue in blocking_issues:
                     key = "{tool}:{rule}"
                     analysis_attempts_by_rule[key] += 1
                     if over_limit: generate_debt_artifact(issue)
                 if no actionable_issues: break
-                coder = spawn(autopilot-coder, fixes=actionable_issues)
+                coder = spawn(coder, fixes=actionable_issues)
                 if tests_fail: git_checkout; break  # Rollback
                 # Re-run analysis
 
         # Step 5: Refactor Phase with stuck detection
         for cycle in 1..MAX_REFACTOR_CYCLES:
-            refactorer = spawn(autopilot-refactorer, task)
+            refactorer = spawn(refactorer, task)
             if no changes: break
             if tests_fail: git_checkout; break  # Rollback
             refactor_history.append(changes)
@@ -407,11 +407,11 @@ plugins/autopilot/
 ├── commands/
 │   └── execute.md              # Command definition
 ├── agents/
-│   ├── autopilot-task-runner.md # Single-task executor (fresh per task)
-│   ├── autopilot-tester.md     # Test writing (TDD red phase)
-│   ├── autopilot-coder.md      # Implementation + artifacts
-│   ├── autopilot-analyzer.md   # Static analysis + fix instructions
-│   ├── autopilot-refactorer.md # Code cleanup
+│   ├── task-runner.md # Single-task executor (fresh per task)
+│   ├── tester.md     # Test writing (TDD red phase)
+│   ├── coder.md      # Implementation + artifacts
+│   ├── analyzer.md   # Static analysis + fix instructions
+│   ├── refactorer.md # Code cleanup
 │   ├── session-summarizer.md   # Context compression
 │   └── references/             # Progressive disclosure docs
 │       ├── test-frameworks.md

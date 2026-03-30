@@ -129,7 +129,7 @@ Execute Command
 #### Test Phase (Write Tests + Run)
 
 **What It Does**:
-- Writes failing tests from acceptance criteria via `autopilot-tester` agent (TDD red phase)
+- Writes failing tests from acceptance criteria via `tester` agent (TDD red phase)
 - Task-runner executes tests via Bash (expecting failure, then pass after coding)
 
 
@@ -138,7 +138,7 @@ Execute Command
 #### Code Phase
 
 **What It Does**:
-- Implements current task via `autopilot-coder` agent
+- Implements current task via `coder` agent
 - Requires justifications for flagged file modifications
 - Documents decisions, assumptions, and risks
 
@@ -153,7 +153,7 @@ Execute Command
 #### Analysis Phase
 
 **What It Does**:
-- Runs static analysis tools via `autopilot-analyzer` agent
+- Runs static analysis tools via `analyzer` agent
 - Reports lint errors, type issues, and code quality problems
 - Provides fix instructions for blocking issues
 
@@ -162,7 +162,7 @@ Execute Command
 #### Refactor Phase
 
 **What It Does**:
-- Cleans up implementation via `autopilot-refactorer` agent
+- Cleans up implementation via `refactorer` agent
 - Applies code quality improvements
 - Returns to Test phase to verify changes
 

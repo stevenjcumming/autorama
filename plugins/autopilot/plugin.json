@@ -23,12 +23,12 @@
     "./agents/plan-builder.md",
     "./agents/plan-analyzer.md",
     "./agents/plan-researcher.md",
-    "./agents/autopilot-tester.md",
-    "./agents/autopilot-coder.md",
-    "./agents/autopilot-refactorer.md",
-    "./agents/autopilot-reviewer.md",
-    "./agents/autopilot-analyzer.md",
-    "./agents/autopilot-task-runner.md",
+    "./agents/tester.md",
+    "./agents/coder.md",
+    "./agents/refactorer.md",
+    "./agents/reviewer.md",
+    "./agents/analyzer.md",
+    "./agents/task-runner.md",
     "./agents/session-summarizer.md"
   ],
   "hooks": "./hooks/hooks.json"

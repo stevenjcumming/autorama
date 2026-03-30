@@ -1,5 +1,5 @@
 ---
-name: autopilot-task-runner
+name: task-runner
 description: Executes a single task with full TDD write-tests/red/code/green/analyze/refactor loop, designed for background execution
 tools: Read, Edit, Write, Task, Glob, Grep, Bash
 permissionMode: acceptEdits
@@ -40,7 +40,7 @@ Run `$AUTOPILOT_PLUGIN_ROOT/scripts/setup-artifacts.sh {SPEC_DIR}` to create dir
 
 Spawn tester:
 ```
-Task(autopilot:autopilot-tester,
+Task(autopilot:tester,
   "Write tests for task
   SPEC_DIR={SPEC_DIR} TASK={TASK}
   <task-context>

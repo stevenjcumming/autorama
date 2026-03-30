@@ -46,7 +46,7 @@ This location is for curated artifacts that users manually move there. Examples 
               ┌────────────────────┼────────────────────┐
               ▼                    ▼                    ▼
 ┌─────────────────────┐  ┌─────────────────────┐  ┌─────────────────────┐
-│  autopilot-tester   │  │  autopilot-coder    │  │autopilot-refactorer │
+│  tester   │  │  coder    │  │refactorer │
 └─────────────────────┘  └─────────────────────┘  └─────────────────────┘
               │                    │                    │
               ▼                    ▼                    ▼
@@ -190,9 +190,9 @@ plugins/autopilot/templates/artifacts/   # Template files for each type
 
 | Agent | Artifacts Generated |
 |-------|---------------------|
-| `autopilot-task-runner` | All artifact types (fills in hook-created templates after sub-agents complete) |
-| `autopilot-coder` | Justification, Decision, Assumption, Risk, Debt, Dependency |
-| `autopilot-refactorer` | Debt (for significant deferred refactoring opportunities) |
+| `task-runner` | All artifact types (fills in hook-created templates after sub-agents complete) |
+| `coder` | Justification, Decision, Assumption, Risk, Debt, Dependency |
+| `refactorer` | Debt (for significant deferred refactoring opportunities) |
 
 ## Using Artifacts
 

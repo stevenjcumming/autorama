@@ -4,11 +4,11 @@ The autopilot system uses a two-layer delegation chain: **command → task-runne
 
 ## Layer 1: `execute.md` (Command — Lightweight Loop Owner)
 
-The command validates prerequisites, runs setup scripts (`setup-artifacts.sh`, `build-task-queue.sh`), and owns the task loop directly. It parses the task queue from script output, then iterates through tasks sequentially — spawning a fresh `autopilot-task-runner` for each one.
+The command validates prerequisites, runs setup scripts (`setup-artifacts.sh`, `build-task-queue.sh`), and owns the task loop directly. It parses the task queue from script output, then iterates through tasks sequentially — spawning a fresh `task-runner` for each one.
 
 It never reads SPEC.md, PLAN.md, or config files — keeping per-iteration context growth minimal.
 
-## Layer 2: `autopilot-task-runner.md` (Single Task Execution)
+## Layer 2: `task-runner.md` (Single Task Execution)
 
 Each task runner is self-contained and starts with a clean context window. It runs the inner loop for one task:
 
@@ -25,7 +25,7 @@ On completion, it marks the task `[x]` in TODO.md and outputs structured XML tha
 
 When Task 1 finishes and Task 2 starts, continuity is maintained via:
 
-- **handoff.md** — written directly by the `autopilot-task-runner` as its final step (Step 8) before completing; loaded by the next task runner at initialization
+- **handoff.md** — written directly by the `task-runner` as its final step (Step 8) before completing; loaded by the next task runner at initialization
 - **TODO.md** — the shared state file; completed tasks are checked off, so the execute command knows where to pick up
 - **SESSION_SUMMARY.md** — if context limits are hit, the `session-summarizer` compresses context
 

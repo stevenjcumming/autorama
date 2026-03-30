@@ -56,7 +56,7 @@ Read the checklist file.
 Spawn the reviewer agent via Task, passing all inputs:
 
 ```
-Task(autopilot:autopilot-reviewer,
+Task(autopilot:reviewer,
   "Review code changes against checklist.
   SPEC_DIR={SPEC_DIR} OUTPUT_PATH={OUTPUT_PATH}
   <diff>{DIFF}</diff>

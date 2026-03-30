@@ -69,8 +69,8 @@ Commands follow a consistent pattern:
 
 Agents can spawn sub-agents for specialized tasks:
 - `plan-builder` spawns `plan-researcher` and `plan-analyzer`
-- `execute.md` (command) spawns a fresh `autopilot-task-runner` for each task
-- `autopilot-task-runner` spawns `autopilot-tester` (writes tests), then runs tests via Bash, spawns `autopilot-coder` (with test files), runs tests via Bash again, then `autopilot-analyzer` and `autopilot-refactorer`. It also writes `handoff.md` directly before exiting.
+- `execute.md` (command) spawns a fresh `task-runner` for each task
+- `task-runner` spawns `tester` (writes tests), then runs tests via Bash, spawns `coder` (with test files), runs tests via Bash again, then `analyzer` and `refactorer`. It also writes `handoff.md` directly before exiting.
 - `session-summarizer` compresses context when approaching limits
 - `create-tasks` command converts PLAN.md to TODO.md inline (no subagent)
 - Agents use `model: opus`, `model: sonnet`, or `model: haiku` in frontmatter
@@ -86,12 +86,12 @@ The autopilot system uses a hook-based Agent Harness architecture with TDD disci
     │
     ├── Step 4: Task Loop (for each task in queue)
     │   │
-    │   ├── Spawn fresh Task(autopilot-task-runner) per task
+    │   ├── Spawn fresh Task(task-runner) per task
     │   │   │
     │   │   ├── PreToolUse Hook: load-context.sh
     │   │   │   └── Loads TODO.md, handoff.md
     │   │   │
-    │   │   ├── autopilot-task-runner (clean context)
+    │   │   ├── task-runner (clean context)
     │   │   │   ├── 1. tester (writes tests)
     │   │   │   ├── 2. Bash: run tests → expect RED (fail)
     │   │   │   ├── 3. coder (implements to satisfy tests)
@@ -110,9 +110,9 @@ The autopilot system uses a hook-based Agent Harness architecture with TDD disci
 
 Key components:
 - **execute.md** - Lightweight loop owner; spawns fresh task-runners
-- **autopilot-task-runner** - Executes a single task with TDD loop (write tests → red → code → green → analyze → refactor → handoff) in a fresh context
-- **autopilot-tester** - Writes tests based on task requirements (does not run them)
-- **autopilot-coder** - Implements code to satisfy pre-written tests
+- **task-runner** - Executes a single task with TDD loop (write tests → red → code → green → analyze → refactor → handoff) in a fresh context
+- **tester** - Writes tests based on task requirements (does not run them)
+- **coder** - Implements code to satisfy pre-written tests
 - **session-summarizer** - Compresses context when approaching token limits
 - **Hooks** - PreToolUse loads context, SubagentStop checks context limits
 
@@ -170,4 +170,4 @@ Key differences:
 
 Artifacts are generated per spec in the user's project at `.claude/specs/<SPEC_ID>/artifacts/`. The plugin provides artifact templates at `plugins/autopilot/templates/artifacts/`.
 
-Artifact template files (justifications, risks, etc.) are created on disk by the PostToolUse hook. The `autopilot-task-runner` fills these in after sub-agents complete their work (Step 2.6).
+Artifact template files (justifications, risks, etc.) are created on disk by the PostToolUse hook. The `task-runner` fills these in after sub-agents complete their work (Step 2.6).

@@ -1,5 +1,5 @@
 ---
-name: autopilot-analyzer
+name: analyzer
 description: Runs configured static analysis tools and reports issues
 tools: Read, Write, Glob, Grep, Bash
 model: sonnet
