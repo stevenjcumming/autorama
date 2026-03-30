@@ -76,11 +76,11 @@ For each task in the queue:
 
 ### 4.1: Spawn Task Runner
 
-Spawn a fresh `autopilot-task-runner` agent for each task. Each runner gets its own clean context — it loads SPEC.md, PLAN.md, TODO.md, and handoff context independently.
+Spawn a fresh `task-runner` agent for each task. Each runner gets its own clean context — it loads SPEC.md, PLAN.md, TODO.md, and handoff context independently.
 
 ```
 Task(
-  subagent_type="autopilot:autopilot-task-runner",
+  subagent_type="autopilot:task-runner",
   prompt="Execute task
 
   SPEC_DIR={SPEC_DIR}

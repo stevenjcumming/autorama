@@ -7,7 +7,7 @@ The autopilot plugin uses a handoff system to preserve context between sequentia
 ```
 Task N completes
     ↓
-autopilot-task-runner → Writes handoff.md directly (Step 8)
+task-runner → Writes handoff.md directly (Step 8)
     ↓
 on-agent-complete.sh (SubagentStop) → Checks context limits
     ↓  (if critical)
@@ -41,7 +41,7 @@ The template lives at `plugins/autopilot/templates/artifacts/handoff/handoff.md`
 
 ### Generation
 
-`handoff.md` is written directly by the `autopilot-task-runner` agent as its final step (Step 8) before completing. The task-runner has full context of the work it just performed, so it writes the handoff inline without requiring a separate agent.
+`handoff.md` is written directly by the `task-runner` agent as its final step (Step 8) before completing. The task-runner has full context of the work it just performed, so it writes the handoff inline without requiring a separate agent.
 
 ## 2. Hook Pipeline
 

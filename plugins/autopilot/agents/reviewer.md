@@ -1,5 +1,5 @@
 ---
-name: autopilot-reviewer
+name: reviewer
 description: Performs structured code review against a checklist, producing severity-bucketed findings
 tools: Read, Glob, Grep, Bash
 model: sonnet

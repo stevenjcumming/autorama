@@ -1,5 +1,5 @@
 ---
-name: autopilot-coder
+name: coder
 description: Implements tasks with artifact generation for audit trail
 tools: Read, Edit, Write, Glob, Grep, Bash
 permissionMode: acceptEdits

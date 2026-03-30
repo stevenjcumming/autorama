@@ -1,5 +1,5 @@
 ---
-name: autopilot-refactorer
+name: refactorer
 description: Reviews recent changes and applies cleanup refactoring
 tools: Read, Edit, Glob, Grep, Bash
 permissionMode: acceptEdits

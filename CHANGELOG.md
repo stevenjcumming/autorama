@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
-- **Agent overrides and skills removed from configuration** — `agents:` and `*_skills:` keys are no longer supported in `autopilot.yml`. The built-in agents are now fixed; `AVAILABLE_SKILLS` and skill selection logic removed from `autopilot-coder` and `autopilot-task-runner`. Custom reviewer agent support removed from `/autopilot:code-review`.
+- **Agent overrides and skills removed from configuration** — `agents:` and `*_skills:` keys are no longer supported in `autopilot.yml`. The built-in agents are now fixed; `AVAILABLE_SKILLS` and skill selection logic removed from `coder` and `task-runner`. Custom reviewer agent support removed from `/autopilot:code-review`.
 
 ### Added
 
@@ -51,7 +51,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - **Updated README** — Improved "Quick Start" steps
-- **handoff-writer agent removed** — `handoff.md` is now written directly by `autopilot-task-runner` (Step 8) instead of spawning a separate agent; `on-agent-complete.sh` no longer emits `<handoff-needed>` signals
+- **handoff-writer agent removed** — `handoff.md` is now written directly by `task-runner` (Step 8) instead of spawning a separate agent; `on-agent-complete.sh` no longer emits `<handoff-needed>` signals
 - **task-builder agent removed** — The `create-tasks` command now reads `PLAN.md` and writes `TODO.md` directly (inline) instead of spawning a `task-builder` subagent
 - **Conventional commits for auto-commits** — `on-agent-complete.sh` now generates commits following the [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) spec with a required body for long-term context. The commit type (feat, fix, refactor, test, etc.) is chosen by the task-runner and passed via the `type` attribute on `<task-completed>` tags
 - **Task-runner outputs commit type** — `<task-completed>` tag now includes `type="{commit_type}"` attribute; the task-runner evaluates what the task did and selects the appropriate conventional commit type
@@ -73,7 +73,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- **Agent names properly scoped with plugin prefix** — All `subagent_type` references in Task calls now use fully qualified names (e.g., `autopilot:autopilot-task-runner` instead of `autopilot-task-runner`) across commands, agents, and config templates
+- **Agent names properly scoped with plugin prefix** — All `subagent_type` references in Task calls now use fully qualified names (e.g., `autopilot:task-runner` instead of `task-runner`) across commands, agents, and config templates
 
 ## [0.12.0] - 2026-02-23
 
@@ -113,8 +113,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - **Agent Harness refactored** — `execute.md` command now owns the task loop directly instead of delegating to intermediate orchestrator agents, reducing context accumulation across tasks
-- **Fresh context per task** — Each task spawns a fresh `autopilot-task-runner` agent with its own clean context window, preventing quality degradation on multi-task specs
-- **Skills loading moved** — Skill description loading relocated from the deprecated `autopilot` agent to `autopilot-task-runner` (Step 1.5), keeping skill context scoped per task
+- **Fresh context per task** — Each task spawns a fresh `task-runner` agent with its own clean context window, preventing quality degradation on multi-task specs
+- **Skills loading moved** — Skill description loading relocated from the deprecated `autopilot` agent to `task-runner` (Step 1.5), keeping skill context scoped per task
 
 ### Removed
 

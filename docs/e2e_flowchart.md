@@ -178,26 +178,26 @@ HUMAN ACTION
 │  │  └───────────────────────────────────────────────────────────────┘ │  │
 │  │                          |                                         │  │
 │  │                          v                                         │  │
-│  │  ┌─── TASK AGENT: autopilot-task-runner (opus, background) ─────┐  │  │
+│  │  ┌─── TASK AGENT: task-runner (opus, background) ─────┐  │  │
 │  │  │                                                              │  │  │
-│  │  │   autopilot-tester (sonnet)                                  │  │  │
+│  │  │   tester (sonnet)                                  │  │  │
 │  │  │       │  Writes tests from acceptance criteria (TDD red)     │  │  │
-│  │  │       │  Generates: test files                                │  │  │
+│  │  │       │  Generates: test files                               │  │  │
 │  │  │       v                                                      │  │  │
 │  │  │   Bash: run tests (expect RED — tests should fail)           │  │  │
 │  │  │       v                                                      │  │  │
-│  │  │   autopilot-coder (opus)                                     │  │  │
+│  │  │   coder (opus)                                     │  │  │
 │  │  │       │  Implements task                                     │  │  │
 │  │  │       │  Generates: justifications, decisions, assumptions,  │  │  │
-│  │  │       │             risks, debt, review_hints                 │  │  │
+│  │  │       │             risks, debt, review_hints                │  │  │
 │  │  │       v                                                      │  │  │
 │  │  │   Bash: run tests (expect GREEN — tests should pass)         │  │  │
 │  │  │       │                                                      │  │  │
 │  │  │       v                                                      │  │  │
-│  │  │   autopilot-analyzer (sonnet)                                │  │  │
+│  │  │   analyzer (sonnet)                                │  │  │
 │  │  │       │  Runs static analysis (lint, type checks)            │  │  │
 │  │  │       v                                                      │  │  │
-│  │  │   autopilot-refactorer (sonnet)                              │  │  │
+│  │  │   refactorer (sonnet)                              │  │  │
 │  │  │       │  Cleanup refactoring                                 │  │  │
 │  │  │       │                                                      │  │  │
 │  │  │       ├── If changes made ──> loop back to tester + tests    │  │  │
@@ -230,7 +230,7 @@ HUMAN ACTION
 ```
 
 **Command**: `/autopilot:execute <id> [T<n>|P<n>]`
-**Agents**: `autopilot-task-runner` (fresh per task) -> `autopilot-tester`, `autopilot-coder`, `autopilot-analyzer`, `autopilot-refactorer`; `session-summarizer` (on context-critical)
+**Agents**: `task-runner` (fresh per task) -> `tester`, `coder`, `analyzer`, `refactorer`; `session-summarizer` (on context-critical)
 **Human Action**: Optional review between tasks
 
 ---
@@ -337,7 +337,7 @@ HUMAN ACTION
 Task N completes
     |
     v
-autopilot-task-runner ──> writes handoff.md (Step 8)
+task-runner ──> writes handoff.md (Step 8)
     |
     v
 on-agent-complete.sh
@@ -379,7 +379,7 @@ All artifacts written to `.claude/specs/<id>/artifacts/` unless noted.
 
 | Artifact | Hook | Trigger |
 |----------|------|---------|
-| `handoff/handoff.md` | autopilot-task-runner (Step 8) | After each task completes |
+| `handoff/handoff.md` | task-runner (Step 8) | After each task completes |
 | `handoff/SESSION_SUMMARY.md` | session-summarizer (via execute command) | Context usage critical (>200k tokens) |
 
 ### Generated During Other Stages
@@ -428,11 +428,11 @@ All artifacts written to `.claude/specs/<id>/artifacts/` unless noted.
 /autopilot:create-tasks ────── (inline, no agent — command writes TODO.md directly)
 
 /autopilot:execute (command — lightweight loop owner)
-                       ├── autopilot-task-runner (opus, fresh per task)
-                       │     ├── autopilot-tester (sonnet)
-                       │     ├── autopilot-coder (opus)
-                       │     ├── autopilot-analyzer (sonnet)
-                       │     └── autopilot-refactorer (sonnet)
+                       ├── task-runner (opus, fresh per task)
+                       │     ├── tester (sonnet)
+                       │     ├── coder (opus)
+                       │     ├── analyzer (sonnet)
+                       │     └── refactorer (sonnet)
                        └── session-summarizer (haiku)
 ```
 

@@ -14,11 +14,11 @@ The autopilot plugin delegates work through a tree of specialized agents. Each a
 /autopilot:create-tasks ──── (inline, no agent — command writes TODO.md directly)
 
 /autopilot:execute (command — lightweight loop owner)
-                  ├── autopilot-task-runner (opus, fresh per task)
-                  │     ├── autopilot-tester (sonnet)
-                  │     ├── autopilot-coder (opus)
-                  │     ├── autopilot-analyzer (sonnet)
-                  │     └── autopilot-refactorer (sonnet)
+                  ├── task-runner (opus, fresh per task)
+                  │     ├── tester (sonnet)
+                  │     ├── coder (opus)
+                  │     ├── analyzer (sonnet)
+                  │     └── refactorer (sonnet)
                   └── session-summarizer (haiku, on context-critical)
 ```
 
@@ -28,8 +28,8 @@ Agents are assigned to model tiers based on the complexity of their work.
 
 | Tier | Model | Agents | Role |
 |------|-------|--------|------|
-| **Heavy** | Opus | autopilot-task-runner, autopilot-coder, plan-builder | Complex reasoning, code generation, multi-step orchestration |
-| **Medium** | Sonnet | autopilot-tester, autopilot-analyzer, autopilot-refactorer, plan-researcher, plan-analyzer | Test writing, structured analysis, pattern matching, sequential tasks |
+| **Heavy** | Opus | task-runner, coder, plan-builder | Complex reasoning, code generation, multi-step orchestration |
+| **Medium** | Sonnet | tester, analyzer, refactorer, plan-researcher, plan-analyzer | Test writing, structured analysis, pattern matching, sequential tasks |
 | **Light** | Haiku | session-summarizer | Text compression |
 
 The general rule: agents that write code or make architectural decisions use Opus. Agents that analyze, search, or follow structured procedures use Sonnet. Agents that produce formulaic output use Haiku.
@@ -74,7 +74,7 @@ The `create-tasks` command reads `PLAN.md` and writes `TODO.md` directly (inline
 
 ### Autopilot Stage
 
-#### `autopilot-task-runner`
+#### `task-runner`
 
 Executes a single task through the full test/code/analyze/refactor loop. Spawned fresh by `execute.md` for each task, giving every task its own clean context window.
 
@@ -82,7 +82,7 @@ Executes a single task through the full test/code/analyze/refactor loop. Spawned
 |-------|-------|
 | Model | Opus |
 | Tools | Read, Edit, Write, Task, Glob, Grep, Bash |
-| Spawns | autopilot-tester, autopilot-coder, autopilot-analyzer, autopilot-refactorer |
+| Spawns | tester, coder, analyzer, refactorer |
 
 Inner loop:
 ```
@@ -97,7 +97,7 @@ After completing the inner loop, the task-runner writes `handoff.md` directly (S
 
 Exit conditions: task passes all checks with no refactoring changes (success), or category-specific retry limit exceeded (failure).
 
-#### `autopilot-tester`
+#### `tester`
 
 Writes tests for a task based on requirements and acceptance criteria. Handles the **Red phase** of TDD — creates failing tests that define expected behavior. Does not run the tests; the task-runner executes them via Bash.
 
@@ -108,7 +108,7 @@ Writes tests for a task based on requirements and acceptance criteria. Handles t
 | Spawns | (none) |
 | Produces | Test files |
 
-#### `autopilot-coder`
+#### `coder`
 
 Implements the task. Generates audit trail artifacts (justifications, decisions, assumptions, risks, debt, review hints).
 
@@ -119,7 +119,7 @@ Implements the task. Generates audit trail artifacts (justifications, decisions,
 | Spawns | (none) |
 | Produces | Justifications, decisions, assumptions, risks, debt, review hints |
 
-#### `autopilot-analyzer`
+#### `analyzer`
 
 Runs configured static analysis tools and reports blocking issues.
 
@@ -130,7 +130,7 @@ Runs configured static analysis tools and reports blocking issues.
 | Spawns | (none) |
 | Produces | Analysis report with fix instructions |
 
-#### `autopilot-refactorer`
+#### `refactorer`
 
 Reviews recent changes and applies cleanup refactoring. If it makes changes, the task-runner loops back to the tester to update tests and re-runs the full cycle. If it makes no changes, the task is considered complete.
 
@@ -161,7 +161,7 @@ Compresses the full session context into a 500-1000 token summary when context l
 Used when sub-agent outputs feed into each other. The parent spawns one child, waits for its result, then spawns the next.
 
 - **plan-builder**: researcher first (gather data), then analyzer (validate plan)
-- **autopilot-task-runner**: tester → Bash(red) → coder → Bash(green) → analyzer → refactorer
+- **task-runner**: tester → Bash(red) → coder → Bash(green) → analyzer → refactorer
 - **execute.md**: task N must complete before task N+1 starts
 
 ### Fire-and-Forget
