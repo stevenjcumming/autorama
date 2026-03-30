@@ -1,6 +1,6 @@
 {
   "name": "autopilot",
-  "version": "0.15.0",
+  "version": "1.0.0-rc.1",
   "description": "semi-autonomous software development toolkit with structured workflows and safety guardrails",
   "author": {
     "name": "Steven Cumming"
