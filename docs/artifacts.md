@@ -46,14 +46,14 @@ This location is for curated artifacts that users manually move there. Examples 
               ┌────────────────────┼────────────────────┐
               ▼                    ▼                    ▼
 ┌─────────────────────┐  ┌─────────────────────┐  ┌─────────────────────┐
-│  tester   │  │  coder    │  │refactorer │
+│           tester    │  │       coder         │  │  refactorer         │
 └─────────────────────┘  └─────────────────────┘  └─────────────────────┘
               │                    │                    │
               ▼                    ▼                    ▼
 ┌─────────────────────────────────────────────────────────────────────────┐
 │                        TRIGGER CONDITIONS                               │
 ├─────────────────────────────────────────────────────────────────────────┤
-│  TASK-RUNNER / CODER:                                                    │
+│  TASK-RUNNER / CODER:                                                   │
 │  • File modified     → Justification (based on file category)           │
 │  • Choice made       → Decision                                         │
 │  • Inferred req      → Assumption                                       │

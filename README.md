@@ -1,6 +1,6 @@
 # Autopilot
 
-A Claude Code plugin for semi-autonomous software development with structured workflows and safety guardrails. Autonomous execution. Human-gated submission. 
+Autopilot is a Claude Code plugin for semi-autonomous software development. It provides a structured framework with workflows, slash commands, and specialized agents for running safe development loops with human oversight. Autonomous execution. Human-gated submission. 
 
 ## Workflow
 
@@ -13,8 +13,8 @@ The plugin guides you through a structured development workflow:
 1. **Spec** - Define requirements and acceptance criteria
 2. **Plan** - Research codebase and create implementation plan
 3. **Tasks** - Break plan into actionable checklist
-4. **Execute** - Execute Write Tests/Red/Code/Green/Analysis/Refactor loop autonomously via Agent Harness
-5. **Review** - Human checkpoint for changes and artifacts (approve, request changes, or reject)
+4. **Execute** - Execute a TDD loop autonomously via an agent harness
+5. **Review** - Human checkpoint for changes and artifacts
 6. **Submit** - Commit and create pull request
 
 See [docs/workflow-overview.md](docs/workflow-overview.md) for detailed stage descriptions.

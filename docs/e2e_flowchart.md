@@ -47,10 +47,10 @@ Requirements ──> [1] Spec ──> HUMAN ──> [2] Plan ──> HUMAN ─�
                |  │      ^                                 |     │      |
                |  │      └──── if changes made ────────────┘     │      |
                |  │                                              │      |
-               |  │  Hook: on-agent-complete (context check)       │      |
+               |  │  Hook: on-agent-complete (context check)     │      |
                |  └──────────────────────────────────────────────┘      |
                |                                                        |
-               |  (repeats for each task)                                |
+               |  (repeats for each task)                               |
                |                                                        |
                v                                                        |
      HUMAN (optional between tasks)                                     |
@@ -178,15 +178,15 @@ HUMAN ACTION
 │  │  └───────────────────────────────────────────────────────────────┘ │  │
 │  │                          |                                         │  │
 │  │                          v                                         │  │
-│  │  ┌─── TASK AGENT: task-runner (opus, background) ─────┐  │  │
+│  │  ┌─── TASK AGENT: task-runner (opus, background) ───────────────┐  │  │
 │  │  │                                                              │  │  │
-│  │  │   tester (sonnet)                                  │  │  │
+│  │  │   tester (sonnet)                                            │  │  │
 │  │  │       │  Writes tests from acceptance criteria (TDD red)     │  │  │
 │  │  │       │  Generates: test files                               │  │  │
 │  │  │       v                                                      │  │  │
 │  │  │   Bash: run tests (expect RED — tests should fail)           │  │  │
 │  │  │       v                                                      │  │  │
-│  │  │   coder (opus)                                     │  │  │
+│  │  │   coder (opus)                                               │  │  │
 │  │  │       │  Implements task                                     │  │  │
 │  │  │       │  Generates: justifications, decisions, assumptions,  │  │  │
 │  │  │       │             risks, debt, review_hints                │  │  │
@@ -194,10 +194,10 @@ HUMAN ACTION
 │  │  │   Bash: run tests (expect GREEN — tests should pass)         │  │  │
 │  │  │       │                                                      │  │  │
 │  │  │       v                                                      │  │  │
-│  │  │   analyzer (sonnet)                                │  │  │
+│  │  │   analyzer (sonnet)                                          │  │  │
 │  │  │       │  Runs static analysis (lint, type checks)            │  │  │
 │  │  │       v                                                      │  │  │
-│  │  │   refactorer (sonnet)                              │  │  │
+│  │  │   refactorer (sonnet)                                        │  │  │
 │  │  │       │  Cleanup refactoring                                 │  │  │
 │  │  │       │                                                      │  │  │
 │  │  │       ├── If changes made ──> loop back to tester + tests    │  │  │
