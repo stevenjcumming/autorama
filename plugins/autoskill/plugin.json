@@ -1,0 +1,17 @@
+{
+  "name": "autoskill",
+  "version": "1.0.0",
+  "description": "Generate reusable project-specific skills from codebase patterns",
+  "author": {
+    "name": "Steven Cumming"
+  },
+  "commands": [
+    "./commands/init.md",
+    "./commands/build.md"
+  ],
+  "agents": [
+    "./agents/discovery.md",
+    "./agents/synthesizer.md",
+    "./agents/quality-check.md"
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "skill_name": "{{skill_name}}",
+  "description": "{{One-line description matching SKILL.md frontmatter}}",
+  "source_files": [
+    "{{path/to/example-file-1}}",
+    "{{path/to/example-file-2}}"
+  ],
+  "dependency_map": {
+    "{{path/to/example-file-1}}": [
+      "{{path/to/dependency-1}}",
+      "{{path/to/dependency-2}}"
+    ]
+  },
+  "internal_docs_read": [
+    "{{path/to/doc-1}}",
+    "{{path/to/doc-2}}"
+  ],
+  "conventions": {
+    "naming": "{{Naming conventions observed in the project, e.g. kebab-case files, PascalCase exports}}",
+    "structure": "{{Directory structure conventions, e.g. feature-based layout under src/features/}}",
+    "testing": "{{Testing conventions, e.g. co-located test files with .test suffix}}"
+  },
+  "last_updated": "{{ISO 8601 timestamp}}",
+  "generated_by": "autoskill:build"
+}
