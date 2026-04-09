@@ -30,3 +30,12 @@ A flag on individual TODO tasks that instructs the task-runner to skip the teste
 ```
 - [ ] [T3] [no-test] Add default config file
 ```
+
+### `/autopilot:architect` — Guide Code Architecture Approach 
+
+A command to pseudo-code the architecture or code design for the classes and public interface of a given plan. This would be used after planning for larger efforts to align on implementation approach.  
+
+**Example usage:**
+```
+/autopilot:architect my-feature
+```
