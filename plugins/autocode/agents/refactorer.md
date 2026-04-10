@@ -32,7 +32,7 @@ Read each modified file to understand the changes.
 
 ### Step 2: Evaluate Refactoring Need
 
-Read `$AUTOPILOT_PLUGIN_ROOT/agents/references/failure-categories.md` for the refactoring evaluation criteria (issue patterns and priorities) and safe refactoring types. Use those tables to assess each modified file.
+Read `$AUTOCODE_PLUGIN_ROOT/agents/references/failure-categories.md` for the refactoring evaluation criteria (issue patterns and priorities) and safe refactoring types. Use those tables to assess each modified file.
 
 ### Step 3: Apply Refactoring
 

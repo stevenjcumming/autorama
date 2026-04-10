@@ -32,9 +32,9 @@ These are passed inline to sub-agents so they don't re-read these files.
 
 Load `{SPEC_DIR}/artifacts/handoff/handoff.md` and `SESSION_SUMMARY.md` if they exist.
 
-Load `.claude/autopilot.yml` for `static_analysis` config. Skip if no config.
+Load `.claude/autocode.yml` for `static_analysis` config. Skip if no config.
 
-Run `$AUTOPILOT_PLUGIN_ROOT/scripts/setup-artifacts.sh {SPEC_DIR}` to create directories.
+Run `$AUTOCODE_PLUGIN_ROOT/scripts/setup-artifacts.sh {SPEC_DIR}` to create directories.
 
 ### Step 2: Write Tests (Red Phase)
 
@@ -85,7 +85,7 @@ Loop up to 3 cycles:
 
 ### Step 6: Generate Artifacts
 
-Read `$AUTOPILOT_PLUGIN_ROOT/agents/references/artifact-triggers.md` for trigger conditions, path patterns, and file categories.
+Read `$AUTOCODE_PLUGIN_ROOT/agents/references/artifact-triggers.md` for trigger conditions, path patterns, and file categories.
 
 Write artifacts when their trigger condition is met. Also scan artifact directories for hook-created files with empty sections (headings followed by blank lines or comments). Use Edit to fill them with real content from task context.
 
@@ -94,7 +94,7 @@ Output `<artifacts-generated count="N" />` when done.
 ### Step 7: Update TODO.md
 
 ```bash
-$AUTOPILOT_PLUGIN_ROOT/scripts/update-task-status.sh {SPEC_DIR} {TASK_ID} --timestamp
+$AUTOCODE_PLUGIN_ROOT/scripts/update-task-status.sh {SPEC_DIR} {TASK_ID} --timestamp
 ```
 
 ### Step 8: Generate Handoff
@@ -102,7 +102,7 @@ $AUTOPILOT_PLUGIN_ROOT/scripts/update-task-status.sh {SPEC_DIR} {TASK_ID} --time
 Write a handoff artifact for context preservation between tasks. Read the template:
 
 ```
-Read("$AUTOPILOT_PLUGIN_ROOT/templates/artifacts/handoff/handoff.md")
+Read("$AUTOCODE_PLUGIN_ROOT/templates/artifacts/handoff/handoff.md")
 ```
 
 Gather context for the handoff:
@@ -145,7 +145,7 @@ End with:
 **Failure** — log the failure for cross-spec learning, then output: task ID, description, failure reason, details, attempt summaries, suggested actions.
 
 ```bash
-bash $AUTOPILOT_PLUGIN_ROOT/scripts/log-failure.sh "{agent_that_failed}" "{failure_category}" "{brief_description}" "{spec_id}"
+bash $AUTOCODE_PLUGIN_ROOT/scripts/log-failure.sh "{agent_that_failed}" "{failure_category}" "{brief_description}" "{spec_id}"
 ```
 
 End with:
@@ -166,6 +166,6 @@ End with:
 - **Non-fatal analysis/refactor** — failures in Steps 4-5 do not block task completion. Shipping working, tested code is more important than perfect lint scores.
 - **Always output status** — end with `<task-completed>` tag. The execute command parses this tag to track progress and decide whether to continue.
 - **No user prompts** — runs in background; fail gracefully
-- **Categorize test failures** using `$AUTOPILOT_PLUGIN_ROOT/agents/references/failure-categories.md`. Categories determine retryability — e.g., setup errors (missing deps, wrong env) are not retryable and should exit immediately rather than wasting retry attempts.
+- **Categorize test failures** using `$AUTOCODE_PLUGIN_ROOT/agents/references/failure-categories.md`. Categories determine retryability — e.g., setup errors (missing deps, wrong env) are not retryable and should exit immediately rather than wasting retry attempts.
 
 </rules>

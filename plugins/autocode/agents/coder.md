@@ -110,7 +110,7 @@ For each file modification:
    - `package.json`, `Gemfile`, `go.mod` → dependency
    - `*_test.go`, `*.test.ts`, `*_spec.rb` → test modification
    - `src/services/*`, `app/models/*` → business logic
-   Use your judgment for files that don't fit common patterns. See `$AUTOPILOT_PLUGIN_ROOT/agents/references/artifact-triggers.md` for edge cases.
+   Use your judgment for files that don't fit common patterns. See `$AUTOCODE_PLUGIN_ROOT/agents/references/artifact-triggers.md` for edge cases.
 2. **Make the change** using Edit or Write
 3. **Generate justification** for non-trivial changes — the review agent uses these for audit trail
 

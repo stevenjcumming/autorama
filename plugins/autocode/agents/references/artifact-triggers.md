@@ -52,7 +52,7 @@ Determine category based on file path:
 
 ## Artifact Templates
 
-Templates are located at `$AUTOPILOT_PLUGIN_ROOT/templates/artifacts/`:
+Templates are located at `$AUTOCODE_PLUGIN_ROOT/templates/artifacts/`:
 - `justification.md`, `decision.md`, `assumption.md`, `risk.md`, `debt.md`, `review_hint.md`, `dependency.md`
 
 The PostToolUse hook creates template artifact files on disk when Edit/Write occurs. The task-runner fills these with real content after agent work completes.

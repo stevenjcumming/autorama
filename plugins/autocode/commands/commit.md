@@ -15,7 +15,7 @@ Create a commit for the above changes.
 
 ### Step 1: Read the conventional commits reference
 
-Read the reference at `$AUTOPILOT_PLUGIN_ROOT/agents/references/conventional-commits.md` for commit message format rules.
+Read the reference at `$AUTOCODE_PLUGIN_ROOT/agents/references/conventional-commits.md` for commit message format rules.
 
 ### Step 2: Stage changes
 

@@ -1,12 +1,12 @@
 ---
-description: Use when the user is done with a spec and wants to archive its files (SPEC.md, PLAN.md, TODO.md, artifacts) to ~/.autopilot/specs/ for long-term storage. Preserves REVIEW.md in the working directory.
-allowed-tools: Bash(bash $AUTOPILOT_PLUGIN_ROOT/scripts/spec-archive.sh:*), Read, Write
+description: Use when the user is done with a spec and wants to archive its files (SPEC.md, PLAN.md, TODO.md, artifacts) to ~/.autocode/specs/ for long-term storage. Preserves REVIEW.md in the working directory.
+allowed-tools: Bash(bash $AUTOCODE_PLUGIN_ROOT/scripts/spec-archive.sh:*), Read, Write
 argument-hint: <identifier>
 ---
 
 # Spec Archive
 
-Move all spec files except REVIEW.md to `~/.autopilot/specs/<project>/<id>/` for long-term storage.
+Move all spec files except REVIEW.md to `~/.autocode/specs/<project>/<id>/` for long-term storage.
 
 ## Arguments
 
@@ -38,12 +38,12 @@ Wait for the review to complete before proceeding.
 ## Step 3: Run Archive Script
 
 ```bash
-bash $AUTOPILOT_PLUGIN_ROOT/scripts/spec-archive.sh $ARGUMENTS
+bash $AUTOCODE_PLUGIN_ROOT/scripts/spec-archive.sh $ARGUMENTS
 ```
 
 The script will:
 1. Determine the project name from the git remote or directory name
-2. Create `~/.autopilot/specs/<project>/<id>/`
+2. Create `~/.autocode/specs/<project>/<id>/`
 3. Copy all spec files (SPEC.md, PLAN.md, TODO.md, artifacts/) to the archive
 4. Remove all spec files except REVIEW.md from the working directory
 

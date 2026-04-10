@@ -24,7 +24,7 @@ Display the available Autopilot commands in the order they should be used.
 
 | Command | Purpose |
 |---------|---------|
-| `/autopilot:spec-archive <id>` | Archive spec files to `~/.autopilot/specs/` |
+| `/autopilot:spec-archive <id>` | Archive spec files to `~/.autocode/specs/` |
 
 ## Typical Workflow
 

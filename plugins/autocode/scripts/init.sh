@@ -14,9 +14,9 @@ if [ ! -d "$TARGET_DIR" ]; then
   echo "Created $TARGET_DIR directory"
 fi
 
-# Copy autopilot.yml configuration
-CONFIG_SOURCE="$PLUGIN_DIR/templates/autopilot.yml"
-CONFIG_TARGET="$TARGET_DIR/autopilot.yml"
+# Copy autocode.yml configuration
+CONFIG_SOURCE="$PLUGIN_DIR/templates/autocode.yml"
+CONFIG_TARGET="$TARGET_DIR/autocode.yml"
 
 if [ -f "$CONFIG_TARGET" ]; then
   echo "Config already exists: $CONFIG_TARGET"
@@ -119,7 +119,7 @@ else
   echo "Created .gitignore with .claude/specs/"
 fi
 
-# Bootstrap AUTOPILOT_PLUGIN_ROOT into .claude/settings.local.json
+# Bootstrap AUTOCODE_PLUGIN_ROOT into .claude/settings.local.json
 echo ""
 echo "=== Bootstrapping Plugin Root ==="
 
@@ -134,10 +134,10 @@ merge_env_setting() {
     # Use jq if available
     if [ -f "$file" ]; then
       local tmp
-      tmp=$(jq --arg dir "$plugin_dir" '.env["AUTOPILOT_PLUGIN_ROOT"] = $dir' "$file")
+      tmp=$(jq --arg dir "$plugin_dir" '.env["AUTOCODE_PLUGIN_ROOT"] = $dir' "$file")
       echo "$tmp" > "$file"
     else
-      jq -n --arg dir "$plugin_dir" '{"env": {"AUTOPILOT_PLUGIN_ROOT": $dir}}' > "$file"
+      jq -n --arg dir "$plugin_dir" '{"env": {"AUTOCODE_PLUGIN_ROOT": $dir}}' > "$file"
     fi
   elif command -v python3 &> /dev/null; then
     # Fallback to python3
@@ -151,7 +151,7 @@ if os.path.exists(file_path):
         data = json.load(f)
 if 'env' not in data:
     data['env'] = {}
-data['env']['AUTOPILOT_PLUGIN_ROOT'] = plugin_dir
+data['env']['AUTOCODE_PLUGIN_ROOT'] = plugin_dir
 with open(file_path, 'w') as f:
     json.dump(data, f, indent=2)
     f.write('\n')
@@ -159,7 +159,7 @@ with open(file_path, 'w') as f:
   else
     echo "WARNING: Neither jq nor python3 found. Cannot write settings."
     echo "  Manually add to $file:"
-    echo "  {\"env\": {\"AUTOPILOT_PLUGIN_ROOT\": \"$plugin_dir\"}}"
+    echo "  {\"env\": {\"AUTOCODE_PLUGIN_ROOT\": \"$plugin_dir\"}}"
     return 1
   fi
 }
@@ -167,7 +167,7 @@ with open(file_path, 'w') as f:
 merge_env_setting "$SETTINGS_FILE" "$PLUGIN_DIR"
 
 if [ $? -eq 0 ]; then
-  echo "Set AUTOPILOT_PLUGIN_ROOT=$PLUGIN_DIR"
+  echo "Set AUTOCODE_PLUGIN_ROOT=$PLUGIN_DIR"
   echo "  in $SETTINGS_FILE"
 else
   echo "Failed to write settings. See above for manual instructions."

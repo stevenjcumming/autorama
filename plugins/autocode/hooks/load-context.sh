@@ -59,7 +59,7 @@ fi
 # Use read-handoff.sh if available (it provides richer context)
 # ============================================================================
 
-PLUGIN_DIR="${CLAUDE_PLUGIN_ROOT:-${AUTOPILOT_PLUGIN_ROOT:-$(dirname "$(dirname "$0")")}}"
+PLUGIN_DIR="${CLAUDE_PLUGIN_ROOT:-${AUTOCODE_PLUGIN_ROOT:-$(dirname "$(dirname "$0")")}}"
 READ_HANDOFF="$PLUGIN_DIR/scripts/read-handoff.sh"
 
 if [ -x "$READ_HANDOFF" ]; then

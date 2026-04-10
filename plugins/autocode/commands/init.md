@@ -1,24 +1,24 @@
 ---
 allowed-tools: Bash, Read
-description: Use once per project to set up Autopilot. Creates autopilot.yml config, checks for yq dependency, adds .claude/specs/ to .gitignore, and bootstraps the AUTOPILOT_PLUGIN_ROOT env var.
+description: Use once per project to set up Autopilot. Creates autocode.yml config, checks for yq dependency, adds .claude/specs/ to .gitignore, and bootstraps the AUTOCODE_PLUGIN_ROOT env var.
 ---
 
 # Autopilot Init
 
 Initialize Autopilot for your project. This will:
 
-1. Create `.claude/autopilot.yml` configuration file
+1. Create `.claude/autocode.yml` configuration file
 2. Check for `yq` and offer to install it (enables config customization)
 3. Add `.claude/specs/` to `.gitignore`
-4. Bootstrap `AUTOPILOT_PLUGIN_ROOT` env var into `.claude/settings.local.json`
+4. Bootstrap `AUTOCODE_PLUGIN_ROOT` env var into `.claude/settings.local.json`
 
 ## Step 1: Resolve Plugin Path
 
-Since `AUTOPILOT_PLUGIN_ROOT` may not be set yet (this is the command that sets it), detect the plugin path first:
+Since `AUTOCODE_PLUGIN_ROOT` may not be set yet (this is the command that sets it), detect the plugin path first:
 
 ```bash
-if [ -n "$AUTOPILOT_PLUGIN_ROOT" ]; then
-  echo "$AUTOPILOT_PLUGIN_ROOT"
+if [ -n "$AUTOCODE_PLUGIN_ROOT" ]; then
+  echo "$AUTOCODE_PLUGIN_ROOT"
 elif command -v jq &> /dev/null && [ -f ~/.claude/plugins/installed_plugins.json ]; then
   jq -r '.[] | select(.package_name == "autopilot") | .install_directory' ~/.claude/plugins/installed_plugins.json 2>/dev/null || echo ""
 elif command -v python3 &> /dev/null && [ -f ~/.claude/plugins/installed_plugins.json ]; then
@@ -49,14 +49,14 @@ bash {PLUGIN_PATH}/scripts/init.sh {JUSTIFICATION_TEMPLATE}
 Pass the justification template name as the first argument to the init script (empty if not specified).
 
 The init script will:
-- Create `.claude/autopilot.yml` from template
+- Create `.claude/autocode.yml` from template
 - Check for `yq` dependency
 - Add `.claude/specs/` to `.gitignore`
-- Write `AUTOPILOT_PLUGIN_ROOT` to `.claude/settings.local.json`
+- Write `AUTOCODE_PLUGIN_ROOT` to `.claude/settings.local.json`
 - Create `.claude/justifications.yml` from the specified template (if provided)
 
 ## Step 4: Inform User
 
-After the script completes, inform the user of the results. Note that `AUTOPILOT_PLUGIN_ROOT` will be available as an env var in **new** Claude Code sessions (requires restart).
+After the script completes, inform the user of the results. Note that `AUTOCODE_PLUGIN_ROOT` will be available as an env var in **new** Claude Code sessions (requires restart).
 
 If no justification template was specified, mention the available templates and how to use them.

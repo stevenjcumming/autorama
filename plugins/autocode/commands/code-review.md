@@ -40,9 +40,9 @@ git diff --stat HEAD
 
 Load the code review checklist in this priority order:
 
-1. Check config path in `.claude/autopilot.yml` under `code_review.checklist`
+1. Check config path in `.claude/autocode.yml` under `code_review.checklist`
 2. Check for `.claude/code-review-checklist.md` in the project
-3. Fall back to shipped default: `$AUTOPILOT_PLUGIN_ROOT/templates/code-review-checklist.md`
+3. Fall back to shipped default: `$AUTOCODE_PLUGIN_ROOT/templates/code-review-checklist.md`
 
 Read the checklist file.
 

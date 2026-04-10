@@ -28,7 +28,7 @@ Extract from `$ARGUMENTS`:
 Run the validation script with both arguments:
 
 ```bash
-bash $AUTOPILOT_PLUGIN_ROOT/scripts/validate-autopilot.sh $ARGUMENTS
+bash $AUTOCODE_PLUGIN_ROOT/scripts/validate-autocode.sh $ARGUMENTS
 ```
 
 This validates:
@@ -42,13 +42,13 @@ This validates:
 Log execution start and check for relevant history from previous runs:
 
 ```bash
-bash $AUTOPILOT_PLUGIN_ROOT/scripts/log-usage.sh "command" "execute" "started" "$IDENTIFIER"
+bash $AUTOCODE_PLUGIN_ROOT/scripts/log-usage.sh "command" "execute" "started" "$IDENTIFIER"
 ```
 
 Optionally, check for past failures on this spec to inform the run:
 
 ```bash
-bash $AUTOPILOT_PLUGIN_ROOT/scripts/read-history.sh --failures --project "$(basename $(pwd))" --recent 5
+bash $AUTOCODE_PLUGIN_ROOT/scripts/read-history.sh --failures --project "$(basename $(pwd))" --recent 5
 ```
 
 If there are recent failures for this spec's agents, note them as context for the task loop (e.g., if the tester agent frequently fails with syntax errors, the task-runner should be aware).
@@ -56,11 +56,11 @@ If there are recent failures for this spec's agents, note them as context for th
 Run setup and build the task queue:
 
 ```bash
-bash $AUTOPILOT_PLUGIN_ROOT/scripts/setup-artifacts.sh {SPEC_DIR}
+bash $AUTOCODE_PLUGIN_ROOT/scripts/setup-artifacts.sh {SPEC_DIR}
 ```
 
 ```bash
-bash $AUTOPILOT_PLUGIN_ROOT/scripts/build-task-queue.sh {SPEC_DIR} {FILTER}
+bash $AUTOCODE_PLUGIN_ROOT/scripts/build-task-queue.sh {SPEC_DIR} {FILTER}
 ```
 
 Parse the output:
@@ -139,7 +139,7 @@ Move to the next task in the queue.
 Log execution completion:
 
 ```bash
-bash $AUTOPILOT_PLUGIN_ROOT/scripts/log-usage.sh "command" "execute" "completed" "{completed_count}/{total} tasks"
+bash $AUTOCODE_PLUGIN_ROOT/scripts/log-usage.sh "command" "execute" "completed" "{completed_count}/{total} tasks"
 ```
 
 After all tasks in the queue have been processed, present a final summary:

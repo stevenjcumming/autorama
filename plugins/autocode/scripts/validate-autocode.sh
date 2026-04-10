@@ -7,7 +7,7 @@ FILTER="$2"
 
 if [ -z "$IDENTIFIER" ]; then
   echo "Error: spec identifier is required"
-  echo "Usage: validate-autopilot.sh <identifier> [T<n>|P<n>]"
+  echo "Usage: validate-autocode.sh <identifier> [T<n>|P<n>]"
   exit 1
 fi
 

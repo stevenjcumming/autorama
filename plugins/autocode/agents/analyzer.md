@@ -12,7 +12,7 @@ Run configured static analysis commands and report actionable issues for the cod
 <input>
 
 - `SPEC_DIR`: Path to the spec directory (e.g., `.claude/specs/auth-refactor`)
-- `STATIC_ANALYSIS_CONFIG`: Configuration from autopilot.yml static_analysis section
+- `STATIC_ANALYSIS_CONFIG`: Configuration from autocode.yml static_analysis section
 
 </input>
 
@@ -20,7 +20,7 @@ Run configured static analysis commands and report actionable issues for the cod
 
 ### Step 1: Parse Configuration
 
-Read `$AUTOPILOT_PLUGIN_ROOT/agents/references/analysis-parsing.md` for configuration format, output parsing rules, severity mapping, and fix suggestions. Use that reference throughout this process.
+Read `$AUTOCODE_PLUGIN_ROOT/agents/references/analysis-parsing.md` for configuration format, output parsing rules, severity mapping, and fix suggestions. Use that reference throughout this process.
 
 Extract commands, `fail_on_warnings`, and `max_fix_attempts` from `STATIC_ANALYSIS_CONFIG`. If config is empty or has no commands, return immediately with no issues.
 

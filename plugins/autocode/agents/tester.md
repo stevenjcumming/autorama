@@ -36,7 +36,7 @@ Extract from the context:
 
 ### Step 2: Detect Test Framework
 
-Read `$AUTOPILOT_PLUGIN_ROOT/agents/references/test-frameworks.md` for the full framework detection matrix, file conventions, and syntax check commands. Use that reference throughout this process.
+Read `$AUTOCODE_PLUGIN_ROOT/agents/references/test-frameworks.md` for the full framework detection matrix, file conventions, and syntax check commands. Use that reference throughout this process.
 
 ### Step 3: Analyze Existing Tests
 

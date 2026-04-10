@@ -1,5 +1,5 @@
 # Autopilot Configuration
-# Copy this file to .claude/autopilot.yml and customize for your project
+# Copy this file to .claude/autocode.yml and customize for your project
 # Requires `yq` to be installed; falls back to built-in defaults without it
 
 # Static analysis configuration (optional)

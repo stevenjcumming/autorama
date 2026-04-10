@@ -29,11 +29,11 @@ This command provides a human checkpoint by summarizing:
 Execute the review script with the spec identifier to gather summary data, then generate the summary report:
 
 ```bash
-bash $AUTOPILOT_PLUGIN_ROOT/scripts/review.sh $ARGUMENTS
+bash $AUTOCODE_PLUGIN_ROOT/scripts/review.sh $ARGUMENTS
 ```
 
 ```bash
-bash $AUTOPILOT_PLUGIN_ROOT/scripts/generate-report.sh .claude/specs/$IDENTIFIER
+bash $AUTOCODE_PLUGIN_ROOT/scripts/generate-report.sh .claude/specs/$IDENTIFIER
 ```
 
 The `generate-report.sh` script creates a `SUMMARY.md` file in the spec directory with artifact counts, deferred issues, and review hints. Read the generated `SUMMARY.md` and include its data in your review output.

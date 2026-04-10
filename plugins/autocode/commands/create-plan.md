@@ -13,7 +13,7 @@ Create an implementation plan from an existing spec.
 Run the create-plan script:
 
 ```bash
-bash $AUTOPILOT_PLUGIN_ROOT/scripts/create-plan.sh $ARGUMENTS
+bash $AUTOCODE_PLUGIN_ROOT/scripts/create-plan.sh $ARGUMENTS
 ```
 
 ## Step 2: Build the Plan
