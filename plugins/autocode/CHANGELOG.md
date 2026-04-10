@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.0.0-rc.2] - 2026-04-10
 
 ### Changed
 
@@ -17,7 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Spec archive path: `~/.autopilot/specs/` → `~/.autocode/specs/`
   - Validate script: `validate-autopilot.sh` → `validate-autocode.sh`
 
-> **Early adopter note:** If you set `AUTOPILOT_PLUGIN_ROOT` in your shell profile, rename it to `AUTOCODE_PLUGIN_ROOT`. If you have an existing `.claude/autopilot.yml`, rename it to `.claude/autocode.yml`.
+> **Early adopter note:** If you set `AUTOPILOT_PLUGIN_ROOT` in your shell profile or settings.local.json, rename it to `AUTOCODE_PLUGIN_ROOT`. If you have an existing `.claude/autopilot.yml`, rename it to `.claude/autocode.yml`.
 
 ## [1.0.0-rc.1] - 2026-03-30
 

@@ -7,7 +7,7 @@
   "plugins": [
     {
       "name": "autocode",
-      "version": "1.0.0-rc.1",
+      "version": "1.0.0-rc.2",
       "source": "./plugins/autocode",
       "description": "semi-autonomous software development toolkit with structured workflows and safety guardrails",
       "tags": ["automation", "workflows", "safety", "development", "testing"]
