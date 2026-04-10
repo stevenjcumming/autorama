@@ -9,7 +9,7 @@ Execute the Write Tests -> Red -> Code -> Green -> Analysis -> Refactor loop aut
 Autopilot uses an **Agent Harness** inspired architecture where background agents complete individual tasks with clean handoffs between them:
 
 ```
-/autopilot:execute (command — lightweight loop owner)
+/autocode:execute (command — lightweight loop owner)
     │
     ├── Step 3: setup-artifacts.sh + build-task-queue.sh
     │
@@ -41,13 +41,13 @@ Autopilot uses an **Agent Harness** inspired architecture where background agent
 **Key benefits:**
 - **Fresh context per task** - Each task agent starts with clean context
 - **Clean handoffs** - Handoff artifacts preserve decisions
-- **Manual commits** - Use `/autopilot:commit` after tasks complete
+- **Manual commits** - Use `/autocode:commit` after tasks complete
 - **Background execution** - Task agents run in background via Task tool
 
 ## Command
 
 ```
-/autopilot:execute <identifier> [T<n>|P<n>]
+/autocode:execute <identifier> [T<n>|P<n>]
 ```
 
 ## Arguments
@@ -61,18 +61,18 @@ Autopilot uses an **Agent Harness** inspired architecture where background agent
 
 ```bash
 # Run all tasks
-/autopilot:execute auth-refactor
+/autocode:execute auth-refactor
 
 # Run only task T3
-/autopilot:execute auth-refactor T3
+/autocode:execute auth-refactor T3
 
 # Run all tasks in phase P1
-/autopilot:execute auth-refactor P1
+/autocode:execute auth-refactor P1
 ```
 
 ## Configuration
 
-Autopilot can be customized via `.claude/autopilot.yml`:
+Autopilot can be customized via `.claude/autocode.yml`:
 
 ```yaml
 # Static analysis configuration
@@ -92,7 +92,7 @@ static_analysis:
 
 ### Static Analysis
 
-When `static_analysis.enabled: true` (default), autopilot runs configured static analysis tools after tests pass:
+When `static_analysis.enabled: true` (default), autocode runs configured static analysis tools after tests pass:
 
 1. **Commands are checked** - Verifies each command exists before running
 2. **Output is parsed** - Auto-detects JSON or text format
@@ -125,7 +125,7 @@ commands:
 
 **Missing commands:**
 
-If a configured command is not installed, autopilot logs a warning and continues. This allows the same config to work across different environments.
+If a configured command is not installed, autocode logs a warning and continues. This allows the same config to work across different environments.
 
 
 ### Handoff Artifacts
@@ -210,7 +210,7 @@ justification:
 ## Agent Pipeline
 
 ```
-/autopilot:execute <identifier>
+/autocode:execute <identifier>
 ├── Validates prerequisites (TODO.md, PLAN.md, SPEC.md)
 ├── Spawns fresh task-runner per task (clean context)
 │   ├── tester - Writes tests from acceptance criteria (TDD red phase)
@@ -400,10 +400,10 @@ For LARGE tasks, the coder writes an approach document to `{SPEC_DIR}/artifacts/
 
 ## Directory Structure
 
-### Plugin Structure (in `plugins/autopilot/`)
+### Plugin Structure (in `plugins/autocode/`)
 
 ```
-plugins/autopilot/
+plugins/autocode/
 ├── commands/
 │   └── execute.md              # Command definition
 ├── agents/
@@ -419,7 +419,7 @@ plugins/autopilot/
 │       ├── analysis-parsing.md
 │       └── failure-categories.md
 ├── scripts/
-│   ├── validate-autopilot.sh   # Prerequisite validation
+│   ├── validate-autocode.sh   # Prerequisite validation
 │   ├── setup-artifacts.sh      # Create artifact directories
 │   ├── build-task-queue.sh     # Parse TODO.md into task queue
 │   ├── update-task-status.sh   # Mark tasks complete in TODO.md
@@ -435,7 +435,7 @@ plugins/autopilot/
 │   ├── log-skill-usage.sh      # PreToolUse agent spawn logger (Task)
 │   └── on-agent-complete.sh    # SubagentStop handler
 └── templates/
-    ├── autopilot.yml           # Config template for user projects
+    ├── autocode.yml           # Config template for user projects
     └── artifacts/
         └── handoff/
             └── handoff.md      # Handoff template
@@ -445,7 +445,7 @@ plugins/autopilot/
 
 ```
 .claude/
-├── autopilot.yml              # Configuration (optional, copy from template)
+├── autocode.yml              # Configuration (optional, copy from template)
 ├── artifacts/                 # Curated/promoted artifacts (user-managed)
 │   └── ...
 └── specs/
@@ -454,7 +454,7 @@ plugins/autopilot/
         ├── SPEC.md
         ├── RESEARCH.md
         ├── PLAN.md
-        ├── TODO.md            # Updated by autopilot
+        ├── TODO.md            # Updated by autocode
         └── artifacts/         # Generated during loop
             ├── justifications/
             ├── decisions/
@@ -477,7 +477,7 @@ The command provides:
 
 ## Next Steps
 
-After autopilot completes:
+After autocode completes:
 
 1. Review generated artifacts in `.claude/specs/<identifier>/artifacts/`
 2. Check for any flagged review hints

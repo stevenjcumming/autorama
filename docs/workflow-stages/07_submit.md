@@ -6,52 +6,52 @@ Commit code changes and synchronize with GitHub pull requests. The Submit stage 
 
 ## Commands
 
-### /autopilot:commit
+### /autocode:commit
 
 Create a commit with a detailed conventional commit message.
 
 ```
-/autopilot:commit
+/autocode:commit
 ```
 
-### /autopilot:sync-pr
+### /autocode:sync-pr
 
 Create or update a GitHub pull request for the current branch.
 
 ```
-/autopilot:sync-pr [pr-number]
+/autocode:sync-pr [pr-number]
 ```
 
 ## Arguments
 
 | Command | Argument | Required | Description |
 |---------|----------|----------|-------------|
-| `/autopilot:commit` | None | - | No arguments required |
-| `/autopilot:sync-pr` | `pr-number` | No | Existing PR number to update |
+| `/autocode:commit` | None | - | No arguments required |
+| `/autocode:sync-pr` | `pr-number` | No | Existing PR number to update |
 
 ## Examples
 
 ```bash
 # Create a commit for staged changes
-/autopilot:commit
+/autocode:commit
 
 # Create a new PR for current branch
-/autopilot:sync-pr
+/autocode:sync-pr
 
 # Update an existing PR
-/autopilot:sync-pr 123
+/autocode:sync-pr 123
 ```
 
 ## Prerequisites
 
 - Git repository initialized
-- Changes to commit (for `/autopilot:commit`)
-- GitHub CLI (`gh`) installed and authenticated (for `/autopilot:sync-pr`)
-- Remote repository configured (for `/autopilot:sync-pr`)
+- Changes to commit (for `/autocode:commit`)
+- GitHub CLI (`gh`) installed and authenticated (for `/autocode:sync-pr`)
+- Remote repository configured (for `/autocode:sync-pr`)
 
 ## What Each Command Does
 
-### /autopilot:commit
+### /autocode:commit
 
 1. **Checks staging area**: Runs `git diff --cached --quiet` to detect staged changes
    - If changes are already staged: commits only what is staged (skips `git add`)
@@ -60,7 +60,7 @@ Create or update a GitHub pull request for the current branch.
 3. **Creates commit**: Uses conventional commit format with detailed body
 4. **Executes immediately**: No approval required
 
-### /autopilot:sync-pr
+### /autocode:sync-pr
 
 1. **Checks for template**: Reads `.claude/templates/pr_description.md` if exists
 2. **Handles branch**: Creates feature branch if on main/master
@@ -157,19 +157,19 @@ If no template file exists, the command falls back to a minimal format:
 ## Workflow Integration
 
 ```
-/autopilot:execute
+/autocode:execute
 ├── Test → Code → Refactor loop
 └── Changes accumulate
 
-/autopilot:review
+/autocode:review
 ├── Summarize changes and artifacts
 └── Human approval
 
-/autopilot:commit
+/autocode:commit
 ├── Stage changes (or use existing staging)
 └── Create conventional commit
 
-/autopilot:sync-pr
+/autocode:sync-pr
 ├── Push branch to remote
 ├── Create or update PR
 └── Ready for code review
@@ -188,13 +188,13 @@ If no template file exists, the command falls back to a minimal format:
 
 ## Output
 
-### /autopilot:commit
+### /autocode:commit
 
 - Stages changes (all if nothing staged, or uses existing staging)
 - Creates commit with conventional message
 - Shows commit hash and summary
 
-### /autopilot:sync-pr
+### /autocode:sync-pr
 
 - Push confirmation
 - PR URL (created or updated)

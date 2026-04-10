@@ -12,17 +12,17 @@ The plugin uses `${CLAUDE_PLUGIN_DATA}` for cross-session and cross-spec persist
 
 Commands and agents require YAML frontmatter with specific fields:
 
-**Commands** (`plugins/autopilot/commands/*.md`):
+**Commands** (`plugins/autocode/commands/*.md`):
 ```yaml
 ---
 description: Trigger condition describing WHEN to use this command (not a summary)
-allowed-tools: Bash(bash $AUTOPILOT_PLUGIN_ROOT/scripts/example.sh:*), Read, Task
+allowed-tools: Bash(bash $AUTOCODE_PLUGIN_ROOT/scripts/example.sh:*), Read, Task
 argument-hint: [identifier]
 model: opus  # optional
 ---
 ```
 
-**Agents** (`plugins/autopilot/agents/*.md`):
+**Agents** (`plugins/autocode/agents/*.md`):
 ```yaml
 ---
 name: agent-name
@@ -41,6 +41,6 @@ Key differences:
 
 ## Artifacts
 
-Artifacts are generated per spec in the user's project at `.claude/specs/<SPEC_ID>/artifacts/`. The plugin provides artifact templates at `plugins/autopilot/templates/artifacts/`.
+Artifacts are generated per spec in the user's project at `.claude/specs/<SPEC_ID>/artifacts/`. The plugin provides artifact templates at `plugins/autocode/templates/artifacts/`.
 
 Artifact template files (justifications, risks, etc.) are created on disk by the PostToolUse hook. The `task-runner` fills these in after sub-agents complete their work (Step 2.6).

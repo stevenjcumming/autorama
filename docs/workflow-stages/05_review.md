@@ -7,7 +7,7 @@ Provide a human checkpoint by summarizing code changes and artifacts generated d
 ## Command
 
 ```
-/autopilot:review <identifier>
+/autocode:review <identifier>
 ```
 
 ## Arguments
@@ -20,12 +20,12 @@ Provide a human checkpoint by summarizing code changes and artifacts generated d
 
 ```bash
 # Generate review summary for a spec
-/autopilot:review auth-refactor
+/autocode:review auth-refactor
 ```
 
 ## Prerequisites
 
-- Implementation work should be completed (autopilot or manual coding)
+- Implementation work should be completed (autocode or manual coding)
 - Artifacts may exist in `.claude/specs/<identifier>/artifacts/` (optional but recommended)
 - Git repository recommended for change detection
 
@@ -43,7 +43,7 @@ Provide a human checkpoint by summarizing code changes and artifacts generated d
 ## Review Process
 
 ```
-/autopilot:review <identifier>
+/autocode:review <identifier>
 ├── Run review.sh (gather data)
 │   ├── Summarize git changes
 │   ├── Count artifacts by type
@@ -139,7 +139,7 @@ After presenting the summary, the reviewer chooses:
 ## Directory Structure
 
 ```
-plugins/autopilot/
+plugins/autocode/
 ├── commands/
 │   └── review.md              # Command definition
 ├── scripts/
@@ -188,6 +188,6 @@ The command provides:
 
 After review completes:
 
-1. If **Approved**: Run `/autopilot:commit` and `/autopilot:sync-pr` to submit
-2. If **Changes needed**: Return to implementation or `/autopilot:execute`
-3. If **Rejected**: Return to `/autopilot:new-spec` or `/autopilot:create-plan` to address fundamental issues
+1. If **Approved**: Run `/autocode:commit` and `/autocode:sync-pr` to submit
+2. If **Changes needed**: Return to implementation or `/autocode:execute`
+3. If **Rejected**: Return to `/autocode:new-spec` or `/autocode:create-plan` to address fundamental issues

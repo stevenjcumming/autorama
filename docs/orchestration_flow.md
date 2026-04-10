@@ -1,6 +1,6 @@
 # Orchestration Flow
 
-The autopilot system uses a two-layer delegation chain: **command → task-runner**.
+The autocode system uses a two-layer delegation chain: **command → task-runner**.
 
 ## Layer 1: `execute.md` (Command — Lightweight Loop Owner)
 

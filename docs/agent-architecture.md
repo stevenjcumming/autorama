@@ -1,19 +1,19 @@
 # Agent Architecture
 
-The autopilot plugin delegates work through a tree of specialized agents. Each agent has a defined role, model tier, tool access, and set of sub-agents it can spawn. No agent has visibility into the full tree -- it only knows about its direct children.
+The autocode plugin delegates work through a tree of specialized agents. Each agent has a defined role, model tier, tool access, and set of sub-agents it can spawn. No agent has visibility into the full tree -- it only knows about its direct children.
 
 ## Overview
 
 ```
-/autopilot:new-spec ─────────────────────────────────────────── (script only, no agent)
+/autocode:new-spec ─────────────────────────────────────────── (script only, no agent)
 
-/autopilot:create-plan ──── plan-builder (opus)
+/autocode:create-plan ──── plan-builder (opus)
                     ├── plan-researcher (sonnet)
                     └── plan-analyzer (sonnet)
 
-/autopilot:create-tasks ──── (inline, no agent — command writes TODO.md directly)
+/autocode:create-tasks ──── (inline, no agent — command writes TODO.md directly)
 
-/autopilot:execute (command — lightweight loop owner)
+/autocode:execute (command — lightweight loop owner)
                   ├── task-runner (opus, fresh per task)
                   │     ├── tester (sonnet)
                   │     ├── coder (opus)
@@ -182,4 +182,4 @@ Utility agents like session-summarizer produce a file and exit. The caller doesn
 - [Orchestration Flow](orchestration_flow.md)
 - [Agent Handoff](agent-handoff.md)
 - [Evaluation Pipeline](evaluation_pipeline.md)
-- [Autopilot Workflow](workflow-stages/04_autopilot.md)
+- [Autocode Workflow](workflow-stages/04_autocode.md)

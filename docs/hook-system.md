@@ -1,6 +1,6 @@
 # Hook System
 
-The autopilot plugin uses Claude Code hooks to inject behavior at specific points during agent execution. Hooks are shell scripts that run automatically -- agents don't call them directly and aren't aware they exist.
+The autocode plugin uses Claude Code hooks to inject behavior at specific points during agent execution. Hooks are shell scripts that run automatically -- agents don't call them directly and aren't aware they exist.
 
 ## Overview
 
@@ -25,7 +25,7 @@ Two hook types fire at different points in the tool lifecycle. Some types have m
 | **PreToolUse** | Task | `log-skill-usage.sh` | 5s |
 | **SubagentStop** | (none) | `on-agent-complete.sh` | 60s |
 
-All hooks are defined in `plugins/autopilot/hooks/hooks.json` and referenced from `plugin.json`.
+All hooks are defined in `plugins/autocode/hooks/hooks.json` and referenced from `plugin.json`.
 
 ## Hook Definitions
 
@@ -79,16 +79,16 @@ Hooks are grouped by lifecycle type. Each type contains an array of matcher/hook
 ### Matcher Behavior
 
 - PreToolUse hooks use matchers to scope which tools trigger them
-- The `Task` matcher fires for Task tool invocations. Within the scripts, further filtering narrows to `autopilot-*` subagent types -- the hooks silently exit for non-autopilot agents
+- The `Task` matcher fires for Task tool invocations. Within the scripts, further filtering narrows to `autocode-*` subagent types -- the hooks silently exit for non-autocode agents
 - SubagentStop has no matcher and fires for all subagent completions. The script checks the agent type internally
 
 ## Hook Scripts
 
 ### `load-context.sh` (PreToolUse)
 
-Fires before each autopilot Task agent is spawned. Loads context from the previous task into the new agent's prompt.
+Fires before each autocode Task agent is spawned. Loads context from the previous task into the new agent's prompt.
 
-**Activation guard:** Only runs for `autopilot-*` subagent types. Exits silently otherwise.
+**Activation guard:** Only runs for `autocode-*` subagent types. Exits silently otherwise.
 
 **Process:**
 1. Extracts `SPEC_DIR` from the Task tool's prompt argument
@@ -109,11 +109,11 @@ Fires before each autopilot Task agent is spawned. Loads context from the previo
 
 Fires alongside `load-context.sh` before each Task agent is spawned. Logs agent spawn events to `${CLAUDE_PLUGIN_DATA}/usage.jsonl` for cross-session analytics.
 
-**Activation guard:** Only runs for `autopilot:*` subagent types. Requires `CLAUDE_PLUGIN_DATA` to be set. Exits silently otherwise.
+**Activation guard:** Only runs for `autocode:*` subagent types. Requires `CLAUDE_PLUGIN_DATA` to be set. Exits silently otherwise.
 
 **Process:**
 1. Extracts subagent type from JSON input
-2. Strips the `autopilot:` prefix
+2. Strips the `autocode:` prefix
 3. Delegates to `scripts/log-usage.sh` to append a JSONL entry
 
 **Dependencies:** Requires `jq` for JSON parsing and `CLAUDE_PLUGIN_DATA` environment variable.
@@ -165,7 +165,7 @@ Standalone utility that assembles handoff context. Used by `load-context.sh` but
 
 ## Configuration
 
-Hooks read their configuration from `.claude/autopilot.yml`:
+Hooks read their configuration from `.claude/autocode.yml`:
 
 | Key | Default | Used By |
 |-----|---------|---------|
@@ -175,7 +175,7 @@ Feature sections are active when present. To disable a feature, remove the secti
 
 To add a hook:
 
-1. Create a shell script in `plugins/autopilot/hooks/`
+1. Create a shell script in `plugins/autocode/hooks/`
 2. Add a matcher/hooks entry under the appropriate lifecycle type in `hooks.json` (see structure above)
 3. The script receives tool input as JSON on stdin (PreToolUse) or agent metadata (SubagentStop)
 4. Output to stdout is injected into the agent's context (PreToolUse) or logged (SubagentStop)

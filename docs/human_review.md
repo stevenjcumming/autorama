@@ -2,13 +2,13 @@
 
 ## Task Filtering
 
-When running `/autopilot:execute`, the engineer controls which tasks are executed via an optional filter argument:
+When running `/autocode:execute`, the engineer controls which tasks are executed via an optional filter argument:
 
 | Invocation | Scope |
 |---|---|
-| `/autopilot:execute auth-refactor` | All uncompleted tasks in order |
-| `/autopilot:execute auth-refactor T3` | Only task T3 |
-| `/autopilot:execute auth-refactor P1` | All uncompleted tasks in phase P1 |
+| `/autocode:execute auth-refactor` | All uncompleted tasks in order |
+| `/autocode:execute auth-refactor T3` | Only task T3 |
+| `/autocode:execute auth-refactor P1` | All uncompleted tasks in phase P1 |
 
 There is no range syntax (e.g., `T2-T5`). The options are: one task, one phase, or everything.
 
@@ -24,9 +24,9 @@ Between tasks, the engineer can inspect changes at any time:
 - Read the handoff at `.claude/specs/<id>/artifacts/handoff/handoff.md`
 - Run tests or check git diffs manually
 
-### Formal Review (`/autopilot:review`)
+### Formal Review (`/autocode:review`)
 
-The `/autopilot:review <id>` command triggers a structured review process. It is designed to run after implementation is complete (all tasks or a meaningful batch). The review command:
+The `/autocode:review <id>` command triggers a structured review process. It is designed to run after implementation is complete (all tasks or a meaningful batch). The review command:
 
 1. **Gathers summary data** — runs a review script that collects changes, artifacts, and flagged items
 2. **Presents an enhanced summary** covering:
@@ -46,15 +46,15 @@ The engineer's decision determines the next step:
 
 | Decision | Next Action |
 |---|---|
-| **Approve** | Run `/autopilot:commit` and `/autopilot:sync-pr` to submit |
-| **Request changes** | Run `/autopilot:execute <id>` again (optionally filtering to specific tasks) to address the feedback |
-| **Reject** | Run `/autopilot:new-spec <id>` to rework the specification from scratch |
+| **Approve** | Run `/autocode:commit` and `/autocode:sync-pr` to submit |
+| **Request changes** | Run `/autocode:execute <id>` again (optionally filtering to specific tasks) to address the feedback |
+| **Reject** | Run `/autocode:new-spec <id>` to rework the specification from scratch |
 
 The full post-review pipeline for an approved review is:
 
 ```
-/autopilot:review → /autopilot:commit → /autopilot:sync-pr
+/autocode:review → /autocode:commit → /autocode:sync-pr
 ```
 
-- `/autopilot:commit` creates a conventional commit
-- `/autopilot:sync-pr` creates or updates a GitHub pull request
+- `/autocode:commit` creates a conventional commit
+- `/autocode:sync-pr` creates or updates a GitHub pull request

@@ -32,14 +32,14 @@ Complete flow of the Autopilot workflow pipeline showing commands, agents, hooks
 ## End-to-End Pipeline
 
 ```
-  HUMAN            /autopilot:new-spec           /autopilot:create-plan         /autopilot:create-tasks
+  HUMAN            /autocode:new-spec           /autocode:create-plan         /autocode:create-tasks
     |                  |                    |                     |
     v                  v                    v                     v
 Requirements ──> [1] Spec ──> HUMAN ──> [2] Plan ──> HUMAN ──> [3] Tasks ──> HUMAN
                                                                                 |
                ┌────────────────────────────────────────────────────────────────┘
                v
-           [4] Autopilot (/autopilot:execute) ──────────────────────────┐
+           [4] Autocode (/autocode:execute) ──────────────────────────┐
                |                                                        |
                |  ┌──────────────────────────────────────────────┐      |
                |  │  Execute Command (per task, fresh context)   │      |
@@ -56,13 +56,13 @@ Requirements ──> [1] Spec ──> HUMAN ──> [2] Plan ──> HUMAN ─�
      HUMAN (optional between tasks)                                     |
                |                                                        |
                v                                                        |
-           [5] Review (/autopilot:review) ──> HUMAN DECISION ───────────┤
+           [5] Review (/autocode:review) ──> HUMAN DECISION ───────────┤
                |          |              |                              |
            Approve    Request Changes   Reject                          |
                |          |              |                              |
                v          v              v                              |
-           [6] Submit   [4] Autopilot  [1] Spec  <──────────────────────┘
-           (/autopilot:commit, /autopilot:sync-pr)
+           [6] Submit   [4] Autocode  [1] Spec  <──────────────────────┘
+           (/autocode:commit, /autocode:sync-pr)
                |
                v
            HUMAN (code review, merge)
@@ -75,7 +75,7 @@ Requirements ──> [1] Spec ──> HUMAN ──> [2] Plan ──> HUMAN ─�
 ### [1] Spec
 
 ```
-/autopilot:new-spec <id>
+/autocode:new-spec <id>
     |
     v
 new-spec.sh script
@@ -90,7 +90,7 @@ HUMAN ACTION
     └── Fill out SPEC.md (overview, acceptance criteria, scope)
 ```
 
-**Command**: `/autopilot:new-spec <id>`
+**Command**: `/autocode:new-spec <id>`
 **Agents**: None (script only)
 **Artifacts Generated**: `REQUIREMENT.md`, `SPEC.md`
 **Human Action**: Fill in requirements and spec details
@@ -100,7 +100,7 @@ HUMAN ACTION
 ### [2] Plan
 
 ```
-/autopilot:create-plan <id>
+/autocode:create-plan <id>
     |
     v
 plan-builder (opus)
@@ -122,7 +122,7 @@ HUMAN ACTION
     └── Approve plan before proceeding
 ```
 
-**Command**: `/autopilot:create-plan <id>`
+**Command**: `/autocode:create-plan <id>`
 **Agents**: `plan-builder` -> `plan-researcher`, `plan-analyzer`
 **Artifacts Generated**: `RESEARCH.md`, `PLAN.md`
 **Human Action**: Review plan, address gaps, approve
@@ -132,7 +132,7 @@ HUMAN ACTION
 ### [3] Tasks
 
 ```
-/autopilot:create-tasks <id>
+/autocode:create-tasks <id>
     |
     v
 create-tasks command (inline)
@@ -149,7 +149,7 @@ HUMAN ACTION
         └── (Loop back to Spec if tasks reveal missing requirements)
 ```
 
-**Command**: `/autopilot:create-tasks <id>`
+**Command**: `/autocode:create-tasks <id>`
 **Agents**: None (command writes TODO.md inline)
 **Artifacts Generated**: `TODO.md`
 **Human Action**: Review tasks, verify ordering, approve
@@ -159,7 +159,7 @@ HUMAN ACTION
 ### [4] Autopilot
 
 ```
-/autopilot:execute <id> [T<n>|P<n>]
+/autocode:execute <id> [T<n>|P<n>]
     |
     v
 ┌──────────────────────────────────────────────────────────────────────────┐
@@ -229,7 +229,7 @@ HUMAN ACTION
 └──────────────────────────────────────────────────────────────────────────┘
 ```
 
-**Command**: `/autopilot:execute <id> [T<n>|P<n>]`
+**Command**: `/autocode:execute <id> [T<n>|P<n>]`
 **Agents**: `task-runner` (fresh per task) -> `tester`, `coder`, `analyzer`, `refactorer`; `session-summarizer` (on context-critical)
 **Human Action**: Optional review between tasks
 
@@ -238,7 +238,7 @@ HUMAN ACTION
 ### [5] Review
 
 ```
-/autopilot:review
+/autocode:review
     |
     v
 review.sh (data gathering)
@@ -261,11 +261,11 @@ Present enhanced summary to HUMAN
 HUMAN DECISION
     |
     ├── APPROVE ──────────> Proceed to Submit
-    ├── REQUEST CHANGES ──> Return to Autopilot (specific fixes)
+    ├── REQUEST CHANGES ──> Return to Autocode (specific fixes)
     └── REJECT ───────────> Return to Spec (fundamental issues)
 ```
 
-**Command**: `/autopilot:review`
+**Command**: `/autocode:review`
 **Agents**: None (script + command orchestration)
 **Human Action**: Review all items, make approve/change/reject decision
 
@@ -274,7 +274,7 @@ HUMAN DECISION
 ### [6] Submit
 
 ```
-/autopilot:commit
+/autocode:commit
     |
     v
     ├── git add -A (stage all changes)
@@ -282,7 +282,7 @@ HUMAN DECISION
     └── Create conventional commit (type(scope): subject)
     |
     v
-/autopilot:sync-pr [pr-number]
+/autocode:sync-pr [pr-number]
     |
     ├── Read PR template (.claude/templates/pr_description.md)
     ├── Create feature branch if on main/master
@@ -296,7 +296,7 @@ HUMAN ACTION
     └── Merge when approved
 ```
 
-**Command**: `/autopilot:commit`, `/autopilot:sync-pr`
+**Command**: `/autocode:commit`, `/autocode:sync-pr`
 **Agents**: None (command orchestration)
 **Human Action**: Monitor PR, address feedback, merge
 
@@ -365,7 +365,7 @@ Task runner initializes with full previous context
 
 All artifacts written to `.claude/specs/<id>/artifacts/` unless noted.
 
-### Generated During Autopilot (by agent)
+### Generated During Autocode (by agent)
 
 | Artifact | Agent | Trigger |
 |----------|-------|---------|
@@ -419,15 +419,15 @@ All artifacts written to `.claude/specs/<id>/artifacts/` unless noted.
 ## Agent Tree
 
 ```
-/autopilot:new-spec ────────── (script only, no agent)
+/autocode:new-spec ────────── (script only, no agent)
 
-/autopilot:create-plan ─────── plan-builder (opus)
+/autocode:create-plan ─────── plan-builder (opus)
                        ├── plan-researcher (sonnet)
                        └── plan-analyzer (sonnet)
 
-/autopilot:create-tasks ────── (inline, no agent — command writes TODO.md directly)
+/autocode:create-tasks ────── (inline, no agent — command writes TODO.md directly)
 
-/autopilot:execute (command — lightweight loop owner)
+/autocode:execute (command — lightweight loop owner)
                        ├── task-runner (opus, fresh per task)
                        │     ├── tester (sonnet)
                        │     ├── coder (opus)

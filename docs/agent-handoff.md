@@ -1,6 +1,6 @@
 # Agent Handoff
 
-The autopilot plugin uses a handoff system to preserve context between sequential task executions. Each agent starts fresh with no memory of previous work, so the handoff pipeline ensures continuity by writing structured artifacts that the next agent loads at initialization.
+The autocode plugin uses a handoff system to preserve context between sequential task executions. Each agent starts fresh with no memory of previous work, so the handoff pipeline ensures continuity by writing structured artifacts that the next agent loads at initialization.
 
 ## Overview
 
@@ -37,7 +37,7 @@ The central artifact is `handoff.md`, written to `{SPEC_DIR}/artifacts/handoff/h
 | **Warnings** | Important context the next agent should know |
 | **Artifacts Generated** | List of artifacts created, by type and path |
 
-The template lives at `plugins/autopilot/templates/artifacts/handoff/handoff.md`.
+The template lives at `plugins/autocode/templates/artifacts/handoff/handoff.md`.
 
 ### Generation
 
@@ -45,11 +45,11 @@ The template lives at `plugins/autopilot/templates/artifacts/handoff/handoff.md`
 
 ## 2. Hook Pipeline
 
-Two hooks coordinate the handoff lifecycle. They are defined in `plugins/autopilot/hooks/hooks.json` and execute automatically during the autopilot loop.
+Two hooks coordinate the handoff lifecycle. They are defined in `plugins/autocode/hooks/hooks.json` and execute automatically during the autocode loop.
 
 ### `load-context.sh` (PreToolUse)
 
-Fires before each `autopilot-*` Task agent is spawned. Loads context from the previous task into the new agent's prompt.
+Fires before each `autocode-*` Task agent is spawned. Loads context from the previous task into the new agent's prompt.
 
 **What it loads:**
 
@@ -75,7 +75,7 @@ Fires when a subagent finishes. Checks context limits and signals completion.
 | `<context-critical>` | Context usage is critical, summarization needed |
 | `<agent-completed>` | Agent finished (always emitted) |
 
-Use `/autopilot:commit` to commit changes after tasks complete.
+Use `/autocode:commit` to commit changes after tasks complete.
 
 ## 3. Session Summarization
 
@@ -122,7 +122,7 @@ A standalone script that assembles handoff context for any consumer. Used by `lo
 
 ## Configuration
 
-The handoff system is configured via `.claude/autopilot.yml`:
+The handoff system is configured via `.claude/autocode.yml`:
 
 Feature sections are active when present. To disable a feature, remove the section entirely.
 
@@ -130,4 +130,4 @@ Feature sections are active when present. To disable a feature, remove the secti
 
 - [Orchestration Flow](orchestration_flow.md)
 - [Evaluation Pipeline](evaluation_pipeline.md)
-- [Autopilot Workflow](workflow-stages/04_autopilot.md)
+- [Autocode Workflow](workflow-stages/04_autocode.md)

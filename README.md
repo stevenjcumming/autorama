@@ -24,16 +24,16 @@ See [docs/workflow-overview.md](docs/workflow-overview.md) for detailed stage de
 ```bash
 # 1. Install the plugin
 /plugin marketplace add stevenjcumming/autopilot
-/plugin install autopilot
+/plugin install autocode
 
 # 2. See available commands and workflow
-/autopilot:help
+/autocode:help
 
 # 3. Initialize (creates config, installs yq, updates gitignore)
-/autopilot:init
+/autocode:init
 
 # 4. Start a new feature
-/autopilot:new-spec my-feature
+/autocode:new-spec my-feature
 
 # 5. Fill in REQUIREMENT.md 
 # Copy and paste your GitHub or JIRA ticket 
@@ -42,16 +42,16 @@ See [docs/workflow-overview.md](docs/workflow-overview.md) for detailed stage de
 # Write or generate a SPEC.md based on REQUIREMENT.md 
 
 # 7. Generate the tasks
-/autopilot:create-plan my-feature
-/autopilot:create-tasks my-feature
+/autocode:create-plan my-feature
+/autocode:create-tasks my-feature
 
 # 8. Start development
-/autopilot:execute my-feature T1
+/autocode:execute my-feature T1
 
 # 9. Review and create/update PR
-/autopilot:review my-feature
-/autopilot:commit
-/autopilot:sync-pr
+/autocode:review my-feature
+/autocode:commit
+/autocode:sync-pr
 ```
 
 ## Safety Principles
@@ -65,12 +65,12 @@ See [docs/workflow-overview.md](docs/workflow-overview.md) for detailed stage de
 
 ## Configuration
 
-Configure via `.claude/autopilot.yml`. Run `/autopilot:init` to create from template. Key settings:
+Configure via `.claude/autocode.yml`. Run `/autocode:init` to create from template. Key settings:
 
 | Setting | Default | Description |
 |---------|---------|-------------|
 | `justification.categories` | (see config) | Require justification for flagged file categories |
-| `static_analysis.commands` | `[]` | Static analysis commands to run during autopilot |
+| `static_analysis.commands` | `[]` | Static analysis commands to run during autocode |
 
 See [docs/configuration.md](docs/configuration.md) for full reference.
 
@@ -88,6 +88,18 @@ See [docs/configuration.md](docs/configuration.md) for full reference.
 - [Configuration](docs/configuration.md)
 - [Justification Categories](docs/justifications.md)
 - [Human Review](docs/human_review.md)
+
+## Plugin Naming
+
+**Autopilot** is the umbrella brand and marketplace name (`stevenjcumming/autopilot`). Under it, individual plugins handle specific areas of the development workflow:
+
+| Plugin | Purpose |
+|--------|---------|
+| `autocode` | Development workflow: TDD loop, specs, plans, PRs |
+| `autoskill` | Skill generation for teams and projects |
+| `autocontext` | Context management (future) |
+
+When you install from the marketplace, you install specific plugins: `/plugin install autocode`. The marketplace stays under the `autopilot` name on GitHub.
 
 ## License
 

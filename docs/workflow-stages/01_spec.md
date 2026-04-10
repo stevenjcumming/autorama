@@ -7,7 +7,7 @@ Create a new spec folder with `REQUIREMENT.md` and `SPEC.md` files to begin the 
 ## Command
 
 ```
-/autopilot:new-spec <identifier>
+/autocode:new-spec <identifier>
 ```
 
 ## Arguments
@@ -52,7 +52,7 @@ After creating the spec:
    - Dependencies
    - Out of scope items
    - Open questions
-3. Run `/autopilot:create-plan <identifier>` to generate the implementation plan
+3. Run `/autocode:create-plan <identifier>` to generate the implementation plan
 
 ### Optional Next Step
 

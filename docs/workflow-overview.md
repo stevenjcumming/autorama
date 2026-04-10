@@ -1,4 +1,4 @@
-# Autopilot Workflow Stages
+# Autocode Workflow Stages
 
 A structured framework for semi-autonomous software development with human oversight.
 
@@ -45,7 +45,7 @@ Gather and document the original requirements for the feature or task. This is t
 
 ### 2. Spec
 
-**Command**: `/autopilot:new-spec <identifier>`
+**Command**: `/autocode:new-spec <identifier>`
 
 Create a specification folder with structured documentation of the requirements.
 
@@ -64,7 +64,7 @@ Create a specification folder with structured documentation of the requirements.
 
 ### 3. Plan
 
-**Command**: `/autopilot:create-plan <identifier>`
+**Command**: `/autocode:create-plan <identifier>`
 
 Generate an implementation plan from the spec using automated research and analysis.
 
@@ -85,7 +85,7 @@ Generate an implementation plan from the spec using automated research and analy
 
 ### 4. Tasks
 
-**Command**: `/autopilot:create-tasks <identifier>`
+**Command**: `/autocode:create-tasks <identifier>`
 
 Convert the implementation plan into a phased TODO checklist.
 
@@ -105,7 +105,7 @@ Convert the implementation plan into a phased TODO checklist.
 
 ### 5. Test → Code → Analysis → Refactor Loop
 
-**Command**: `/autopilot:execute <identifier> [T<n>|P<n>]`
+**Command**: `/autocode:execute <identifier> [T<n>|P<n>]`
 
 Execute the implementation loop autonomously for a spec using the Agent Harness architecture.
 
@@ -179,7 +179,7 @@ Execute Command
 
 ### 6. Review
 
-**Command**: `/autopilot:review <identifier>`
+**Command**: `/autocode:review <identifier>`
 
 Human checkpoint to review all changes and artifacts before finalizing.
 
@@ -203,18 +203,18 @@ Human checkpoint to review all changes and artifacts before finalizing.
 
 ### 7. Submit
 
-**Commands**: `/autopilot:commit`, `/autopilot:sync-pr`
+**Commands**: `/autocode:commit`, `/autocode:sync-pr`
 
 Finalize implementation by creating commits and managing pull requests.
 
-#### /autopilot:commit
+#### /autocode:commit
 
 **What It Does**:
 1. Stages all changes
 2. Analyzes diff for context
 3. Creates conventional commit with detailed message
 
-#### /autopilot:sync-pr
+#### /autocode:sync-pr
 
 **What It Does**:
 1. Creates feature branch if on main/master
@@ -233,9 +233,9 @@ Finalize implementation by creating commits and managing pull requests.
 
 | Stage | Command | Input | Output |
 |-------|---------|-------|--------|
-| Spec | `/autopilot:new-spec <id>` | Requirements | `REQUIREMENT.md`, `SPEC.md` |
-| Plan | `/autopilot:create-plan <id>` | Spec | `RESEARCH.md`, `PLAN.md` |
-| Tasks | `/autopilot:create-tasks <id>` | Plan | `TODO.md` |
-| Autopilot | `/autopilot:execute <id>` | Tasks | Code changes, per-spec artifacts, commits |
-| Review | `/autopilot:review <id>` | Changes, per-spec artifacts | Human decision |
-| Submit | `/autopilot:commit`, `/autopilot:sync-pr` | Changes | Commits, PR |
+| Spec | `/autocode:new-spec <id>` | Requirements | `REQUIREMENT.md`, `SPEC.md` |
+| Plan | `/autocode:create-plan <id>` | Spec | `RESEARCH.md`, `PLAN.md` |
+| Tasks | `/autocode:create-tasks <id>` | Plan | `TODO.md` |
+| Autopilot | `/autocode:execute <id>` | Tasks | Code changes, per-spec artifacts, commits |
+| Review | `/autocode:review <id>` | Changes, per-spec artifacts | Human decision |
+| Submit | `/autocode:commit`, `/autocode:sync-pr` | Changes | Commits, PR |

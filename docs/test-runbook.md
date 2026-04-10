@@ -27,7 +27,7 @@ echo "- [ ] [T1] Create hello.js with hello() function" > .claude/specs/test-sin
 
 **Execution:**
 ```bash
-/autopilot:execute test-single-task
+/autocode:execute test-single-task
 ```
 
 **Expected Results:**
@@ -62,7 +62,7 @@ EOF
 
 **Execution:**
 ```bash
-/autopilot:execute test-multi-task
+/autocode:execute test-multi-task
 ```
 
 **Expected Results:**
@@ -79,7 +79,7 @@ grep -c "\[x\]" .claude/specs/test-multi-task/TODO.md  # Should be 3
 
 ### T3: Resume from Incomplete State
 
-**Purpose:** Verify autopilot correctly resumes from incomplete tasks.
+**Purpose:** Verify autocode correctly resumes from incomplete tasks.
 
 **Setup:**
 ```bash
@@ -94,11 +94,11 @@ EOF
 
 **Execution:**
 ```bash
-/autopilot:execute test-resume
+/autocode:execute test-resume
 ```
 
 **Expected Results:**
-- [ ] Autopilot resumes from T2 (not T1)
+- [ ] Autocode resumes from T2 (not T1)
 - [ ] Context from handoff is loaded
 - [ ] T2 and T3 complete successfully
 
@@ -128,7 +128,7 @@ EOF
 
 **Execution:**
 ```bash
-/autopilot:execute test-context
+/autocode:execute test-context
 ```
 
 **Expected Results:**
@@ -159,7 +159,7 @@ EOF
 
 **Execution:**
 ```bash
-/autopilot:execute test-background
+/autocode:execute test-background
 ```
 
 **Expected Results:**
@@ -183,7 +183,7 @@ test -f .claude/specs/test-background/artifacts/handoff/handoff.md
 
 **Test:**
 1. Create handoff.md with known content
-2. Run autopilot
+2. Run autocode
 3. Verify task agent receives context
 
 **Verification:** Check task agent output references handoff content.
@@ -205,23 +205,23 @@ test -f .claude/specs/test-background/artifacts/handoff/handoff.md
 
 ### E1: Missing Prerequisites
 
-**Test:** Run `/autopilot:execute` without TODO.md
+**Test:** Run `/autocode:execute` without TODO.md
 **Expected:** Clear error message, no crash
 
 ### E2: Invalid Task Filter
 
-**Test:** Run `/autopilot:execute spec T99` (non-existent task)
+**Test:** Run `/autocode:execute spec T99` (non-existent task)
 **Expected:** Error message indicating task not found
 
 ### E3: Hook Script Failure
 
 **Test:** Make hook script return non-zero exit
-**Expected:** Graceful handling, error reported, autopilot can continue or pause
+**Expected:** Graceful handling, error reported, autocode can continue or pause
 
 ### E4: Git Commit Failure
 
 **Test:** Create scenario where git commit fails (e.g., no changes)
-**Expected:** Warning logged, autopilot continues
+**Expected:** Warning logged, autocode continues
 
 ---
 
@@ -234,7 +234,7 @@ To run these tests manually:
 for test in test-single-task test-multi-task test-resume test-context test-background; do
   echo "Running $test..."
   # Setup test
-  # Run autopilot
+  # Run autocode
   # Verify results
   # Cleanup
 done

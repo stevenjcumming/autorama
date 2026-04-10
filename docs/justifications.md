@@ -1,10 +1,10 @@
 # Justification Categories
 
-This document provides examples of justification categories and questions you can configure in `.claude/autopilot.yml`.
+This document provides examples of justification categories and questions you can configure in `.claude/autocode.yml`.
 
 ## Default Categories
 
-These categories are included in the default `autopilot.yml` template:
+These categories are included in the default `autocode.yml` template:
 
 - `spec_modification`
 - `migration`
@@ -12,13 +12,13 @@ These categories are included in the default `autopilot.yml` template:
 - `configuration`
 - `security`
 
-Run `/autopilot:init` to copy the default template to `.claude/autopilot.yml`, or manually copy from the plugin's `templates/autopilot.yml`. Modify the file's patterns or questions to fit your project's needs.
+Run `/autocode:init` to copy the default template to `.claude/autocode.yml`, or manually copy from the plugin's `templates/autocode.yml`. Modify the file's patterns or questions to fit your project's needs.
 
 ---
 
 ## Additional Category Examples
 
-Add these to your `.claude/autopilot.yml` under `justification.categories`:
+Add these to your `.claude/autocode.yml` under `justification.categories`:
 
 ### Infrastructure / DevOps
 

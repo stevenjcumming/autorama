@@ -7,7 +7,7 @@ Perform a structured code review of recent changes against a configurable checkl
 ## Command
 
 ```
-/autopilot:code-review [identifier] [--ref <ref>]
+/autocode:code-review [identifier] [--ref <ref>]
 ```
 
 ## Arguments
@@ -21,16 +21,16 @@ Perform a structured code review of recent changes against a configurable checkl
 
 ```bash
 # Review uncommitted changes using the default checklist
-/autopilot:code-review
+/autocode:code-review
 
 # Review changes for a specific spec
-/autopilot:code-review auth-refactor
+/autocode:code-review auth-refactor
 
 # Review against a specific git ref
-/autopilot:code-review --ref main
+/autocode:code-review --ref main
 
 # Both spec-scoped and ref-based
-/autopilot:code-review auth-refactor --ref origin/main
+/autocode:code-review auth-refactor --ref origin/main
 ```
 
 ## Prerequisites
@@ -48,7 +48,7 @@ Perform a structured code review of recent changes against a configurable checkl
 ## Review Process
 
 ```
-/autopilot:code-review [identifier]
+/autocode:code-review [identifier]
 ├── Gather diff (git diff + git diff --stat)
 ├── Load checklist (config → project → default)
 ├── Spawn reviewer agent
@@ -118,29 +118,29 @@ The checklist is resolved in priority order:
 
 | Priority | Source | Path |
 |----------|--------|------|
-| 1 | Config | Path specified in `code_review.checklist` in `.claude/autopilot.yml` |
+| 1 | Config | Path specified in `code_review.checklist` in `.claude/autocode.yml` |
 | 2 | Project | `.claude/code-review-checklist.md` |
-| 3 | Default | `$AUTOPILOT_PLUGIN_ROOT/templates/code-review-checklist.md` |
+| 3 | Default | `$AUTOCODE_PLUGIN_ROOT/templates/code-review-checklist.md` |
 
 The default checklist covers five areas: Security, Testing, Error Handling, Code Quality, and Performance (5 items each, 25 total).
 
 To customize, copy the default and modify:
 
 ```bash
-cp plugins/autopilot/templates/code-review-checklist.md .claude/code-review-checklist.md
+cp plugins/autocode/templates/code-review-checklist.md .claude/code-review-checklist.md
 ```
 
 Or point to a custom path in config:
 
 ```yaml
-# .claude/autopilot.yml
+# .claude/autocode.yml
 code_review:
   checklist: .claude/my-team-checklist.md
 ```
 
 ## Comparison: Code Review vs Review
 
-| Aspect | `/autopilot:code-review` | `/autopilot:review` |
+| Aspect | `/autocode:code-review` | `/autocode:review` |
 |--------|--------------------------|---------------------|
 | **Focus** | Finding checklist violations in code | Summarizing artifacts for human oversight |
 | **Input** | Git diff | Artifacts, git changes, review hints |
@@ -149,7 +149,7 @@ code_review:
 | **Decision** | Informational — no approval flow | Approve / Request Changes / Reject |
 | **When to use** | Automated quality gate | Human checkpoint before submission |
 
-Both can be used together: run `/autopilot:code-review` first for automated checks, then `/autopilot:review` for the human decision.
+Both can be used together: run `/autocode:code-review` first for automated checks, then `/autocode:review` for the human decision.
 
 ## Key Characteristics
 
@@ -163,5 +163,5 @@ Both can be used together: run `/autopilot:code-review` first for automated chec
 After code review:
 
 1. **Fix findings**: Address CRITICAL and HIGH issues before proceeding
-2. **Run `/autopilot:review`**: Human checkpoint for artifact review and approval
-3. **Submit**: `/autopilot:commit` and `/autopilot:sync-pr`
+2. **Run `/autocode:review`**: Human checkpoint for artifact review and approval
+3. **Submit**: `/autocode:commit` and `/autocode:sync-pr`

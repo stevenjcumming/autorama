@@ -1,13 +1,13 @@
 # Configuration
 
-The autopilot plugin is configured via `.claude/autopilot.yml` in the project root. All keys are optional -- the system uses sensible defaults when configuration is absent.
+The autocode plugin is configured via `.claude/autocode.yml` in the project root. All keys are optional -- the system uses sensible defaults when configuration is absent.
 
 ## Setup
 
-Run `/autopilot:init` or copy the template manually:
+Run `/autocode:init` or copy the template manually:
 
 ```
-cp plugins/autopilot/templates/autopilot.yml .claude/autopilot.yml
+cp plugins/autocode/templates/autocode.yml .claude/autocode.yml
 ```
 
 ## Reference
@@ -43,7 +43,7 @@ Commands can be specified as a simple string or as an object with an explicit `f
 
 **Fix attempts:** Each blocking issue is tracked by `{tool}:{rule}` key. Issues exceeding `max_fix_attempts` generate a debt artifact instead of retrying.
 
-**Missing commands:** If a configured command is not installed, autopilot logs a warning and continues. Remove the `static_analysis` section entirely to disable.
+**Missing commands:** If a configured command is not installed, autocode logs a warning and continues. Remove the `static_analysis` section entirely to disable.
 
 ### Justification
 
@@ -162,8 +162,8 @@ justification:
 
 | File | Purpose |
 |------|---------|
-| `.claude/autopilot.yml` | Active configuration (user-created) |
-| `plugins/autopilot/templates/autopilot.yml` | Template with defaults and examples |
+| `.claude/autocode.yml` | Active configuration (user-created) |
+| `plugins/autocode/templates/autocode.yml` | Template with defaults and examples |
 
 ## Related Documentation
 

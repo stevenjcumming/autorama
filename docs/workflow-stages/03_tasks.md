@@ -7,7 +7,7 @@ Convert an implementation plan into a phased TODO checklist. This marks the end 
 ## Command
 
 ```
-/autopilot:create-tasks <identifier>
+/autocode:create-tasks <identifier>
 ```
 
 ## Arguments
@@ -87,8 +87,8 @@ Tasks are globally numbered with `[T1]`, `[T2]`, etc. across all phases, and pha
 # TODO
 
 <!-- Task checklist generated from PLAN.md -->
-<!-- Run specific task: /autopilot:execute <SPEC_DIR> T3 -->
-<!-- Run specific phase: /autopilot:execute <SPEC_DIR> P1 -->
+<!-- Run specific task: /autocode:execute <SPEC_DIR> T3 -->
+<!-- Run specific phase: /autocode:execute <SPEC_DIR> P1 -->
 
 ## P1: [Actual Phase Name from PLAN.md]
 
@@ -121,6 +121,6 @@ After the command completes:
 
 1. Review TODO.md for completeness
 2. Verify task ordering makes sense
-3. Run all tasks: `/autopilot:execute <SPEC_DIR>`
-4. Or run a specific task: `/autopilot:execute <SPEC_DIR> T1`
-5. Or run a specific phase: `/autopilot:execute <SPEC_DIR> P1`
+3. Run all tasks: `/autocode:execute <SPEC_DIR>`
+4. Or run a specific task: `/autocode:execute <SPEC_DIR> T1`
+5. Or run a specific phase: `/autocode:execute <SPEC_DIR> P1`

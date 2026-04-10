@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Artifacts are structured documentation files generated during the autopilot loop. They create an audit trail of decisions and reasoning that supports human oversight and continuous improvement.
+Artifacts are structured documentation files generated during the autocode loop. They create an audit trail of decisions and reasoning that supports human oversight and continuous improvement.
 
 ## Artifact Locations
 
@@ -10,7 +10,7 @@ Artifacts follow a two-tier organization:
 
 ### Per-Spec Artifacts (Primary)
 
-During autopilot execution, artifacts are generated within the spec directory:
+During autocode execution, artifacts are generated within the spec directory:
 
 ```
 .claude/specs/<SPEC_ID>/artifacts/
@@ -34,7 +34,7 @@ This location is for curated artifacts that users manually move there. Examples 
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
-│                     /autopilot:execute Command                          │
+│                     /autocode:execute Command                          │
 └─────────────────────────────────────────────────────────────────────────┘
                                    │
                                    ▼
@@ -70,7 +70,7 @@ This location is for curated artifacts that users manually move there. Examples 
 │  1. Agent identifies trigger condition                                  │
 │  2. Agent generates filename: {task_id}_{name}_{timestamp}.md           │
 │  3. Agent writes to: .claude/specs/<SPEC_ID>/artifacts/{artifact_type}/ │
-│  4. Uses template structure from plugins/autopilot/templates/artifacts/ │
+│  4. Uses template structure from plugins/autocode/templates/artifacts/ │
 └─────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -134,7 +134,7 @@ This location is for curated artifacts that users manually move there. Examples 
 
 ## File Categories Requiring Justification
 
-These categories are the built-in defaults from `agents/references/artifact-triggers.md`. They can be customized in `.claude/autopilot.yml` under `justification.categories`.
+These categories are the built-in defaults from `agents/references/artifact-triggers.md`. They can be customized in `.claude/autocode.yml` under `justification.categories`.
 
 | Category | File Patterns | Key Questions |
 |----------|---------------|---------------|
@@ -157,7 +157,7 @@ These categories are the built-in defaults from `agents/references/artifact-trig
 ├── RESEARCH.md
 ├── PLAN.md
 ├── TODO.md
-└── artifacts/             # Generated during autopilot
+└── artifacts/             # Generated during autocode
     ├── justifications/    # Why changes were made
     ├── decisions/         # Approach choices
     ├── assumptions/       # Inferred requirements
@@ -183,7 +183,7 @@ These categories are the built-in defaults from `agents/references/artifact-trig
 Templates used for artifact generation are located within the plugin:
 
 ```
-plugins/autopilot/templates/artifacts/   # Template files for each type
+plugins/autocode/templates/artifacts/   # Template files for each type
 ```
 
 ## Agent Responsibilities

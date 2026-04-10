@@ -1,6 +1,6 @@
 # Evaluation Pipeline
 
-The autopilot plugin implements a multi-layered evaluation pipeline that gives engineers structured visibility into agent work at every stage.
+The autocode plugin implements a multi-layered evaluation pipeline that gives engineers structured visibility into agent work at every stage.
 
 ## Overview
 
@@ -33,7 +33,7 @@ Artifacts accumulate at `.claude/specs/<SPEC_ID>/artifacts/`.
 | **Debt** | Shortcut taken | Ideal vs shortcut, repayment plan |
 | **Review Hint** | Human judgment needed | Files, line ranges, specific questions |
 
-## 2. Review Stage (`/autopilot:review <id>`)
+## 2. Review Stage (`/autocode:review <id>`)
 
 The primary human checkpoint. The `review.sh` script gathers and surfaces everything an engineer needs.
 
@@ -72,15 +72,15 @@ The engineer is presented with a structured checklist:
 | Decision | Effect |
 |----------|--------|
 | **Approve** | Continue to Submit stage |
-| **Request Changes** | Return to autopilot with specific fixes |
+| **Request Changes** | Return to autocode with specific fixes |
 | **Reject** | Return to Spec stage for fundamental issues |
 
-## 3. Submit Stage (`/autopilot:commit`, `/autopilot:sync-pr`)
+## 3. Submit Stage (`/autocode:commit`, `/autocode:sync-pr`)
 
 The final quality gate feeds into standard code review workflows.
 
-- `/autopilot:commit` generates conventional commits with structured messages
-- `/autopilot:sync-pr` creates or updates a GitHub PR with summary, changes, testing details, and acceptance criteria
+- `/autocode:commit` generates conventional commits with structured messages
+- `/autocode:sync-pr` creates or updates a GitHub PR with summary, changes, testing details, and acceptance criteria
 
 ## Key Properties
 
@@ -88,7 +88,7 @@ The final quality gate feeds into standard code review workflows.
 - **Proactive review hints**: Agents flag what needs human judgment with specific questions and file locations
 - **Justification system**: Certain file categories (specs, migrations, dependencies, security, API changes) automatically require written justification
 - **Context preservation**: handoff.md artifacts and hooks ensure continuity between tasks so the evaluation trail is coherent across the full session
-- **Configurable thresholds**: Static analysis rules and justification categories are customizable in `.claude/autopilot.yml`
+- **Configurable thresholds**: Static analysis rules and justification categories are customizable in `.claude/autocode.yml`
 
 ## Related Documentation
 

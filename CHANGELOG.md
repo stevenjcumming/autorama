@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+- **Plugin renamed from `autopilot` to `autocode`** — The development workflow plugin is now `autocode`. The marketplace and umbrella brand remain `autopilot` (`stevenjcumming/autopilot`).
+  - Plugin directory: `plugins/autopilot/` → `plugins/autocode/`
+  - Slash commands: `/autopilot:*` → `/autocode:*`
+  - Environment variable: `AUTOPILOT_PLUGIN_ROOT` → `AUTOCODE_PLUGIN_ROOT`
+  - Config file: `autopilot.yml` → `autocode.yml`
+  - Spec archive path: `~/.autopilot/specs/` → `~/.autocode/specs/`
+  - Validate script: `validate-autopilot.sh` → `validate-autocode.sh`
+
+> **Early adopter note:** If you set `AUTOPILOT_PLUGIN_ROOT` in your shell profile, rename it to `AUTOCODE_PLUGIN_ROOT`. If you have an existing `.claude/autopilot.yml`, rename it to `.claude/autocode.yml`.
+
 ## [1.0.0-rc.1] - 2026-03-30
 
 ### Changed
@@ -15,7 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
-- **Agent overrides and skills removed from configuration** — `agents:` and `*_skills:` keys are no longer supported in `autopilot.yml`. The built-in agents are now fixed; `AVAILABLE_SKILLS` and skill selection logic removed from `coder` and `task-runner`. Custom reviewer agent support removed from `/autopilot:code-review`.
+- **Agent overrides and skills removed from configuration** — `agents:` and `*_skills:` keys are no longer supported in `autocode.yml`. The built-in agents are now fixed; `AVAILABLE_SKILLS` and skill selection logic removed from `coder` and `task-runner`. Custom reviewer agent support removed from `/autocode:code-review`.
 
 ### Added
 
@@ -31,13 +45,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- **`/autopilot:sync-pr` updates existing PR descriptions** — When a PR already exists for the current branch, the command now updates the existing description rather than rewriting it from scratch
+- **`/autocode:sync-pr` updates existing PR descriptions** — When a PR already exists for the current branch, the command now updates the existing description rather than rewriting it from scratch
 
 ## [0.14.1] - 2026-03-27
 
 ### Fixed
 
-- **`/autopilot:sync-pr` detects default branch dynamically** — Context now detects the default branch via `gh repo view` instead of hardcoding `main`; added `Bash(gh repo view:*)` to allowed-tools
+- **`/autocode:sync-pr` detects default branch dynamically** — Context now detects the default branch via `gh repo view` instead of hardcoding `main`; added `Bash(gh repo view:*)` to allowed-tools
 - **Commits and diff gathered at execution time** — Commits and diff are no longer in the context section (which would fail before the command runs); they're now gathered in step 5 using the detected default branch
 - **PR targets correct branch** — `gh pr create` explicitly sets `--base <default-branch>` so the PR targets the right branch
 
@@ -45,7 +59,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **Code review workflow docs** (`docs/workflow-stages/07_code_review.md`) — Covers command usage with all argument combinations, full review process flow (diff → checklist → agent → report), severity level definitions with examples, checklist configuration (3-tier priority resolution), custom reviewer agent section (why, how, input contract, example), and comparison table between `/autopilot:code-review` vs `/autopilot:review`
+- **Code review workflow docs** (`docs/workflow-stages/07_code_review.md`) — Covers command usage with all argument combinations, full review process flow (diff → checklist → agent → report), severity level definitions with examples, checklist configuration (3-tier priority resolution), custom reviewer agent section (why, how, input contract, example), and comparison table between `/autocode:code-review` vs `/autocode:review`
 
 ### Changed
 
@@ -61,7 +75,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **task-builder agent removed** — The `create-tasks` command now reads `PLAN.md` and writes `TODO.md` directly (inline) instead of spawning a `task-builder` subagent
 - **Conventional commits for auto-commits** — `on-agent-complete.sh` now generates commits following the [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) spec with a required body for long-term context. The commit type (feat, fix, refactor, test, etc.) is chosen by the task-runner and passed via the `type` attribute on `<task-completed>` tags
 - **Task-runner outputs commit type** — `<task-completed>` tag now includes `type="{commit_type}"` attribute; the task-runner evaluates what the task did and selects the appropriate conventional commit type
-- **`/autopilot:commit` reads conventional commits reference** — The commit command now reads `agents/references/conventional-commits.md` before creating commits, ensuring consistent format with required body
+- **`/autocode:commit` reads conventional commits reference** — The commit command now reads `agents/references/conventional-commits.md` before creating commits, ensuring consistent format with required body
 
 ### Added
 
@@ -71,7 +85,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 
 - **`commit.sh` hook removed** — The PostToolUse hook on `Write|Edit|Bash` that emitted `<skill-invoke skill="commit">` directives has been deleted. It was counterproductive: subagents couldn't act on skill invocations, wasting context tokens. Auto-commits are handled solely by `on-agent-complete.sh` (SubagentStop)
-- **`auto_commit.message_template` config removed** — The configurable commit template in `autopilot.yml` has been replaced by the standardized conventional commits format. Removed from `on-agent-complete.sh`, docs, and config references
+- **`auto_commit.message_template` config removed** — The configurable commit template in `autocode.yml` has been replaced by the standardized conventional commits format. Removed from `on-agent-complete.sh`, docs, and config references
 - **Co-Authored-By trailer removed** — Auto-commits no longer append `Co-Authored-By: Claude` footer; users can configure this via their git config and Claude settings
 - **Delete single_task_mode references** — Removed references to `single_task_mode` from README.md and docs
 
@@ -87,24 +101,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Agent Harness refactored** — `execute.md` command now owns the task loop directly instead of delegating to intermediate orchestrator agents, with fresh context per task to prevent quality degradation on multi-task specs
 - **Artifact system reduced from 7 to 6 types** — Removed signals; remaining types are justifications, decisions, assumptions, risks, debt, and review hints
-- **Trigger-based artifact generation** — Artifacts are now generated only when specific trigger conditions are met, driven by `autopilot.yml` config instead of being mandatory for every task
+- **Trigger-based artifact generation** — Artifacts are now generated only when specific trigger conditions are met, driven by `autocode.yml` config instead of being mandatory for every task
 - **Dedicated artifact generation step in task-runner** — Task-runner generates all artifact types directly from TDD context with an `<artifacts-generated>` completion tag for observability
 - **Workflow pipeline reduced from 8 to 7 stages** — Removed Reflect; review now flows directly to Submit
 - **Handoff generation uses `handoff-writer` agent** — Replaced inline shell-generated handoff with a richer context-aware agent-based approach
 - **Justifications always enabled** — Removed the `is_justification_enabled` config toggle; justifications run unconditionally on file modifications
-- **Plugin root env var bootstrapped via `/autopilot:init`** — Commands and agents now use `AUTOPILOT_PLUGIN_ROOT` set as a real env var instead of relying on `$CLAUDE_PLUGIN_ROOT`
+- **Plugin root env var bootstrapped via `/autocode:init`** — Commands and agents now use `AUTOCODE_PLUGIN_ROOT` set as a real env var instead of relying on `$CLAUDE_PLUGIN_ROOT`
 
 ### Added
 
-- **`/autopilot:help` command** — Displays all available commands in workflow order with a typical workflow summary
-- **`generate-report.sh` integrated** — Called by `/autopilot:review` to produce a `SUMMARY.md` with artifact counts, deferred issues, and review hints
+- **`/autocode:help` command** — Displays all available commands in workflow order with a typical workflow summary
+- **`generate-report.sh` integrated** — Called by `/autocode:review` to produce a `SUMMARY.md` with artifact counts, deferred issues, and review hints
 
 ### Removed
 
 - **Signals artifact type** — Removed signal generation from all agents, deleted the signal template, and removed `signals/` from artifact directory setup and report generation
-- **Reflect stage** — Removed the `/autopilot:reflect` command, `reflect.sh` script, `rules-builder` agent, and `evaluate-signals.sh` script
+- **Reflect stage** — Removed the `/autocode:reflect` command, `reflect.sh` script, `rules-builder` agent, and `evaluate-signals.sh` script
 - **`artifact-prompt.sh` hook** — Artifact generation now handled entirely by the task-runner's dedicated artifact step
-- **`/autopilot:pause-autopilot` command** — Removed the pause command and related scripts/templates
+- **`/autocode:pause-autopilot` command** — Removed the pause command and related scripts/templates
 - **Deprecated agent stubs** — Deleted the `autopilot.md` and `loop-controller.md` agents superseded by `execute.md`
 
 ### Fixed
@@ -144,5 +158,5 @@ Initial public release of Autopilot
 - **Justification system** requiring written rationale for modifications to flagged file categories (tests, migrations, dependencies, config, API, security)
 - **Evaluation pipeline** with artifact generation and structured review checklist
 - **Signals feedback loop**: test failures become signals, signals inform future tasks
-- **Configuration** via `.claude/autopilot.yml` for agent overrides, skills, loop behavior, auto-commit, handoff, justification categories, and static analysis
+- **Configuration** via `.claude/autocode.yml` for agent overrides, skills, loop behavior, auto-commit, handoff, justification categories, and static analysis
 - **17 utility scripts**, **14 templates**, and **21 documentation files**

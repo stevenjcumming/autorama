@@ -7,7 +7,7 @@ Create a `PLAN.md` implementation plan from the contents of the specified spec f
 ## Command
 
 ```
-/autopilot:create-plan <identifier>
+/autocode:create-plan <identifier>
 ```
 
 ## Arguments
