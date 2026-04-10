@@ -6,9 +6,9 @@
   },
   "plugins": [
     {
-      "name": "autopilot",
+      "name": "autocode",
       "version": "1.0.0-rc.1",
-      "source": "./plugins/autopilot",
+      "source": "./plugins/autocode",
       "description": "semi-autonomous software development toolkit with structured workflows and safety guardrails",
       "tags": ["automation", "workflows", "safety", "development", "testing"]
     }

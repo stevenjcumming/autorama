@@ -1,7 +1,7 @@
 {
-  "name": "autopilot",
+  "name": "autocode",
   "version": "1.0.0-rc.1",
-  "description": "semi-autonomous software development toolkit with structured workflows and safety guardrails",
+  "description": "semi-autonomous development workflow toolkit: TDD execution loop, specs, plans, and PR automation",
   "author": {
     "name": "Steven Cumming"
   },
