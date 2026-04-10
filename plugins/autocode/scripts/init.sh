@@ -5,7 +5,7 @@ set -e
 PLUGIN_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 TARGET_DIR=".claude"
 
-echo "=== Autopilot Initialization ==="
+echo "=== Autocode Initialization ==="
 echo ""
 
 # Create .claude directory if it doesn't exist
@@ -28,7 +28,7 @@ else
   else
     # Fallback: create minimal config if template not found
     cat > "$CONFIG_TARGET" << 'EOF'
-# Autopilot Configuration
+# Autocode Configuration
 # See docs for full options: https://github.com/stevenjcumming/autopilot
 
 justification:
@@ -109,12 +109,12 @@ if [ -f ".gitignore" ]; then
     echo ".claude/specs already in .gitignore"
   else
     echo "" >> .gitignore
-    echo "# Autopilot specs (generated)" >> .gitignore
+    echo "# Autocode specs (generated)" >> .gitignore
     echo ".claude/specs/" >> .gitignore
     echo "Added .claude/specs/ to .gitignore"
   fi
 else
-  echo "# Autopilot specs (generated)" > .gitignore
+  echo "# Autocode specs (generated)" > .gitignore
   echo ".claude/specs/" >> .gitignore
   echo "Created .gitignore with .claude/specs/"
 fi

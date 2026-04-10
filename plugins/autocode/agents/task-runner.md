@@ -6,7 +6,7 @@ permissionMode: acceptEdits
 model: opus
 ---
 
-# Autopilot Task Runner Agent
+# Autocode Task Runner Agent
 
 Execute a single task through: **write tests → red → code → green → analyze → refactor**.
 

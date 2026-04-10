@@ -5,7 +5,7 @@ argument-hint: <identifier> [T<n>|P<n>]
 model: sonnet
 ---
 
-# Autopilot
+# Autocode
 
 Execute the Test -> Code -> Refactor loop autonomously until all tasks are complete.
 
@@ -113,7 +113,7 @@ This is an observability signal, not a hard gate — do not fail the task or spa
 If the task failed:
 1. Output failure message:
    ```markdown
-   ## Autopilot Stopped
+   ## Autocode Stopped
 
    **Reason:** Task {task_id} failed
    **Details:** {reason}
@@ -145,7 +145,7 @@ bash $AUTOCODE_PLUGIN_ROOT/scripts/log-usage.sh "command" "execute" "completed" 
 After all tasks in the queue have been processed, present a final summary:
 
 ```markdown
-## Autopilot Complete
+## Autocode Complete
 
 **Spec:** {SPEC_DIR}
 

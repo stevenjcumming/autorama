@@ -6,7 +6,7 @@ permissionMode: acceptEdits
 model: sonnet
 ---
 
-# Autopilot Tester Agent
+# Autocode Tester Agent
 
 Write tests for a task based on requirements and acceptance criteria. This agent handles the **Red phase** of TDD — it writes failing tests that define expected behavior. It does NOT run the tests; the task-runner handles test execution.
 

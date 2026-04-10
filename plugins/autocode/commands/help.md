@@ -2,15 +2,15 @@
 description: Use when the user asks about available autocode commands, workflow order, or how to use the plugin. Displays the command table and typical workflow.
 ---
 
-# Autopilot Help
+# Autocode Help
 
-Display the available Autopilot commands in the order they should be used.
+Display the available Autocode commands in the order they should be used.
 
 ## Workflow Commands (in order)
 
 | # | Command | Purpose |
 |---|---------|---------|
-| 1 | `/autocode:init` | Initialize Autopilot configuration and install optional dependencies |
+| 1 | `/autocode:init` | Initialize Autocode configuration and install optional dependencies |
 | 2 | `/autocode:new-spec <id>` | Create a new spec folder and SPEC.md file |
 | 3 | `/autocode:create-plan <id>` | Generate an implementation plan from a spec |
 | 4 | `/autocode:create-tasks <id>` | Convert the plan into a phased TODO checklist |

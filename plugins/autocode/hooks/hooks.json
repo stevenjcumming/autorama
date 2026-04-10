@@ -1,5 +1,5 @@
 {
-  "description": "Autopilot agent harness hooks for context loading and context limit checks",
+  "description": "Autocode agent harness hooks for context loading and context limit checks",
   "hooks": {
     "PreToolUse": [
       {

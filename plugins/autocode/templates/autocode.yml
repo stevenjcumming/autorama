@@ -1,4 +1,4 @@
-# Autopilot Configuration
+# Autocode Configuration
 # Copy this file to .claude/autocode.yml and customize for your project
 # Requires `yq` to be installed; falls back to built-in defaults without it
 

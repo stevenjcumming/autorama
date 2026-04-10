@@ -6,7 +6,7 @@ permissionMode: acceptEdits
 model: opus
 ---
 
-# Autopilot Coder Agent
+# Autocode Coder Agent
 
 Implement a single task from the TODO.md checklist, generating appropriate artifacts to document reasoning and decisions.
 

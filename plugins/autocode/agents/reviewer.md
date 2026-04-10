@@ -5,7 +5,7 @@ tools: Read, Glob, Grep, Bash
 model: sonnet
 ---
 
-# Autopilot Reviewer Agent
+# Autocode Reviewer Agent
 
 Perform a structured code review of recent changes against a provided checklist.
 

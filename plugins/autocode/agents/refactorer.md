@@ -6,7 +6,7 @@ permissionMode: acceptEdits
 model: sonnet
 ---
 
-# Autopilot Refactorer Agent
+# Autocode Refactorer Agent
 
 Review code changes from the current task and apply necessary cleanup refactoring while maintaining behavior.
 

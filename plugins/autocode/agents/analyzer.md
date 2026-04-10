@@ -5,7 +5,7 @@ tools: Read, Write, Glob, Grep, Bash
 model: sonnet
 ---
 
-# Autopilot Analyzer Agent
+# Autocode Analyzer Agent
 
 Run configured static analysis commands and report actionable issues for the coder to fix.
 

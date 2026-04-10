@@ -1,11 +1,11 @@
 ---
 allowed-tools: Bash, Read
-description: Use once per project to set up Autopilot. Creates autocode.yml config, checks for yq dependency, adds .claude/specs/ to .gitignore, and bootstraps the AUTOCODE_PLUGIN_ROOT env var.
+description: Use once per project to set up Autocode. Creates autocode.yml config, checks for yq dependency, adds .claude/specs/ to .gitignore, and bootstraps the AUTOCODE_PLUGIN_ROOT env var.
 ---
 
-# Autopilot Init
+# Autocode Init
 
-Initialize Autopilot for your project. This will:
+Initialize Autocode for your project. This will:
 
 1. Create `.claude/autocode.yml` configuration file
 2. Check for `yq` and offer to install it (enables config customization)
