@@ -219,8 +219,8 @@ else
       [ -f "$t" ] && echo "    - $(basename "$t" .yml)"
     done
     echo ""
-    echo "  To use a template, run: /autopilot:init --justifications <template>"
-    echo "  Example: /autopilot:init --justifications rails"
+    echo "  To use a template, run: /autocode:init --justifications <template>"
+    echo "  Example: /autocode:init --justifications rails"
   fi
 fi
 
@@ -229,5 +229,5 @@ echo "=== Initialization Complete ==="
 echo ""
 echo "Next steps:"
 echo "  1. Customize $CONFIG_TARGET (optional)"
-echo "  2. Run /autopilot:new-spec <identifier> to start a feature"
+echo "  2. Run /autocode:new-spec <identifier> to start a feature"
 echo ""

@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# on-agent-complete.sh - SubagentStop hook for autopilot task completion
+# autocode task completion
 #
 # Handles post-task-completion actions:
 # 1. Check context limits and signal if summarization needed
@@ -23,8 +23,8 @@ INPUT=$(cat)
 AGENT_NAME=$(echo "$INPUT" | jq -r '.agent_name // empty')
 AGENT_OUTPUT=$(echo "$INPUT" | jq -r '.agent_output // empty')
 
-# Only trigger for autopilot agents
-if [[ "$AGENT_NAME" != autopilot-* ]]; then
+# Only trigger for autocode agents
+if [[ "$AGENT_NAME" != autocode-* ]]; then
   exit 0
 fi
 

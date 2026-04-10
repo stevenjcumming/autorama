@@ -31,7 +31,7 @@ if [ -z "$PROJECT_NAME" ]; then
   PROJECT_NAME=$(basename "$(pwd)")
 fi
 
-ARCHIVE_DIR="$HOME/.autopilot/specs/$PROJECT_NAME/$IDENTIFIER"
+ARCHIVE_DIR="$HOME/.autocode/specs/$PROJECT_NAME/$IDENTIFIER"
 
 echo "=== Spec Archive ==="
 echo ""
@@ -43,7 +43,7 @@ echo ""
 # Check for REVIEW.md
 if [ ! -f "$SPEC_DIR/REVIEW.md" ]; then
   echo "WARNING: REVIEW.md not found in $SPEC_DIR"
-  echo "Run /autopilot:review $IDENTIFIER first"
+  echo "Run /autocode:review $IDENTIFIER first"
   exit 1
 fi
 

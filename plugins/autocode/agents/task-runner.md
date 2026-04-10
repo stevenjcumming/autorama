@@ -40,7 +40,7 @@ Run `$AUTOCODE_PLUGIN_ROOT/scripts/setup-artifacts.sh {SPEC_DIR}` to create dire
 
 Spawn tester:
 ```
-Task(autopilot:tester,
+Task(autocode:tester,
   "Write tests for task
   SPEC_DIR={SPEC_DIR} TASK={TASK}
   <task-context>

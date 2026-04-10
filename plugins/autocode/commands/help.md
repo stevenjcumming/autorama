@@ -1,5 +1,5 @@
 ---
-description: Use when the user asks about available autopilot commands, workflow order, or how to use the plugin. Displays the command table and typical workflow.
+description: Use when the user asks about available autocode commands, workflow order, or how to use the plugin. Displays the command table and typical workflow.
 ---
 
 # Autopilot Help
@@ -10,21 +10,21 @@ Display the available Autopilot commands in the order they should be used.
 
 | # | Command | Purpose |
 |---|---------|---------|
-| 1 | `/autopilot:init` | Initialize Autopilot configuration and install optional dependencies |
-| 2 | `/autopilot:new-spec <id>` | Create a new spec folder and SPEC.md file |
-| 3 | `/autopilot:create-plan <id>` | Generate an implementation plan from a spec |
-| 4 | `/autopilot:create-tasks <id>` | Convert the plan into a phased TODO checklist |
-| 5 | `/autopilot:execute <path>` | Execute TDD loop (Write Tests / Red / Code / Green / Analysis / Refactor) |
-| 6 | `/autopilot:review <id>` | Generate a review summary of changes and artifacts |
-| 7 | `/autopilot:code-review [id]` | Structured code review against a configurable checklist |
-| 8 | `/autopilot:commit` | Create a commit with a conventional commit message |
-| 9 | `/autopilot:sync-pr` | Create or update a PR for the current branch |
+| 1 | `/autocode:init` | Initialize Autopilot configuration and install optional dependencies |
+| 2 | `/autocode:new-spec <id>` | Create a new spec folder and SPEC.md file |
+| 3 | `/autocode:create-plan <id>` | Generate an implementation plan from a spec |
+| 4 | `/autocode:create-tasks <id>` | Convert the plan into a phased TODO checklist |
+| 5 | `/autocode:execute <path>` | Execute TDD loop (Write Tests / Red / Code / Green / Analysis / Refactor) |
+| 6 | `/autocode:review <id>` | Generate a review summary of changes and artifacts |
+| 7 | `/autocode:code-review [id]` | Structured code review against a configurable checklist |
+| 8 | `/autocode:commit` | Create a commit with a conventional commit message |
+| 9 | `/autocode:sync-pr` | Create or update a PR for the current branch |
 
 ## Utility Commands
 
 | Command | Purpose |
 |---------|---------|
-| `/autopilot:spec-archive <id>` | Archive spec files to `~/.autocode/specs/` |
+| `/autocode:spec-archive <id>` | Archive spec files to `~/.autocode/specs/` |
 
 ## Typical Workflow
 

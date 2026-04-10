@@ -37,7 +37,7 @@ Based on the [Conventional Commits 1.0.0](https://www.conventionalcommits.org/en
 ## Scope
 
 - A noun in parentheses describing the section of the codebase: `feat(auth):`, `fix(parser):`
-- During autopilot execution, use the **spec identifier** as scope: `feat(auth-refactor):`
+- During autocode execution, use the **spec identifier** as scope: `feat(auth-refactor):`
 
 ## Breaking Changes
 
@@ -56,7 +56,7 @@ The body should provide long-term context for anyone reading `git log`:
 
 ## Examples
 
-### Feature with task context (autopilot)
+### Feature with task context (autocode)
 
 ```
 feat(auth-refactor): add JWT token refresh endpoint

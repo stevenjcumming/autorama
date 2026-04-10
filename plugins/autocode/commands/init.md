@@ -20,14 +20,14 @@ Since `AUTOCODE_PLUGIN_ROOT` may not be set yet (this is the command that sets i
 if [ -n "$AUTOCODE_PLUGIN_ROOT" ]; then
   echo "$AUTOCODE_PLUGIN_ROOT"
 elif command -v jq &> /dev/null && [ -f ~/.claude/plugins/installed_plugins.json ]; then
-  jq -r '.[] | select(.package_name == "autopilot") | .install_directory' ~/.claude/plugins/installed_plugins.json 2>/dev/null || echo ""
+  jq -r '.[] | select(.package_name == "autocode") | .install_directory' ~/.claude/plugins/installed_plugins.json 2>/dev/null || echo ""
 elif command -v python3 &> /dev/null && [ -f ~/.claude/plugins/installed_plugins.json ]; then
   python3 -c "
 import json, sys
 with open('$HOME/.claude/plugins/installed_plugins.json') as f:
     plugins = json.load(f)
 for p in plugins:
-    if p.get('package_name') == 'autopilot':
+    if p.get('package_name') == 'autocode':
         print(p['install_directory'])
         sys.exit(0)
 " 2>/dev/null || echo ""

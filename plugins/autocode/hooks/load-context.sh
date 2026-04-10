@@ -2,7 +2,7 @@
 #
 # load-context.sh - PreToolUse hook for loading agent context
 #
-# Loads context from handoff artifacts before spawning autopilot task
+# autocode task
 # agents. This ensures agents have relevant context from previous
 # task completions.
 #
@@ -28,8 +28,8 @@ if [ "$TOOL_NAME" != "Task" ]; then
   exit 0
 fi
 
-# Only trigger for autopilot agents
-if [[ "$SUBAGENT_TYPE" != autopilot-* ]]; then
+# Only trigger for autocode agents
+if [[ "$SUBAGENT_TYPE" != autocode-* ]]; then
   exit 0
 fi
 

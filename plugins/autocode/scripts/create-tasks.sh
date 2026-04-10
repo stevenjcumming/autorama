@@ -14,13 +14,13 @@ SPEC_DIR=".claude/specs/$IDENTIFIER"
 
 if [ ! -d "$SPEC_DIR" ]; then
   echo "Error: spec '$IDENTIFIER' does not exist at $SPEC_DIR"
-  echo "Run '/autopilot:new-spec $IDENTIFIER' first"
+  echo "Run '/autocode:new-spec $IDENTIFIER' first"
   exit 1
 fi
 
 if [ ! -f "$SPEC_DIR/PLAN.md" ]; then
   echo "Error: PLAN.md not found in $SPEC_DIR"
-  echo "Run '/autopilot:create-plan $IDENTIFIER' first"
+  echo "Run '/autocode:create-plan $IDENTIFIER' first"
   exit 1
 fi
 

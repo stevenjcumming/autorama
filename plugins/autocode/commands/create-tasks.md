@@ -75,14 +75,14 @@ Replace the template content in `TODO.md` with **numbered tasks**:
 - **Phases**: Use `## P1:`, `## P2:`, etc.
 - **Tasks**: Prefix each task with `[T1]`, `[T2]`, etc. (global numbering across all phases)
 
-This enables targeted execution: `/autopilot:execute <SPEC_DIR> T3` runs only task T3.
+This enables targeted execution: `/autocode:execute <SPEC_DIR> T3` runs only task T3.
 
 ```markdown
 # TODO
 
 <!-- Task checklist generated from PLAN.md -->
-<!-- Run specific task: /autopilot:execute <SPEC_DIR> T3 -->
-<!-- Run specific phase: /autopilot:execute <SPEC_DIR> P1 -->
+<!-- Run specific task: /autocode:execute <SPEC_DIR> T3 -->
+<!-- Run specific phase: /autocode:execute <SPEC_DIR> P1 -->
 
 ## P1: [Actual Phase Name from PLAN.md]
 
@@ -120,9 +120,9 @@ Files:
 - .claude/specs/<identifier>/TODO.md - Task checklist
 
 Run options:
-- All tasks: /autopilot:execute <identifier>
-- Single task: /autopilot:execute <identifier> T1
-- Single phase: /autopilot:execute <identifier> P1
+- All tasks: /autocode:execute <identifier>
+- Single task: /autocode:execute <identifier> T1
+- Single phase: /autocode:execute <identifier> P1
 
 First task:
 - [ ] [T1] <First task description>

@@ -15,7 +15,7 @@ SPEC_DIR=".claude/specs/$IDENTIFIER"
 
 if [ ! -d "$SPEC_DIR" ]; then
   echo "Error: spec directory does not exist at $SPEC_DIR"
-  echo "Run '/autopilot:new-spec $IDENTIFIER' to create it first"
+  echo "Run '/autocode:new-spec $IDENTIFIER' to create it first"
   exit 1
 fi
 

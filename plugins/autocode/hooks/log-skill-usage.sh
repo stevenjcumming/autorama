@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# PreToolUse hook: Log when autopilot skills/agents are invoked.
+# PreToolUse hook: Log when autocode skills/agents are invoked.
 # Triggered on Task tool calls to track agent spawning.
 #
 # Reads tool_input from stdin (JSON with subagent_type, prompt).
@@ -23,13 +23,13 @@ if command -v jq &>/dev/null; then
   AGENT_NAME=$(echo "$INPUT" | jq -r '.tool_input.subagent_type // empty' 2>/dev/null || true)
 fi
 
-# Only log autopilot agent spawns
-if [ -z "$AGENT_NAME" ] || [[ "$AGENT_NAME" != autopilot:* ]]; then
+# Only log autocode agent spawns
+if [ -z "$AGENT_NAME" ] || [[ "$AGENT_NAME" != autocode:* ]]; then
   exit 0
 fi
 
 # Strip prefix
-SHORT_NAME="${AGENT_NAME#autopilot:}"
+SHORT_NAME="${AGENT_NAME#autocode:}"
 
 # Extract SPEC_DIR from prompt if present
 SPEC_DIR=""

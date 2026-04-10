@@ -14,7 +14,7 @@ set -euo pipefail
 
 # Require CLAUDE_PLUGIN_DATA
 if [ -z "${CLAUDE_PLUGIN_DATA:-}" ]; then
-  echo "CLAUDE_PLUGIN_DATA not set. Run /autopilot:init to configure."
+  echo "CLAUDE_PLUGIN_DATA not set. Run /autocode:init to configure."
   exit 0
 fi
 
@@ -113,7 +113,7 @@ fi
 
 # Default: show recent usage
 if [ ! -f "$USAGE_FILE" ]; then
-  echo "No usage data found. Data will be logged as you use autopilot commands."
+  echo "No usage data found. Data will be logged as you use autocode commands."
   exit 0
 fi
 

@@ -30,7 +30,7 @@ If the spec directory doesn't exist or is empty, inform the user and exit.
 Check if `$SPEC_DIR/REVIEW.md` exists. If not, inform the user that a review should be generated first and invoke:
 
 ```
-/autopilot:review $IDENTIFIER
+/autocode:review $IDENTIFIER
 ```
 
 Wait for the review to complete before proceeding.

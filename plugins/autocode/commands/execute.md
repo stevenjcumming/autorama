@@ -80,7 +80,7 @@ Spawn a fresh `task-runner` agent for each task. Each runner gets its own clean 
 
 ```
 Task(
-  subagent_type="autopilot:task-runner",
+  subagent_type="autocode:task-runner",
   prompt="Execute task
 
   SPEC_DIR={SPEC_DIR}
@@ -125,7 +125,7 @@ If the task failed:
    ### To Resume
    Address the issue and run:
    ```
-   /autopilot:execute {IDENTIFIER}
+   /autocode:execute {IDENTIFIER}
    ```
    ```
 2. Exit the loop
@@ -156,8 +156,8 @@ After all tasks in the queue have been processed, present a final summary:
 
 ### Next Steps
 1. Review artifacts in `{SPEC_DIR}/artifacts/`
-2. Run `/autopilot:review {IDENTIFIER}` to generate a review summary
-3. Run `/autopilot:commit` to commit changes
+2. Run `/autocode:review {IDENTIFIER}` to generate a review summary
+3. Run `/autocode:commit` to commit changes
 ```
 
 ## Key Principles
