@@ -10,7 +10,7 @@ uses this document as self-reference when generating skill output.
 ### Minimal Skill (most patterns)
 
 ```
-.claude/skills/autoskills/<skill-name>/
+.claude/skills/<skill-name>/
   SKILL.md          # Core instructions
   metadata.json     # Discovery metadata and conventions
 ```
@@ -18,7 +18,7 @@ uses this document as self-reference when generating skill output.
 ### Full Skill (complex patterns with templates or references)
 
 ```
-.claude/skills/autoskills/<skill-name>/
+.claude/skills/<skill-name>/
   SKILL.md
   metadata.json
   templates/        # Structural templates Claude fills in during generation
@@ -108,6 +108,24 @@ choice unambiguous.>
     "docs/architecture.md",
     "CONTRIBUTING.md"
   ],
+  "companion_files": [
+    {
+      "path": "config/betamocks/services_config.yml",
+      "reason": "Central registry. Each service using the :betamocks middleware must add an entry here."
+    }
+  ],
+  "user_provided_docs": [
+    {
+      "source": "https://example.com/docs/service-client-pattern",
+      "type": "url",
+      "fetched_at": "2026-04-09T12:00:00Z"
+    },
+    {
+      "source": "/Users/you/notes/betamocks-explainer.md",
+      "type": "path",
+      "fetched_at": "2026-04-09T12:00:00Z"
+    }
+  ],
   "conventions": {
     "naming": "kebab-case files, PascalCase exports",
     "structure": "feature-based directory layout under src/features/",
@@ -189,3 +207,6 @@ Before presenting generated skill output, verify:
 - [ ] Only files that add value are included (no empty templates or placeholder scripts)
 - [ ] If templates exist, they use the project's actual language and conventions
 - [ ] Source files in metadata.json are real paths that exist in the project
+- [ ] When the project has central registration manifests or middleware configuration files relevant to the pattern, SKILL.md contains an explicit "Register the new instance" step
+- [ ] metadata.json contains a `companion_files` field (empty array acceptable)
+- [ ] If the developer supplied documentation sources, SKILL.md reflects their terminology and framing, and metadata.json `user_provided_docs` lists each source with type and fetched_at

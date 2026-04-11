@@ -34,6 +34,8 @@ Read `{GUIDE_PATH}` to load the quality checklist (found in the "Quality Checkli
 8. Only files that add value are included (no empty templates or placeholder scripts)
 9. If templates exist, they use the project's actual language and conventions
 10. Source files in metadata.json are real paths that exist in the project
+11. SKILL.md contains a "Register the new instance" step when companion files are present in metadata
+12. metadata.json contains a `companion_files` field (array, possibly empty)
 
 ### Step 2: Parse Generated Content
 
@@ -76,6 +78,11 @@ If the `<skill-files>` output is malformed or missing required files (SKILL.md, 
 - Verify it describes what to test, what to assert, and what constitutes coverage
 - Flag if it names a specific test framework unless the detected stack has exactly one unambiguous choice
 
+**Check 11 - Companion files surfaced in SKILL.md:**
+- Read `companion_files` from metadata.json
+- If non-empty, verify SKILL.md contains a Steps entry directing the implementer to edit each listed companion file
+- Flag as blocking if companion files are listed in metadata but absent from SKILL.md Steps
+
 ### Step 4: Validate metadata.json
 
 **Check 7 - Valid JSON structure:**
@@ -89,6 +96,10 @@ If the `<skill-files>` output is malformed or missing required files (SKILL.md, 
 **Check 9 - Source files are real:**
 - Verify `source_files` is a non-empty array
 - Check that paths look like real project paths (not template placeholders or example paths from the guide)
+
+**Check 12 - Companion files field present:**
+- Verify metadata.json contains a `companion_files` field
+- An empty array is acceptable; a missing field is a warning
 
 ### Step 5: Validate Additional Files
 
@@ -116,7 +127,7 @@ Return the validation result using the following structured tags. The build comm
 
 ```
 <quality-result status="pass">
-All 10 quality checks passed.
+All 12 quality checks passed.
 </quality-result>
 ```
 
@@ -163,6 +174,6 @@ If there are only warnings and no blocking issues, use `status="pass-with-warnin
 - Be specific in failure descriptions. "Check 3 failed" is not helpful. "Step 4 in SKILL.md uses the command `rails generate model` instead of describing the intent" is helpful.
 - Apply checks strictly for blocking issues and pragmatically for warnings. A slightly imperfect trigger description should be a warning, not a blocker.
 - Validate against the detected stack context. A testing section that names "pytest" is acceptable if the project uses Python with pytest as its only test framework.
-- Do NOT invent additional checks beyond the quality checklist. The 10 checks from the guide are the authoritative set.
+- Do NOT invent additional checks beyond the quality checklist. The 12 checks from the guide are the authoritative set.
 
 </rules>

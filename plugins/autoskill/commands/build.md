@@ -1,6 +1,6 @@
 ---
 description: Use when the user wants to build a skill from codebase patterns. Triggers on "build a skill for", "capture how we", "make a skill from", "create a skill for", "codify how we do", or similar requests to turn a project pattern into a reusable skill.
-allowed-tools: Bash, Read, Edit, Write, Glob, Grep, Task
+allowed-tools: Bash, Read, Edit, Write, Glob, Grep, Task, WebFetch
 argument-hint: <pattern description>
 model: opus
 ---
@@ -42,12 +42,40 @@ Also note the top-level directory structure (e.g., `src/`, `app/`, `lib/`, `pkg/
 
 Record the detected stack as `DETECTED_STACK` for use in later phases.
 
-### 1.3 Check for Existing Skill
+### 1.3 Resolve Name Conflicts
 
-Check whether `.claude/skills/autoskills/<skill-name>/` already exists.
+Check whether `.claude/skills/<skill-name>/` already exists.
 
-- If it exists, set `IS_RERUN=true`. This flag is used in Phase 5 to trigger diff-and-confirm logic instead of direct writes.
-- If it does not exist, set `IS_RERUN=false`.
+- If it does not exist, use the name as-is.
+- If it exists, append an incrementing numeric suffix: `<skill-name>-2`, `<skill-name>-3`, etc. Find the first unused suffix.
+- Inform the user of the final name if a suffix was added: "A skill named `<skill-name>` already exists. Creating `<skill-name>-2` instead. Use `/update <skill-name>` to modify an existing skill."
+
+### 1.4 Collect Supporting Documentation
+
+Before discovery runs, give the developer a chance to point to authoritative documentation that describes this pattern. Ask once:
+
+> "Do you have any documentation I should reference while building this skill? You can paste:
+> - URLs (e.g., architecture docs, ADRs, RFCs, framework guides, Notion exports, internal wiki pages)
+> - Absolute file paths to docs on your machine (e.g., /Users/you/notes/pattern.md)
+>
+> Paste one per line, or reply 'none'."
+
+Parse the response into a list of sources. For each:
+
+- **Absolute file path**: verify the path exists and is readable, then use Read to load its full content
+- **URL**: use WebFetch to retrieve the content; treat HTTP errors as a soft failure, warn the developer, and continue without that source
+- **Relative path or ambiguous input**: ask the developer to disambiguate or skip the item
+
+Record the successfully-loaded sources as `USER_PROVIDED_DOCS`, a structured list where each entry contains:
+
+- `source`: the original URL or absolute path (exact string the user supplied)
+- `type`: "url" or "path"
+- `content`: the full text the tool retrieved
+- `fetched_at`: current ISO 8601 timestamp (so update re-runs can compare)
+
+If the developer replies "none" or provides nothing, set `USER_PROVIDED_DOCS` to an empty list. Do NOT halt the workflow on empty; this is an optional affordance.
+
+The list is passed to Phase 2 (discovery) and Phase 5 (synthesis). Discovery uses it to seed Step 1 (Understand the Pattern) and Step 6 (Internal Documentation). Synthesis uses it as authoritative context alongside observations.
 
 ## Phase 2: Discovery
 
@@ -60,8 +88,9 @@ Task(
 
   PATTERN_DESCRIPTION: {pattern_description}
   DETECTED_STACK: {detected_stack}
+  USER_PROVIDED_DOCS: {user_provided_docs}
 
-  Search the codebase using the strategies in your process steps. Return structured output with <examples>, <dependency-map>, <observations>, and <internal-docs> tags."
+  Search the codebase using the strategies in your process steps. Return structured output with <examples>, <dependency-map>, <companion-files>, <observations>, and <internal-docs> tags."
 )
 ```
 
@@ -69,6 +98,7 @@ Parse the agent's response to extract:
 
 - `<examples>` tag content (list of example files, or "none")
 - `<dependency-map>` tag content
+- `<companion-files>` tag content (list of companion files, or "none")
 - `<observations>` tag content
 - `<internal-docs>` tag content
 
@@ -120,6 +150,7 @@ Task(
   DETECTED_STACK: {detected_stack}
   DISCOVERY_OUTPUT: {discovery_output}
   CLARIFYING_ANSWERS: {clarifying_answers}
+  USER_PROVIDED_DOCS: {user_provided_docs}
   TEMPLATE_DIR: $AUTOSKILL_PLUGIN_ROOT/templates/
   GUIDE_PATH: $AUTOSKILL_PLUGIN_ROOT/references/skill-output-guide.md
 
@@ -155,17 +186,7 @@ Parse the `<quality-result>` tag:
 
 ### 5.3 Write Files
 
-**If IS_RERUN is true (existing skill detected in Phase 1):**
-
-1. Read the existing `.claude/skills/autoskills/<skill-name>/SKILL.md`
-2. Diff the new SKILL.md content against the existing file
-3. Present a readable summary to the developer showing: sections added, sections removed or changed, template or script changes
-4. Ask: "Here is what changed. Should I apply this update?"
-5. Only write files after receiving explicit confirmation. If the developer declines, skip writing and go to Phase 7.
-
-**If IS_RERUN is false (first run):**
-
-Write files directly to `.claude/skills/autoskills/<skill-name>/`:
+Write files directly to `.claude/skills/<skill-name>/`:
 
 - Write `SKILL.md`
 - Write `metadata.json`
@@ -188,7 +209,7 @@ Each entry has the following fields:
   "skills": [
     {
       "name": "<skill-name>",
-      "path": ".claude/skills/autoskills/<skill-name>/",
+      "path": ".claude/skills/<skill-name>/",
       "description": "<one-line description from SKILL.md frontmatter>",
       "pattern_type": "<free-form label describing the pattern category>",
       "last_updated": "<ISO 8601 timestamp>"
