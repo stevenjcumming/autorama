@@ -105,6 +105,33 @@ If `<examples>` contains "none", inform the user: "I could not find examples of 
 
 Wait for the user's response before proceeding. If they choose to keep as-is, skip to Phase 5 with no changes.
 
+### 2.1 Compatibility Check
+
+Read the `compatibility` field from the existing skill's `metadata.json` (if
+present). For each entry, verify that the dependency still exists in the
+current project environment:
+
+- For language-ecosystem packages (gems, npm packages, Python packages, Go
+  modules, etc.): check the project's lockfile or manifest for the package
+  name. If missing, record it as a drift.
+- For CLIs (e.g., `yq`, `jq`, `gh`): grep the repository and the user's
+  scripts for the command. If no callers remain, record it as a drift.
+- For internal libraries or modules (e.g., `internal-lib/service-base`):
+  Glob for the path. If the path has disappeared, record it as a drift.
+
+Warn the user about every drift before proceeding:
+
+> "This skill's metadata records a dependency on `<name>`, which I could
+> not find in the current project. The pattern may no longer work the same
+> way. Do you want to proceed with the update, drop this dependency from
+> `compatibility`, or halt and investigate?"
+
+Respect the user's choice. Drops should be reflected when writing the new
+metadata.json in Phase 6.
+
+If the existing skill has no `compatibility` field (e.g., it predates this
+feature), skip this sub-step.
+
 ## Phase 3: Ask About Changes
 
 Present a brief summary of what discovery found compared to the existing skill, then ask:

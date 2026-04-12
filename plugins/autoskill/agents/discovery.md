@@ -77,6 +77,15 @@ For each selected example file, identify its direct dependencies:
 
 Build a dependency map linking each example to its dependencies.
 
+**Test files are surfaced distinctly.** In addition to listing test files
+under the regular dependency entries, emit them under a separate
+`<test-files>` block so the synthesizer can find them without re-searching.
+Each entry should pair the example file with its corresponding test file(s)
+and note whether the tests are co-located, in a parallel test tree, or in a
+different directory convention. If an example has no corresponding test
+file, record "no test file found" for that example rather than omitting the
+entry.
+
 ### Step 4.5: Find Companion Files
 
 Dependency maps only capture outbound edges (what example files read or import). They miss "companion" or "registration manifest" files: files you MUST edit when adding a new instance of the pattern, even though no example file imports them. Missing these means the generated skill silently produces broken instances.
@@ -87,6 +96,23 @@ Run a companion-file sweep for every example selected in Step 3. This sweep is m
 - Read the top-level configuration directories the stack uses (e.g., config/initializers/ for Rails, config/ or src/config/ for Node, conf/ for JVM projects, equivalent for other stacks)
 - Grep for file-read patterns (File.read, YAML.load_file, require, load, fs.readFileSync, include, ConfigSource) that point to paths inside the repo
 - Treat every referenced path that is not already in the dependency map as a companion candidate
+- **Environment siblings:** When a companion file has siblings in the same
+  directory whose names differ only by an environment suffix
+  (`settings.yml` alongside `settings.test.yml`, `settings.production.yml`,
+  `settings.staging.yml`), include each sibling as a separate companion
+  entry. The reason string should note that each environment file must be
+  kept in sync when adding a new instance. Missing environment siblings is
+  a common source of "works locally, breaks in staging" bugs, so surfacing
+  them explicitly is worth the small amount of extra noise.
+- **Second-hop rule:** After identifying a registration manifest, scan its
+  entries for path-shaped values (keys like `file_path`, `fixture`,
+  `template`, `source`, or any string value that looks like a repo-relative
+  path). For each referenced path, record it as a dependent companion with
+  the manifest entry as its reason. If the referenced path is a
+  conventional shape rather than a specific existing file (e.g., a fixture
+  file that new entries are expected to create), record the expected shape
+  (e.g., "YAML file under spec/fixtures/<service>/response.yml, keyed by
+  HTTP verb") instead of a concrete path.
 
 **Heuristic 2: Middleware and gem registries**
 - For every middleware, gem, package, or external library name referenced in the examples (e.g., :betamocks, Sidekiq, breakers, graphql), Glob for directories and files whose name contains that keyword
@@ -152,6 +178,15 @@ Return the following structured sections. The build command parses these tags to
 <file-path>:
   - <dependency-path>
 </dependency-map>
+
+<test-files>
+- example: <example-path>
+  test: <test-file-path, or "no test file found">
+  location: <co-located | parallel-tree | other>
+- example: ...
+  test: ...
+  location: ...
+</test-files>
 
 <companion-files>
 - path: <project-relative path>

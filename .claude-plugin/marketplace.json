@@ -11,6 +11,13 @@
       "source": "./plugins/autopilot",
       "description": "semi-autonomous software development toolkit with structured workflows and safety guardrails",
       "tags": ["automation", "workflows", "safety", "development", "testing"]
+    },
+    {
+      "name": "autoskill",
+      "version": "0.1.0",
+      "source": "./plugins/autoskill",
+      "description": "Generate reusable project-specific skills from codebase patterns",
+      "tags": ["skills", "automation", "code-generation", "patterns"]
     }
   ]
 }

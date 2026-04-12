@@ -65,16 +65,54 @@ Separate what is universal to the pattern from what is specific to individual ex
 
 ### Step 4: Generate SKILL.md
 
-Create the SKILL.md content following the template structure:
+Create the SKILL.md content following the template structure. Apply the
+guide's "Writing Voice" rules throughout: prefer imperative voice, append a
+one-sentence "because..." to non-obvious steps (drawn from discovery
+observations or user-provided docs), and state failure modes instead of
+shouting ALWAYS/NEVER. Treat the frontmatter `description` and the
+`## When to Use` section as two distinct surfaces, per the guide's "Two 'When
+to Use' Surfaces" note; do not duplicate text verbatim between them.
 
 **Frontmatter:**
 - `name`: Use `{SKILL_NAME}`
-- `description`: Write a specific, action-oriented trigger description (see the guide's "Writing Good Trigger Descriptions" section). Start with "When" followed by a specific action verb. Reference the pattern shape, not a framework name.
+- `description`: Write a specific, action-oriented trigger description (see
+  the guide's "Writing Good Trigger Descriptions" section). Apply the
+  following construction rules:
+  - Start with "When" followed by a specific action verb.
+  - Describe the *job* the pattern does, not the internal base-class name
+    or internal vocabulary. Reference the pattern shape, not a framework
+    name.
+  - **Extract naming synonyms** from discovery observations, companion file
+    keys, and user-provided docs. Bake three to five into the description so
+    it matches the phrases a developer would actually use. Example inputs to
+    extract from: class names in examples, directory names, keys in the
+    companion registry, terms the user's docs use for the artifact.
+  - **Enumerate three to five trigger phrasings** a developer would say
+    ("integrate with X", "wrap the Y API", "add a new upstream").
+  - **Apply the pushy phrasing template**: include an explicit directive
+    such as "Make sure to use this skill whenever the user mentions ...,
+    even if they do not explicitly ask for '<pattern-name>'". This
+    compensates for Claude's tendency to undertrigger skills.
+  - The description must stand alone as a trigger: a reader who has not yet
+    loaded the skill body must be able to tell whether the skill applies.
+    Do not write "see below" or "as described in Steps".
 
 **When to Use:**
 - List clear positive signals ("when you see X", "when you need to Y")
 - List negative signals ("do not use this for Z")
 - Use the developer's clarifying answer about scope and alternatives
+
+**Quick Checklist:**
+- After the Steps are drafted, derive a one-line-per-step checkbox list that
+  mirrors them. Each checkbox must be concrete enough to verify against a PR
+  diff (e.g., "Service class created under src/services/<name>/" rather than
+  "Configure the service").
+- Place the section directly between `## When to Use` and `## Steps` so a
+  scanning reader sees the outline before the detail.
+- Omit the Quick Checklist section entirely if Steps has fewer than four
+  items; a three-item checklist duplicates the Steps without adding value.
+- The checklist is a strict subset of Steps. Do not introduce new requirements
+  in the checklist that are not in Steps.
 
 **Steps:**
 - Describe each step as intent, not commands (e.g., "Create the handler file in the appropriate directory" not "touch src/handlers/new-handler.ts")
@@ -99,6 +137,17 @@ Create the SKILL.md content following the template structure:
 - Do not name specific test frameworks unless the detected stack makes the choice unambiguous
 - Describe what to assert, what to mock or stub, and what constitutes sufficient coverage
 
+**Examples:**
+- Generate two or three Input/Output pairs that anchor the pattern in its real
+  triggering context. Each pair should show what a developer might say (or
+  the shape of the request they would make) and the concrete artifact that
+  should result.
+- Draw these pairs from illustrative moments observed in the files discovery
+  already read. Do not invent scenarios; if discovery did not surface any
+  concrete triggering moments, omit the section rather than fabricating one.
+- Prefer variety over volume: one simple case plus one that shows a
+  variation point is more useful than three near-identical cases.
+
 **References:**
 - Only include this section if the skill will contain additional files (templates, references, scripts)
 - List each additional file with a brief description of its purpose
@@ -122,6 +171,13 @@ Create the metadata.json content:
 - `companion_files`: Copy companion file paths and reasons from `<companion-files>`. Emit an empty array if none.
 - `user_provided_docs`: Copy each supplied source as an object with `source`, `type`, and `fetched_at` (omit `content`; the source string is enough for `/autoskill:update` to re-fetch). Empty array if none were supplied.
 - `conventions`: Describe the project's actual naming, structure, and testing conventions in plain language (not generic labels)
+- `compatibility`: Optional array listing hard dependencies the pattern
+  relies on, for example external gems, npm packages, CLIs, or internal
+  libraries (e.g., `["sidekiq", "yq", "internal-lib/service-base"]`). Only
+  include an entry when discovery identified a dependency that the pattern
+  cannot work without; the field is used by `/autoskill:update` to warn the
+  developer when a previously-recorded dependency has disappeared from the
+  project. Omit the field entirely if no hard dependencies were identified.
 - `last_updated`: Current ISO 8601 timestamp
 - `generated_by`: `"autoskill:build"`
 
@@ -134,6 +190,28 @@ Decide whether the skill needs files beyond SKILL.md and metadata.json. Only gen
 - The SKILL.md steps reference a structural shape that is easier to show than describe
 - A companion file requires a structured entry that is easier to show than describe (e.g., a YAML block with multiple keys). Generate a snippet template under `templates/companion-entry.<ext>` and reference it from the Related Files section of SKILL.md
 
+**Generate a test template when:**
+- The Testing section describes a multi-part test shape (setup, mocks or
+  stubs, assertions on two or more behaviors), AND
+- Discovery's `<test-files>` block returned at least one real test file for
+  one of the selected examples
+- Model the template on the discovered test file(s). Name it
+  `templates/<pattern>_spec.<ext>` (or the project's native test-file
+  convention). Preserve the project's actual assertion style, setup blocks,
+  and mocking idioms.
+- If discovery found tests for multiple examples that agree on shape,
+  synthesize across them. If they disagree, choose the shape that matches
+  the canonical example and note the divergence in an inline comment.
+
+**Generate a fixture template when:**
+- Discovery surfaces a referenced-but-conventional companion (for example, a
+  fixture file that registration manifest entries point to but that a new
+  instance would need to create), AND
+- At least one existing fixture file is available to model the shape on
+- Name it `templates/<companion-data>.<ext>` and show the expected shape
+  with one worked example lifted from an existing entry, with identifying
+  values replaced by placeholders.
+
 **Generate a reference file when:**
 - There are edge cases or historical decisions too detailed for the main SKILL.md
 - Internal documentation was found that should be distilled into a skill-specific reference
@@ -142,7 +220,56 @@ Decide whether the skill needs files beyond SKILL.md and metadata.json. Only gen
 - The pattern involves scaffolding or repetitive file creation that a helper script accelerates
 - The script must be stack-appropriate and use the project's actual tooling
 
+**Variant splitting (one skill, multiple flavors):**
+
+If discovery's `<observations>` reports two or more coherent variants of the
+pattern, not inconsistencies or drift, but legitimately parallel
+implementations like a Postgres flavor and a Mongo flavor of the same data
+access layer, generate the skill as a split:
+
+- One SKILL.md carrying the shared workflow, the selection heuristic
+  ("use the Postgres variant when the upstream data is relational; use
+  the Mongo variant when the upstream data is document-shaped"), and any
+  steps that are identical across variants.
+- One `references/<variant>.md` file per variant, carrying only the
+  variant-specific detail. Load-on-demand means the main SKILL.md stays
+  small and readers only pay for the variant they actually need.
+- The SKILL.md References section must list every variant file with a
+  one-line description of when to read it.
+
+Variant splitting is distinct from inconsistencies. Inconsistencies ("two
+examples disagree on error handling") should stay in Phase 4 clarifying
+questions: ask the user which is canonical. Only split when the examples
+are *all* canonical and parallel.
+
 For each additional file, generate its full content. Templates should use the project's actual language and conventions. Reference files should distill, not copy, source material.
+
+**Template conventions (applies to every file under `templates/`):**
+
+- **Placeholder banner.** Every generated template file must begin with a
+  comment block, in the file's native comment syntax, listing the tokens a
+  reader must replace. Derive this list from the placeholders actually used
+  in the template body. Name each token and describe what to put there.
+  Example for YAML:
+
+  ```yaml
+  # Replace:
+  #   <service_name>  - kebab-case identifier for the new service
+  #   <base_uri>      - root URL for the upstream endpoint
+  #   <auth_strategy> - one of: bearer, basic, none
+  ```
+
+- **Inline "why" comments on subtle structural choices.** When a template
+  contains a structural choice that looks wrong at first glance (counter-
+  intuitive ordering, error-handling placement, unusual middleware order),
+  emit a one-line inline comment explaining the failure mode if the choice
+  is "corrected" away. Draw the failure modes from discovery's observations
+  about what breaks when the convention is violated. The reader should not
+  have to guess which lines are load-bearing.
+
+- **Real tokens, not metavariables.** Use `<service_name>` or `{{ServiceName}}`
+  style placeholders, not `FOO`/`XYZ`. If the project already uses its own
+  template style, match it.
 
 ### Step 7: Assemble Output
 

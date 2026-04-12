@@ -33,6 +33,9 @@
     "structure": "{{Directory structure conventions, e.g. feature-based layout under src/features/}}",
     "testing": "{{Testing conventions, e.g. co-located test files with .test suffix}}"
   },
+  "compatibility": [
+    "{{optional: hard dependencies the pattern relies on, e.g. 'sidekiq', 'yq', 'internal-lib/service-base'}}"
+  ],
   "last_updated": "{{ISO 8601 timestamp}}",
   "generated_by": "autoskill:build"
 }

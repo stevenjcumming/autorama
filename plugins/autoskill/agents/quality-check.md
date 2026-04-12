@@ -36,6 +36,10 @@ Read `{GUIDE_PATH}` to load the quality checklist (found in the "Quality Checkli
 10. Source files in metadata.json are real paths that exist in the project
 11. SKILL.md contains a "Register the new instance" step when companion files are present in metadata
 12. metadata.json contains a `companion_files` field (array, possibly empty)
+13. SKILL.md length is within budget (target under 300 lines, hard ceiling 500)
+14. Every file path referenced in SKILL.md resolves to a known destination (no dangling references)
+15. Every edge case listed is actionable (says *how* to handle it, not just *that* it exists)
+16. If a Quick Checklist section is present, its items mirror the Steps 1:1 or are a strict subset
 
 ### Step 2: Parse Generated Content
 
@@ -58,6 +62,19 @@ If the `<skill-files>` output is malformed or missing required files (SKILL.md, 
 - Verify the description starts with "When" followed by a specific action verb
 - Verify it references the pattern shape or behavior, not just a framework name
 - Flag generic descriptions like "When working with services" or "When building features"
+- **Sub-check 2a - Phrase space coverage:** Flag descriptions that mention
+  only one phrasing of the pattern name. A good description enumerates
+  three to five synonyms or natural trigger phrasings so Claude can match
+  the way a developer would actually describe the job. A description that
+  uses only the internal name (e.g., only "service client" with no
+  synonyms like "connector", "API wrapper", "gateway") is a warning.
+- **Sub-check 2b - Standalone interpretability:** The description must be
+  interpretable without reading the body. Flag descriptions containing
+  "see below", "as described in Steps", "refer to Inline Context", or any
+  phrasing that defers meaning to the body. This is a blocking issue: the
+  description is the only thing in Claude's context before the skill
+  triggers, so a forward reference makes it unreadable at the moment it
+  has to make the activation decision.
 
 **Check 3 - Steps describe intent:**
 - Scan each step for tool call patterns (e.g., `mkdir`, `touch`, `echo`, `cat`, `grep`, `npm run`, `rails generate`)
@@ -77,6 +94,47 @@ If the `<skill-files>` output is malformed or missing required files (SKILL.md, 
 - Verify a "Testing" section (or equivalent heading) exists
 - Verify it describes what to test, what to assert, and what constitutes coverage
 - Flag if it names a specific test framework unless the detected stack has exactly one unambiguous choice
+
+**Check 13 - Length budget:**
+- Count the lines in SKILL.md (including frontmatter).
+- Target: under 300 lines. Hard ceiling: 500 lines.
+- Over 300 but under 500: warning. Suggest moving detailed Edge Cases or
+  long Inline Context into `references/<topic>.md` so the main body stays
+  scannable.
+- Over 500: blocking. The skill must be slimmed before writing. The
+  synthesizer should move the overflow into references and leave pointers
+  in SKILL.md.
+
+**Check 14 - Dangling file check (blocking):**
+- For every file path mentioned in SKILL.md Steps, Inline Context, or Edge
+  Cases, verify that the path appears in at least one of:
+  - `metadata.json` `companion_files`
+  - The SKILL.md `References` section
+  - The SKILL.md `Related Files` section
+  - A path that is clearly scoped to skill-internal files (e.g.,
+    `templates/...`, `references/...`, `scripts/...`)
+- Flag any reference that points at a file with no known destination. A
+  dangling path means the reader will not know where to find the file or
+  whether it needs to be created. This is a blocking issue because
+  dangling references turn into silent failures at use time.
+
+**Check 15 - Non-discriminating edge cases:**
+- For every bullet in the Edge Cases section, verify that the bullet says
+  *how* to handle the situation, not just that it exists.
+- Flag bullets like "Handle errors gracefully" or "Watch out for race
+  conditions" that name a category without giving actionable guidance.
+  The test is: could a clearly-wrong implementation also pass this
+  edge-case description? If yes, the bullet is not discriminating.
+- This is a warning, not a blocker. A thin edge case is better than none,
+  but the synthesizer should be told to expand it.
+
+**Check 16 - Quick Checklist consistency (non-blocking):**
+- If a `## Quick Checklist` section is present, verify that its items
+  correspond one-to-one to the Steps, or are a strict subset. Each
+  checklist item should map to exactly one step.
+- Flag checklist items that introduce new requirements not present in
+  Steps, or that duplicate the same step multiple times.
+- This is a warning: a mismatched checklist is confusing but not broken.
 
 **Check 11 - Companion files surfaced in SKILL.md:**
 - Read `companion_files` from metadata.json
@@ -127,7 +185,7 @@ Return the validation result using the following structured tags. The build comm
 
 ```
 <quality-result status="pass">
-All 12 quality checks passed.
+All 16 quality checks passed.
 </quality-result>
 ```
 
@@ -174,6 +232,6 @@ If there are only warnings and no blocking issues, use `status="pass-with-warnin
 - Be specific in failure descriptions. "Check 3 failed" is not helpful. "Step 4 in SKILL.md uses the command `rails generate model` instead of describing the intent" is helpful.
 - Apply checks strictly for blocking issues and pragmatically for warnings. A slightly imperfect trigger description should be a warning, not a blocker.
 - Validate against the detected stack context. A testing section that names "pytest" is acceptable if the project uses Python with pytest as its only test framework.
-- Do NOT invent additional checks beyond the quality checklist. The 12 checks from the guide are the authoritative set.
+- Do NOT invent additional checks beyond the quality checklist. The 16 checks from the guide are the authoritative set.
 
 </rules>
