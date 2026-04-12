@@ -1,105 +1,59 @@
 # Autopilot
 
-Autopilot is a Claude Code plugin for semi-autonomous software development. It provides a structured framework with workflows, slash commands, and specialized agents for running safe development loops with human oversight. Autonomous execution. Human-gated submission. 
+Autopilot is a Claude Code plugin marketplace for safe, structured, semi-autonomous software development. 
 
-## Workflow
-
-```
-Requirements → Spec → Plan → Tasks → Write Tests → Red → Code → Green → Analysis → Refactor → Review → Submit
-```
-
-The plugin guides you through a structured development workflow:
-
-1. **Spec** - Define requirements and acceptance criteria
-2. **Plan** - Research codebase and create implementation plan
-3. **Tasks** - Break plan into actionable checklist
-4. **Execute** - Execute a TDD loop autonomously via an agent harness
-5. **Review** - Human checkpoint for changes and artifacts
-6. **Submit** - Commit and create pull request
-
-See [docs/workflow-overview.md](docs/workflow-overview.md) for detailed stage descriptions.
-
-## Quick Start
-
-```bash
-# 1. Install the plugin
-/plugin marketplace add stevenjcumming/autopilot
-/plugin install autocode
-
-# 2. See available commands and workflow
-/autocode:help
-
-# 3. Initialize (creates config, installs yq, updates gitignore)
-/autocode:init
-
-# 4. Start a new feature
-/autocode:new-spec my-feature
-
-# 5. Fill in REQUIREMENT.md 
-# Copy and paste your GitHub or JIRA ticket 
-
-# 6. Fill in SPEC.md
-# Write or generate a SPEC.md based on REQUIREMENT.md 
-
-# 7. Generate the tasks
-/autocode:create-plan my-feature
-/autocode:create-tasks my-feature
-
-# 8. Start development
-/autocode:execute my-feature T1
-
-# 9. Review and create/update PR
-/autocode:review my-feature
-/autocode:commit
-/autocode:sync-pr
-```
-
-## Safety Principles
-
-- **Human checkpoints** - Review stage requires approval before submission
-- **Automatic pause** - Stops on repeated violations and human review flags
-- **Incremental changes** - Small, reviewable tasks with clean handoffs between each completion
-- **Artifact trail** - Decisions, assumptions, risks, and justifications documented per spec
-- **Context preservation** - Handoff artifacts ensure continuity between task agents
-- **Continuous improvement** - Rules in `.claude/rules/` inform future sessions
-
-## Configuration
-
-Configure via `.claude/autocode.yml`. Run `/autocode:init` to create from template. Key settings:
-
-| Setting | Default | Description |
-|---------|---------|-------------|
-| `justification.categories` | (see config) | Require justification for flagged file categories |
-| `static_analysis.commands` | `[]` | Static analysis commands to run during autocode |
-
-See [docs/configuration.md](docs/configuration.md) for full reference.
-
-## Documentation
-
-- [Workflow Overview](docs/workflow-overview.md)
-- [Workflow Stages](docs/workflow-stages/)
-- [End-to-End Flowchart](docs/e2e_flowchart.md)
-- [Agent Architecture](docs/agent-architecture.md)
-- [Agent Handoff](docs/agent-handoff.md)
-- [Hook System](docs/hook-system.md)
-- [Artifact System](docs/artifacts.md)
-- [Evaluation Pipeline](docs/evaluation_pipeline.md)
-- [Rules](docs/rules.md)
-- [Configuration](docs/configuration.md)
-- [Justification Categories](docs/justifications.md)
-- [Human Review](docs/human_review.md)
-
-## Plugin Naming
-
-**Autopilot** is the umbrella brand and marketplace name (`stevenjcumming/autopilot`). Under it, individual plugins handle specific areas of the development workflow:
+Claude Code is powerful but project-ignorant. It does not know your coding patterns, your team conventions, or your domain context. Generic tools produce generic results. Autopilot closes that gap with project-specific skills, structured development loops, and the context layer Claude needs to work reliably in your codebase. Autopilot makes sure Claude knows your project.
 
 | Plugin | Purpose |
 |--------|---------|
-| `autocode` | Development workflow: TDD loop, specs, plans, PRs |
-| `autoskill` | Skill generation for teams and projects |
-| `autocontext` | Context management (future) |
+| `autocode` | Development framework from spec to pull request |
+| `autoskill` | Generate skills from project-specific coding patterns |
+| `autocontext` (in-progress) | Generates token-efficient, project-specific context for agents |
 
-When you install from the marketplace, you install specific plugins: `/plugin install autocode`. The marketplace stays under the `autopilot` name on GitHub.
+## Install
+
+```bash
+# Add the marketplace
+/plugin marketplace add stevenjcumming/autopilot
+
+# Install the plugins
+/plugin install autocode@stevenjcumming
+/plugin install autoskill@stevenjcumming
+```
+
+---
+
+## autocode
+
+A structured TDD workflow with specialized agents for autonomous execution and human-gated submission.
+
+- [Usage Guide](docs/autocode/usage-guide.md) - Quick start, safety principles, configuration
+- [Workflow Overview](docs/autocode/workflow-overview.md) - Stage-by-stage breakdown with command reference
+- [Workflow Stages](docs/autocode/workflow-stages/) - Deep-dive per stage
+- [Agent Architecture](docs/autocode/agent-architecture.md) - Agent harness and task runner design
+- [Agent Handoff](docs/autocode/agent-handoff.md) - Context preservation between tasks
+- [Artifact System](docs/autocode/artifacts.md) - Decisions, risks, justifications, review hints
+- [Hook System](docs/autocode/hook-system.md) - Pre/post tool hooks
+- [Configuration](docs/autocode/configuration.md) - Full config reference
+- [Justification Categories](docs/autocode/justifications.md) - When and why justifications are required
+- [Human Review](docs/autocode/human_review.md) - Review stage and approval flow
+- [Rules](docs/autocode/rules.md) - Cross-session learning via `.claude/rules/`
+- [Evaluation Pipeline](docs/autocode/evaluation_pipeline.md) - Testing the plugin itself
+- [End-to-End Flowchart](docs/autocode/e2e_flowchart.md)
+
+---
+
+## autoskill
+
+A skill generation engine that discovers codebase patterns and generates Claude Code skills so future sessions follow your team's conventions automatically.
+
+- [Overview](docs/autoskill/overview.md) - What autoskill does and command summary
+- [Usage Guide](docs/autoskill/usage-guide.md) - Step-by-step init, build, and update instructions
+- [How It Works](docs/autoskill/how-it-works.md) - Build and update workflows under the hood
+- [Agent Architecture](docs/autoskill/agent-architecture.md) - Discovery, synthesizer, and quality-check agents
+- [Generated Output](docs/autoskill/generated-output.md) - Skill folder structure and metadata
+
+---
 
 ## License
 
