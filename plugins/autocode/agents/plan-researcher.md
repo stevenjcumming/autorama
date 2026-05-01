@@ -11,7 +11,7 @@ Analyze the current spec and research the codebase to identify relevant files, s
 
 <input>
 
-The spec folder path is provided by the calling command (e.g., `.claude/specs/spec-123/`).
+The spec folder path is provided by the calling command (e.g., `.specs/spec-123/`).
 
 Read the SPEC.md from `<spec-folder>/SPEC.md` to understand what needs to be built.
 

@@ -20,8 +20,8 @@ Review can happen at two levels:
 
 Between tasks, the engineer can inspect changes at any time:
 
-- Inspect the code changes and artifacts in `.claude/specs/<id>/artifacts/`
-- Read the handoff at `.claude/specs/<id>/artifacts/handoff/handoff.md`
+- Inspect the code changes and artifacts in `.specs/<id>/artifacts/`
+- Read the handoff at `.specs/<id>/artifacts/handoff/handoff.md`
 - Run tests or check git diffs manually
 
 ### Formal Review (`/autocode:review`)

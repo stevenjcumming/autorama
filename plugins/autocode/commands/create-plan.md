@@ -23,7 +23,7 @@ Spawn the plan-builder agent:
 ```
 Task(
   subagent_type="autocode:plan-builder",
-  prompt="SPEC_DIR=.claude/specs/$ARGUMENTS"
+  prompt="SPEC_DIR=.specs/$ARGUMENTS"
 )
 ```
 

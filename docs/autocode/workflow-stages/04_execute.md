@@ -139,7 +139,7 @@ Autopilot generates handoff artifacts after each task. The `task-runner` writes 
 5. **Blockers** - Any issues preventing progress
 6. **Warnings for next agent** - Important context the next agent needs
 
-Handoff artifacts are stored at `.claude/specs/<identifier>/artifacts/handoff/handoff.md` and provide continuity between task agents.
+Handoff artifacts are stored at `.specs/<identifier>/artifacts/handoff/handoff.md` and provide continuity between task agents.
 
 ### Justification Configuration
 
@@ -184,7 +184,7 @@ justification:
 
 ## Prerequisites
 
-- Spec folder must exist at `.claude/specs/<identifier>/`
+- Spec folder must exist at `.specs/<identifier>/`
 - `TODO.md` must exist with uncompleted tasks
 - `PLAN.md` must be present
 - `SPEC.md` must be present
@@ -379,13 +379,13 @@ For LARGE tasks, the coder writes an approach document to `{SPEC_DIR}/artifacts/
 
 | Artifact | When | Location |
 |----------|------|----------|
-| Justifications | Flagged file modified | `.claude/specs/<identifier>/artifacts/justifications/` |
-| Decisions | Multiple approaches possible | `.claude/specs/<identifier>/artifacts/decisions/` |
-| Assumptions | Inferring unstated requirements | `.claude/specs/<identifier>/artifacts/assumptions/` |
-| Dependencies | Code interconnections | `.claude/specs/<identifier>/artifacts/dependencies/` |
-| Risks | Potential problems identified | `.claude/specs/<identifier>/artifacts/risks/` |
-| Review Hints | Human judgment needed | `.claude/specs/<identifier>/artifacts/review_hints/` |
-| Technical Debt | Shortcuts taken | `.claude/specs/<identifier>/artifacts/debt/` |
+| Justifications | Flagged file modified | `.specs/<identifier>/artifacts/justifications/` |
+| Decisions | Multiple approaches possible | `.specs/<identifier>/artifacts/decisions/` |
+| Assumptions | Inferring unstated requirements | `.specs/<identifier>/artifacts/assumptions/` |
+| Dependencies | Code interconnections | `.specs/<identifier>/artifacts/dependencies/` |
+| Risks | Potential problems identified | `.specs/<identifier>/artifacts/risks/` |
+| Review Hints | Human judgment needed | `.specs/<identifier>/artifacts/review_hints/` |
+| Technical Debt | Shortcuts taken | `.specs/<identifier>/artifacts/debt/` |
 
 ### File Categories Requiring Justification
 
@@ -479,7 +479,7 @@ The command provides:
 
 After autocode completes:
 
-1. Review generated artifacts in `.claude/specs/<identifier>/artifacts/`
+1. Review generated artifacts in `.specs/<identifier>/artifacts/`
 2. Check for any flagged review hints
 3. Validate assumptions documented
 4. Proceed to Review stage (human checkpoint)

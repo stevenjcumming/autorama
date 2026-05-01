@@ -11,7 +11,7 @@ Run configured static analysis commands and report actionable issues for the cod
 
 <input>
 
-- `SPEC_DIR`: Path to the spec directory (e.g., `.claude/specs/auth-refactor`)
+- `SPEC_DIR`: Path to the spec directory (e.g., `.specs/auth-refactor`)
 - `STATIC_ANALYSIS_CONFIG`: Configuration from autocode.yml static_analysis section
 
 </input>

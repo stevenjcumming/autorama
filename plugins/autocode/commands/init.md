@@ -1,6 +1,6 @@
 ---
 allowed-tools: Bash, Read
-description: Use once per project to set up Autocode. Creates autocode.yml config, checks for yq dependency, adds .claude/specs/ to .gitignore, and bootstraps the AUTOCODE_PLUGIN_ROOT env var.
+description: Use once per project to set up Autocode. Creates autocode.yml config, checks for yq dependency, adds .specs/ to .gitignore, and bootstraps the AUTOCODE_PLUGIN_ROOT env var.
 ---
 
 # Autocode Init
@@ -9,7 +9,7 @@ Initialize Autocode for your project. This will:
 
 1. Create `.claude/autocode.yml` configuration file
 2. Check for `yq` and offer to install it (enables config customization)
-3. Add `.claude/specs/` to `.gitignore`
+3. Add `.specs/` to `.gitignore`
 4. Bootstrap `AUTOCODE_PLUGIN_ROOT` env var into `.claude/settings.local.json`
 
 ## Step 1: Resolve Plugin Path
@@ -51,7 +51,7 @@ Pass the justification template name as the first argument to the init script (e
 The init script will:
 - Create `.claude/autocode.yml` from template
 - Check for `yq` dependency
-- Add `.claude/specs/` to `.gitignore`
+- Add `.specs/` to `.gitignore`
 - Write `AUTOCODE_PLUGIN_ROOT` to `.claude/settings.local.json`
 - Create `.claude/justifications.yml` from the specified template (if provided)
 

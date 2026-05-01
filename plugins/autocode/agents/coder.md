@@ -12,7 +12,7 @@ Implement a single task from the TODO.md checklist, generating appropriate artif
 
 <input>
 
-- `SPEC_DIR`: Path to the spec directory (e.g., `.claude/specs/auth-refactor`)
+- `SPEC_DIR`: Path to the spec directory (e.g., `.specs/auth-refactor`)
 - `TASK`: The specific task to implement
 - `TEST_FILES`: Comma-separated list of test file paths written by the tester (optional, provided in TDD mode)
 - `ANALYSIS_FIXES`: Fix instructions from analyzer agent (optional, takes priority over TASK)

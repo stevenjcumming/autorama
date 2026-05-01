@@ -12,7 +12,7 @@ Execute a single task through: **write tests → red → code → green → anal
 
 <input>
 
-- `SPEC_DIR`: Path to spec directory (e.g., `.claude/specs/auth-refactor`)
+- `SPEC_DIR`: Path to spec directory (e.g., `.specs/auth-refactor`)
 - `TASK`: Task to execute (e.g., `[T1] Implement UserService`)
 - `TASK_ID`: Optional explicit task ID
 - `CONFIG`: Optional configuration overrides

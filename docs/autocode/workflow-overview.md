@@ -50,7 +50,7 @@ Gather and document the original requirements for the feature or task. This is t
 Create a specification folder with structured documentation of the requirements.
 
 **What It Does**:
-1. Creates `.claude/specs/<identifier>/` directory
+1. Creates `.specs/<identifier>/` directory
 2. Creates `REQUIREMENT.md` for original requirements (verbatim)
 3. Creates `SPEC.md` from template
 
@@ -142,7 +142,7 @@ Execute Command
 - Requires justifications for flagged file modifications
 - Documents decisions, assumptions, and risks
 
-**Artifacts Generated**: All artifacts are written to `.claude/specs/<identifier>/artifacts/`:
+**Artifacts Generated**: All artifacts are written to `.specs/<identifier>/artifacts/`:
 - `justifications/` - Why changes were made
 - `decisions/` - Approach choices
 - `assumptions/` - Inferred requirements
@@ -185,7 +185,7 @@ Human checkpoint to review all changes and artifacts before finalizing.
 
 **What It Does**:
 1. Summarizes git changes and file modifications
-2. Lists artifacts from `.claude/specs/<identifier>/artifacts/` by type with counts
+2. Lists artifacts from `.specs/<identifier>/artifacts/` by type with counts
 3. Highlights high-risk items requiring attention
 4. Presents review hints with questions for human judgment
 5. Shows review checklist

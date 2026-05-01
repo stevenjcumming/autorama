@@ -9,7 +9,7 @@
 # Usage: build-task-queue.sh <spec_dir> [filter]
 #
 # Arguments:
-#   spec_dir  Path to the spec directory (e.g., .claude/specs/auth-refactor)
+#   spec_dir  Path to the spec directory (e.g., .specs/auth-refactor)
 #   filter    Optional: T<n> for single task, P<n> for phase
 #
 # Output (one per line):

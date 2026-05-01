@@ -12,7 +12,7 @@ if [ -z "$SPEC_ID" ]; then
     exit 1
 fi
 
-SPEC_DIR=".claude/specs/$SPEC_ID"
+SPEC_DIR=".specs/$SPEC_ID"
 
 if [ ! -d "$SPEC_DIR" ]; then
     echo "Error: Spec directory not found at $SPEC_DIR"

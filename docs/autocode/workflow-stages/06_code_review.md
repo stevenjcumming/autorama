@@ -73,7 +73,7 @@ Perform a structured code review of recent changes against a configurable checkl
 
 The reviewer agent writes a structured report to:
 
-- **Spec mode**: `.claude/specs/<identifier>/artifacts/CODE_REVIEW.md`
+- **Spec mode**: `.specs/<identifier>/artifacts/CODE_REVIEW.md`
 - **Standalone mode**: `.claude/CODE_REVIEW.md`
 
 Report format:

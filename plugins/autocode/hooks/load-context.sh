@@ -45,9 +45,9 @@ if [ -z "$SPEC_DIR" ]; then
   SPEC_DIR=$(echo "$PROMPT" | grep -oE 'SPEC_DIR[=:][[:space:]]*[^[:space:]]+' | head -1 | sed 's/^SPEC_DIR[=:][[:space:]]*//' || echo "")
 fi
 
-# Method 3: Match .claude/specs/<id> path pattern anywhere in prompt
+# Method 3: Match .specs/<id> path pattern anywhere in prompt
 if [ -z "$SPEC_DIR" ]; then
-  SPEC_DIR=$(echo "$PROMPT" | grep -oE '\.claude/specs/[^[:space:]/]+' | head -1 || echo "")
+  SPEC_DIR=$(echo "$PROMPT" | grep -oE '\.specs/[^[:space:]/]+' | head -1 || echo "")
 fi
 
 # If still no SPEC_DIR, exit silently

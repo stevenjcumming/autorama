@@ -8,7 +8,7 @@
 # Usage: setup-artifacts.sh <spec_dir>
 #
 # Arguments:
-#   spec_dir  Path to the spec directory (e.g., .claude/specs/auth-refactor)
+#   spec_dir  Path to the spec directory (e.g., .specs/auth-refactor)
 #
 # Output:
 #   CREATED:<spec_dir>/artifacts

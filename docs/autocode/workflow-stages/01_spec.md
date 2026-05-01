@@ -24,7 +24,7 @@ Create a new spec folder with `REQUIREMENT.md` and `SPEC.md` files to begin the 
 
 ## What It Does
 
-1. Creates `.claude/specs/<identifier>/` directory
+1. Creates `.specs/<identifier>/` directory
 2. Creates `REQUIREMENT.md` for original requirements (verbatim)
 3. Creates `SPEC.md` from template
 

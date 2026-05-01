@@ -80,7 +80,7 @@ Requirements ──> [1] Spec ──> HUMAN ──> [2] Plan ──> HUMAN ─�
     v
 new-spec.sh script
     |
-    ├── Creates .claude/specs/<id>/
+    ├── Creates .specs/<id>/
     ├── Creates REQUIREMENT.md (template)
     └── Creates SPEC.md (template)
     |
@@ -244,7 +244,7 @@ HUMAN ACTION
 review.sh (data gathering)
     |
     ├── Summarize git changes (file counts, flagged files)
-    ├── Count artifacts by type from .claude/specs/<id>/artifacts/
+    ├── Count artifacts by type from .specs/<id>/artifacts/
     ├── Find high-risk items (risk:high, priority:critical)
     └── Extract review hints (files, lines, questions)
     |
@@ -363,7 +363,7 @@ Task runner initializes with full previous context
 
 ## Artifact Map
 
-All artifacts written to `.claude/specs/<id>/artifacts/` unless noted.
+All artifacts written to `.specs/<id>/artifacts/` unless noted.
 
 ### Generated During Autocode (by agent)
 
@@ -386,11 +386,11 @@ All artifacts written to `.claude/specs/<id>/artifacts/` unless noted.
 
 | Artifact | Stage | Location |
 |----------|-------|----------|
-| `REQUIREMENT.md` | Spec | `.claude/specs/<id>/` |
-| `SPEC.md` | Spec | `.claude/specs/<id>/` |
-| `RESEARCH.md` | Plan | `.claude/specs/<id>/` |
-| `PLAN.md` | Plan | `.claude/specs/<id>/` |
-| `TODO.md` | Tasks | `.claude/specs/<id>/` |
+| `REQUIREMENT.md` | Spec | `.specs/<id>/` |
+| `SPEC.md` | Spec | `.specs/<id>/` |
+| `RESEARCH.md` | Plan | `.specs/<id>/` |
+| `PLAN.md` | Plan | `.specs/<id>/` |
+| `TODO.md` | Tasks | `.specs/<id>/` |
 | Git commits | Submit | Git history |
 | GitHub PR | Submit | GitHub |
 

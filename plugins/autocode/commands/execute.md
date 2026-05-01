@@ -21,7 +21,7 @@ Execute the Test -> Code -> Refactor loop autonomously until all tasks are compl
 Extract from `$ARGUMENTS`:
 - `IDENTIFIER`: The spec identifier (first argument, e.g., `auth-refactor`)
 - `FILTER`: Optional task/phase filter (second argument, e.g., `T3` or `P1`)
-- Construct `SPEC_DIR` as `.claude/specs/$IDENTIFIER`
+- Construct `SPEC_DIR` as `.specs/$IDENTIFIER`
 
 ## Step 2: Validate Prerequisites
 

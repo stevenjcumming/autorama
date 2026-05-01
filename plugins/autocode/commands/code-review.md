@@ -14,7 +14,7 @@ Perform a structured code review against a configurable checklist, producing sev
 - Parse the arguments to extract:
   - `IDENTIFIER`: Optional spec identifier (e.g., `auth-refactor`)
   - `REF`: Optional git ref to diff against (default: use spec branch or HEAD~1)
-- If `IDENTIFIER` is provided, construct `SPEC_DIR` as `.claude/specs/$IDENTIFIER`
+- If `IDENTIFIER` is provided, construct `SPEC_DIR` as `.specs/$IDENTIFIER`
 
 ## Step 1: Gather Diff
 

@@ -20,7 +20,7 @@ Each sub-agent generates typed artifacts as it works:
 | **Refactorer** | Refactoring changes |
 | **Task Runner** | Justifications, decisions, assumptions, risks, debt, review hints (Step 6: artifact generation) |
 
-Artifacts accumulate at `.claude/specs/<SPEC_ID>/artifacts/`.
+Artifacts accumulate at `.specs/<SPEC_ID>/artifacts/`.
 
 ### Artifact Types
 

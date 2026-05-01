@@ -13,7 +13,7 @@ Move all spec files except REVIEW.md to `~/.autocode/specs/<project>/<id>/` for 
 - `$ARGUMENTS` contains: `<identifier>`
 - Parse the arguments to extract:
   - `IDENTIFIER`: The spec identifier (e.g., `auth-refactor`)
-- Construct `SPEC_DIR` as `.claude/specs/$IDENTIFIER`
+- Construct `SPEC_DIR` as `.specs/$IDENTIFIER`
 
 ## Step 1: Validate Prerequisites
 

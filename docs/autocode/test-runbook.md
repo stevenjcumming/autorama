@@ -5,7 +5,7 @@ This document describes the integration test scenarios for the Autopilot.
 ## Test Setup
 
 Each test requires:
-1. A test spec folder at `.claude/specs/test-<scenario>/`
+1. A test spec folder at `.specs/test-<scenario>/`
 2. Required files: REQUIREMENT.md, SPEC.md, PLAN.md, TODO.md
 3. Clean git state (commit or stash any changes)
 
@@ -18,11 +18,11 @@ Each test requires:
 **Setup:**
 ```bash
 # Create minimal spec
-mkdir -p .claude/specs/test-single-task/artifacts
-echo "# Requirement\nAdd hello function" > .claude/specs/test-single-task/REQUIREMENT.md
-echo "# Spec\nCreate hello.js with hello() function" > .claude/specs/test-single-task/SPEC.md
-echo "# Plan\n1. Create hello.js" > .claude/specs/test-single-task/PLAN.md
-echo "- [ ] [T1] Create hello.js with hello() function" > .claude/specs/test-single-task/TODO.md
+mkdir -p .specs/test-single-task/artifacts
+echo "# Requirement\nAdd hello function" > .specs/test-single-task/REQUIREMENT.md
+echo "# Spec\nCreate hello.js with hello() function" > .specs/test-single-task/SPEC.md
+echo "# Plan\n1. Create hello.js" > .specs/test-single-task/PLAN.md
+echo "- [ ] [T1] Create hello.js with hello() function" > .specs/test-single-task/TODO.md
 ```
 
 **Execution:**
@@ -37,9 +37,9 @@ echo "- [ ] [T1] Create hello.js with hello() function" > .claude/specs/test-sin
 
 **Verification Commands:**
 ```bash
-grep -q "\[x\] \[T1\]" .claude/specs/test-single-task/TODO.md
+grep -q "\[x\] \[T1\]" .specs/test-single-task/TODO.md
 test -f hello.js
-test -f .claude/specs/test-single-task/artifacts/handoff/handoff.md
+test -f .specs/test-single-task/artifacts/handoff/handoff.md
 ```
 
 ---
@@ -50,8 +50,8 @@ test -f .claude/specs/test-single-task/artifacts/handoff/handoff.md
 
 **Setup:**
 ```bash
-mkdir -p .claude/specs/test-multi-task/artifacts
-cat > .claude/specs/test-multi-task/TODO.md << 'EOF'
+mkdir -p .specs/test-multi-task/artifacts
+cat > .specs/test-multi-task/TODO.md << 'EOF'
 ## Phase 1: Setup
 - [ ] [T1] Create config.js with default settings
 - [ ] [T2] Create utils.js with helper functions
@@ -72,7 +72,7 @@ EOF
 
 **Verification:**
 ```bash
-grep -c "\[x\]" .claude/specs/test-multi-task/TODO.md  # Should be 3
+grep -c "\[x\]" .specs/test-multi-task/TODO.md  # Should be 3
 ```
 
 ---
@@ -83,8 +83,8 @@ grep -c "\[x\]" .claude/specs/test-multi-task/TODO.md  # Should be 3
 
 **Setup:**
 ```bash
-mkdir -p .claude/specs/test-resume/artifacts
-cat > .claude/specs/test-resume/TODO.md << 'EOF'
+mkdir -p .specs/test-resume/artifacts
+cat > .specs/test-resume/TODO.md << 'EOF'
 - [x] [T1] Completed task
 - [ ] [T2] Task that was in progress
 - [ ] [T3] Pending task
@@ -104,7 +104,7 @@ EOF
 
 **Verification:**
 ```bash
-grep -q "\[x\] \[T2\]" .claude/specs/test-resume/TODO.md
+grep -q "\[x\] \[T2\]" .specs/test-resume/TODO.md
 ```
 
 ---
@@ -115,9 +115,9 @@ grep -q "\[x\] \[T2\]" .claude/specs/test-resume/TODO.md
 
 **Setup:**
 ```bash
-mkdir -p .claude/specs/test-context/artifacts
+mkdir -p .specs/test-context/artifacts
 # Create spec with many tasks that generate lots of artifacts
-cat > .claude/specs/test-context/TODO.md << 'EOF'
+cat > .specs/test-context/TODO.md << 'EOF'
 - [ ] [T1] Generate large artifact 1
 - [ ] [T2] Generate large artifact 2
 - [ ] [T3] Generate large artifact 3
@@ -140,7 +140,7 @@ EOF
 **Verification:**
 ```bash
 # Check session summaries exist in handoffs
-grep -q "Session Summary" .claude/specs/test-context/artifacts/handoff/handoff.md
+grep -q "Session Summary" .specs/test-context/artifacts/handoff/handoff.md
 ```
 
 ---
@@ -151,8 +151,8 @@ grep -q "Session Summary" .claude/specs/test-context/artifacts/handoff/handoff.m
 
 **Setup:**
 ```bash
-mkdir -p .claude/specs/test-background/artifacts
-cat > .claude/specs/test-background/TODO.md << 'EOF'
+mkdir -p .specs/test-background/artifacts
+cat > .specs/test-background/TODO.md << 'EOF'
 - [ ] [T1] Simple task for background execution
 EOF
 ```
@@ -170,7 +170,7 @@ EOF
 **Verification:**
 ```bash
 # Verify hook artifacts
-test -f .claude/specs/test-background/artifacts/handoff/handoff.md
+test -f .specs/test-background/artifacts/handoff/handoff.md
 ```
 
 ---

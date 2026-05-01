@@ -11,7 +11,7 @@ if [ -z "$IDENTIFIER" ]; then
   exit 1
 fi
 
-SPEC_DIR=".claude/specs/$IDENTIFIER"
+SPEC_DIR=".specs/$IDENTIFIER"
 
 if [ ! -d "$SPEC_DIR" ]; then
   echo "Error: spec directory does not exist at $SPEC_DIR"

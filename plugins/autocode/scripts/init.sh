@@ -105,18 +105,18 @@ echo ""
 echo "=== Checking .gitignore ==="
 
 if [ -f ".gitignore" ]; then
-  if grep -q ".claude/specs" .gitignore 2>/dev/null; then
-    echo ".claude/specs already in .gitignore"
+  if grep -q ".specs/" .gitignore 2>/dev/null; then
+    echo ".specs/ already in .gitignore"
   else
     echo "" >> .gitignore
     echo "# Autocode specs (generated)" >> .gitignore
-    echo ".claude/specs/" >> .gitignore
-    echo "Added .claude/specs/ to .gitignore"
+    echo ".specs/" >> .gitignore
+    echo "Added .specs/ to .gitignore"
   fi
 else
   echo "# Autocode specs (generated)" > .gitignore
-  echo ".claude/specs/" >> .gitignore
-  echo "Created .gitignore with .claude/specs/"
+  echo ".specs/" >> .gitignore
+  echo "Created .gitignore with .specs/"
 fi
 
 # Bootstrap AUTOCODE_PLUGIN_ROOT into .claude/settings.local.json

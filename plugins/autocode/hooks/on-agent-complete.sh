@@ -44,7 +44,7 @@ if [ -x "$FIND_SPEC_SCRIPT" ]; then
   fi
 else
   # Fallback: find any spec directory with a TODO.md
-  for todo_file in .claude/specs/*/TODO.md; do
+  for todo_file in .specs/*/TODO.md; do
     if [ -f "$todo_file" ]; then
       SPEC_DIR=$(dirname "$todo_file")
       break

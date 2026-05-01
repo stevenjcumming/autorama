@@ -14,7 +14,7 @@ Perform a structured code review of recent changes against a provided checklist.
 - `DIFF`: The full git diff to review
 - `DIFF_STAT`: The diff stat summary (files changed, insertions, deletions)
 - `CHECKLIST`: The code review checklist content to evaluate against
-- `SPEC_DIR`: Optional path to the spec directory (e.g., `.claude/specs/auth-refactor`)
+- `SPEC_DIR`: Optional path to the spec directory (e.g., `.specs/auth-refactor`)
 - `OUTPUT_PATH`: Path where the review report should be written
 
 </input>

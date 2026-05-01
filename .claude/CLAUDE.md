@@ -41,6 +41,6 @@ Key differences:
 
 ## Artifacts
 
-Artifacts are generated per spec in the user's project at `.claude/specs/<SPEC_ID>/artifacts/`. The plugin provides artifact templates at `plugins/autocode/templates/artifacts/`.
+Artifacts are generated per spec in the user's project at `.specs/<SPEC_ID>/artifacts/`. The plugin provides artifact templates at `plugins/autocode/templates/artifacts/`.
 
 Artifact template files (justifications, risks, etc.) are created on disk by the PostToolUse hook. The `task-runner` fills these in after sub-agents complete their work (Step 2.6).

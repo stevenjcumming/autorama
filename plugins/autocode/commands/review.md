@@ -13,8 +13,8 @@ Generate a review summary for human oversight before proceeding to the Submit st
 - `$ARGUMENTS` contains: `<identifier>`
 - Parse the arguments to extract:
   - `IDENTIFIER`: The spec identifier (e.g., `auth-refactor`)
-- Construct `SPEC_DIR` as `.claude/specs/$IDENTIFIER`
-- Artifacts are located at `.claude/specs/$IDENTIFIER/artifacts/`
+- Construct `SPEC_DIR` as `.specs/$IDENTIFIER`
+- Artifacts are located at `.specs/$IDENTIFIER/artifacts/`
 
 ## Overview
 
@@ -33,7 +33,7 @@ bash $AUTOCODE_PLUGIN_ROOT/scripts/review.sh $ARGUMENTS
 ```
 
 ```bash
-bash $AUTOCODE_PLUGIN_ROOT/scripts/generate-report.sh .claude/specs/$IDENTIFIER
+bash $AUTOCODE_PLUGIN_ROOT/scripts/generate-report.sh .specs/$IDENTIFIER
 ```
 
 The `generate-report.sh` script creates a `SUMMARY.md` file in the spec directory with artifact counts, deferred issues, and review hints. Read the generated `SUMMARY.md` and include its data in your review output.

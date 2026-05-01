@@ -10,7 +10,7 @@ if [ -z "$IDENTIFIER" ]; then
   exit 1
 fi
 
-SPEC_DIR=".claude/specs/$IDENTIFIER"
+SPEC_DIR=".specs/$IDENTIFIER"
 
 if [ -d "$SPEC_DIR" ]; then
   echo "Error: spec '$IDENTIFIER' already exists at $SPEC_DIR"

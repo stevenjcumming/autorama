@@ -26,7 +26,7 @@ Provide a human checkpoint by summarizing code changes and artifacts generated d
 ## Prerequisites
 
 - Implementation work should be completed (autocode or manual coding)
-- Artifacts may exist in `.claude/specs/<identifier>/artifacts/` (optional but recommended)
+- Artifacts may exist in `.specs/<identifier>/artifacts/` (optional but recommended)
 - Git repository recommended for change detection
 
 ## What It Does

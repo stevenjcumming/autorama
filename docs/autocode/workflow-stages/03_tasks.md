@@ -18,7 +18,7 @@ Convert an implementation plan into a phased TODO checklist. This marks the end 
 
 ## Prerequisites
 
-- Spec folder must exist at `.claude/specs/<identifier>/`
+- Spec folder must exist at `.specs/<identifier>/`
 - `PLAN.md` must be present and filled out
 
 ## What It Does

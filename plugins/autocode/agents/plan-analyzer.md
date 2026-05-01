@@ -13,7 +13,7 @@ Review the implementation plan, validate assumptions against the codebase, and p
 
 <input>
 
-The spec folder path is provided by the calling agent (e.g., `.claude/specs/spec-123/`).
+The spec folder path is provided by the calling agent (e.g., `.specs/spec-123/`).
 
 </input>
 

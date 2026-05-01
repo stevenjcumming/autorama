@@ -27,7 +27,7 @@ Read `PLAN.md` from the spec directory and extract:
 - Testing requirements
 
 ```
-Read(".claude/specs/$ARGUMENTS/PLAN.md")
+Read(".specs/$ARGUMENTS/PLAN.md")
 ```
 
 If PLAN.md is empty or has only template content, tell the user to complete the plan first and stop.
@@ -116,8 +116,8 @@ After writing TODO.md, present:
 Planning complete. Generated TODO.md with N tasks across M phases.
 
 Files:
-- .claude/specs/<identifier>/PLAN.md - Implementation plan
-- .claude/specs/<identifier>/TODO.md - Task checklist
+- .specs/<identifier>/PLAN.md - Implementation plan
+- .specs/<identifier>/TODO.md - Task checklist
 
 Run options:
 - All tasks: /autocode:execute <identifier>

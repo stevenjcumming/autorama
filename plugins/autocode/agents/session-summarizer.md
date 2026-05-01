@@ -11,7 +11,7 @@ Generate compressed session summaries to preserve context when approaching token
 
 <input>
 
-- `SPEC_DIR`: Path to the spec directory (e.g., `.claude/specs/auth-refactor`)
+- `SPEC_DIR`: Path to the spec directory (e.g., `.specs/auth-refactor`)
 - `TASKS_COMPLETED`: List of task IDs completed this session (e.g., `T1,T2,T3`)
 - `TRIGGER_REASON`: Why summarization was triggered (`context_limit`, `session_end`, `manual`)
 

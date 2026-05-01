@@ -13,10 +13,10 @@ Artifacts follow a two-tier organization:
 During autocode execution, artifacts are generated within the spec directory:
 
 ```
-.claude/specs/<SPEC_ID>/artifacts/
+.specs/<SPEC_ID>/artifacts/
 ```
 
-This keeps all work-in-progress artifacts co-located with their spec, making it easy to track what was generated for each feature. Per-spec artifacts are gitignored by default (`.claude/specs/*` is in `.gitignore`).
+This keeps all work-in-progress artifacts co-located with their spec, making it easy to track what was generated for each feature. Per-spec artifacts are gitignored by default (`.specs/*` is in `.gitignore`).
 
 ### Curated Artifacts (Promoted)
 
@@ -69,7 +69,7 @@ This location is for curated artifacts that users manually move there. Examples 
 ├─────────────────────────────────────────────────────────────────────────┤
 │  1. Agent identifies trigger condition                                  │
 │  2. Agent generates filename: {task_id}_{name}_{timestamp}.md           │
-│  3. Agent writes to: .claude/specs/<SPEC_ID>/artifacts/{artifact_type}/ │
+│  3. Agent writes to: .specs/<SPEC_ID>/artifacts/{artifact_type}/ │
 │  4. Uses template structure from plugins/autocode/templates/artifacts/ │
 └─────────────────────────────────────────────────────────────────────────┘
 ```
@@ -82,7 +82,7 @@ This location is for curated artifacts that users manually move there. Examples 
 
 **Purpose**: Documents why a change was made, alternatives considered, and risk assessment. Includes category-specific checklists to ensure important considerations aren't missed.
 
-**Location**: `.claude/specs/<SPEC_ID>/artifacts/justifications/`
+**Location**: `.specs/<SPEC_ID>/artifacts/justifications/`
 
 ### Decision
 
@@ -90,7 +90,7 @@ This location is for curated artifacts that users manually move there. Examples 
 
 **Purpose**: Records options considered, trade-offs evaluated, and rationale for the chosen approach. Creates a record for future reference if the decision needs revisiting.
 
-**Location**: `.claude/specs/<SPEC_ID>/artifacts/decisions/`
+**Location**: `.specs/<SPEC_ID>/artifacts/decisions/`
 
 ### Assumption
 
@@ -98,7 +98,7 @@ This location is for curated artifacts that users manually move there. Examples 
 
 **Purpose**: Documents what was assumed, the basis for the assumption, validation questions, and what would need to change if the assumption is wrong.
 
-**Location**: `.claude/specs/<SPEC_ID>/artifacts/assumptions/`
+**Location**: `.specs/<SPEC_ID>/artifacts/assumptions/`
 
 ### Risk
 
@@ -106,7 +106,7 @@ This location is for curated artifacts that users manually move there. Examples 
 
 **Purpose**: Captures likelihood, impact, mitigation strategies, and rollback plans. Surfaces concerns that need human attention.
 
-**Location**: `.claude/specs/<SPEC_ID>/artifacts/risks/`
+**Location**: `.specs/<SPEC_ID>/artifacts/risks/`
 
 ### Debt
 
@@ -114,7 +114,7 @@ This location is for curated artifacts that users manually move there. Examples 
 
 **Purpose**: Documents what the ideal implementation would be, why the shortcut was taken, and a plan for paying it back later.
 
-**Location**: `.claude/specs/<SPEC_ID>/artifacts/debt/`
+**Location**: `.specs/<SPEC_ID>/artifacts/debt/`
 
 ### Dependency
 
@@ -122,7 +122,7 @@ This location is for curated artifacts that users manually move there. Examples 
 
 **Purpose**: Documents dependency relationships, coupling level, impact of changes, and migration paths if the dependency needs to be replaced.
 
-**Location**: `.claude/specs/<SPEC_ID>/artifacts/dependencies/`
+**Location**: `.specs/<SPEC_ID>/artifacts/dependencies/`
 
 ### Review Hint
 
@@ -130,7 +130,7 @@ This location is for curated artifacts that users manually move there. Examples 
 
 **Purpose**: Flags specific files and line ranges that require human review, with focused questions for the reviewer.
 
-**Location**: `.claude/specs/<SPEC_ID>/artifacts/review_hints/`
+**Location**: `.specs/<SPEC_ID>/artifacts/review_hints/`
 
 ## File Categories Requiring Justification
 
@@ -151,7 +151,7 @@ These categories are the built-in defaults from `agents/references/artifact-trig
 ### Per-Spec Artifacts (Generated)
 
 ```
-.claude/specs/<SPEC_ID>/
+.specs/<SPEC_ID>/
 ├── REQUIREMENT.md
 ├── SPEC.md
 ├── RESEARCH.md
@@ -217,7 +217,7 @@ After completing a spec, review the generated artifacts and promote valuable one
 
 ```bash
 # Example: Promote a precedent-setting decision
-cp .claude/specs/api-v2/artifacts/decisions/2024-01-16-pagination-strategy.md \
+cp .specs/api-v2/artifacts/decisions/2024-01-16-pagination-strategy.md \
    .claude/artifacts/decisions/
 ```
 
@@ -226,4 +226,4 @@ Promoted artifacts should be:
 - Worth preserving for long-term reference
 - Edited to remove spec-specific details if needed
 
-Per-spec artifacts that are not promoted will be cleaned up when the spec directory is deleted (since `.claude/specs/*` is gitignored).
+Per-spec artifacts that are not promoted will be cleaned up when the spec directory is deleted (since `.specs/*` is gitignored).

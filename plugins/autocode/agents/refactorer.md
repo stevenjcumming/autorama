@@ -12,7 +12,7 @@ Review code changes from the current task and apply necessary cleanup refactorin
 
 <input>
 
-- `SPEC_DIR`: Path to the spec directory (e.g., `.claude/specs/auth-refactor`)
+- `SPEC_DIR`: Path to the spec directory (e.g., `.specs/auth-refactor`)
 
 </input>
 

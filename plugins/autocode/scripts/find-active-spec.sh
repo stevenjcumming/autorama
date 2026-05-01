@@ -2,13 +2,13 @@
 #
 # find-active-spec.sh - Find the most recently active spec directory
 #
-# Searches .claude/specs/ for the spec with the most recently modified
+# Searches .specs/ for the spec with the most recently modified
 # TODO.md, falling back to any spec directory.
 #
 # Usage: find-active-spec.sh [specs_root]
 #
 # Arguments:
-#   specs_root  Optional root directory (default: .claude/specs)
+#   specs_root  Optional root directory (default: .specs)
 #
 # Output:
 #   FOUND:<spec_dir>:<spec_id>   - Found active spec
@@ -21,7 +21,7 @@
 
 set -e
 
-SPECS_ROOT="${1:-.claude/specs}"
+SPECS_ROOT="${1:-.specs}"
 
 if [ ! -d "$SPECS_ROOT" ]; then
   echo "NOT_FOUND"

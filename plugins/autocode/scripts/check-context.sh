@@ -21,7 +21,7 @@
 
 set -e
 
-SPEC_DIR="${1:-.claude/specs/default}"
+SPEC_DIR="${1:-.specs/default}"
 THRESHOLD="${2:-150000}"  # ~150k tokens warning threshold
 CRITICAL_THRESHOLD=$((THRESHOLD + 50000))  # ~200k critical threshold
 

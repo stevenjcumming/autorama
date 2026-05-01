@@ -11,7 +11,7 @@ Create a detailed implementation plan based on a spec. This is a non-interactive
 
 <input>
 
-- `SPEC_DIR`: Path to the spec directory (e.g., `.claude/specs/test-123`)
+- `SPEC_DIR`: Path to the spec directory (e.g., `.specs/test-123`)
 
 </input>
 
@@ -125,7 +125,7 @@ After both agents complete, output:
 ```markdown
 ## Plan Created
 
-**Location:** `.claude/specs/<identifier>/PLAN.md`
+**Location:** `.specs/<identifier>/PLAN.md`
 
 ### Research Summary
 - <Key findings from codebase research>

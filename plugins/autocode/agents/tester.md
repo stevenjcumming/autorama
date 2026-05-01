@@ -12,7 +12,7 @@ Write tests for a task based on requirements and acceptance criteria. This agent
 
 <input>
 
-- `SPEC_DIR`: Path to the spec directory (e.g., `.claude/specs/auth-refactor`)
+- `SPEC_DIR`: Path to the spec directory (e.g., `.specs/auth-refactor`)
 - `TASK`: The specific task to write tests for
 - `<task-context>`: Inline context provided by the task-runner containing:
   - `<acceptance-criteria>`: The acceptance criteria relevant to this task

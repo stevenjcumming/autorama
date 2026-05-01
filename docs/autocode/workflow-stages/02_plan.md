@@ -18,7 +18,7 @@ Create a `PLAN.md` implementation plan from the contents of the specified spec f
 
 ## Prerequisites
 
-- Spec folder must exist at `.claude/specs/<identifier>/`
+- Spec folder must exist at `.specs/<identifier>/`
 - `SPEC.md` must be present and filled out
 - `REQUIREMENT.md` should contain the original requirements
 

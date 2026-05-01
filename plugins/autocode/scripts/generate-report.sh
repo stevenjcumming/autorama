@@ -2,7 +2,7 @@
 # Generate summary report of spec artifacts
 set -e
 
-SPEC_DIR="${1:-.claude/specs/default}"
+SPEC_DIR="${1:-.specs/default}"
 REPORT="${SPEC_DIR}/SUMMARY.md"
 
 echo "# Spec Summary Report" > "$REPORT"
