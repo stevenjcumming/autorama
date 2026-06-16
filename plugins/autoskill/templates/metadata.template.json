@@ -1,6 +1,7 @@
 {
   "skill_name": "{{skill_name}}",
   "description": "{{One-line description matching SKILL.md frontmatter}}",
+  "pattern_description": "{{The developer's original pattern description, verbatim, so update re-runs can re-seed discovery from it}}",
   "source_files": [
     "{{path/to/example-file-1}}",
     "{{path/to/example-file-2}}"
@@ -18,7 +19,8 @@
   "companion_files": [
     {
       "path": "{{path/to/companion-file}}",
-      "reason": "{{why this file must be edited for every new instance}}"
+      "reason": "{{why this file must be edited for every new instance}}",
+      "shape": "{{one-line description of the edit shape, e.g. add new YAML entry under services: keyed by service name}}"
     }
   ],
   "user_provided_docs": [
@@ -37,5 +39,5 @@
     "{{optional: hard dependencies the pattern relies on, e.g. 'sidekiq', 'yq', 'internal-lib/service-base'}}"
   ],
   "last_updated": "{{ISO 8601 timestamp}}",
-  "generated_by": "autoskill:build"
+  "generated_by": "{{invoking skill: autoskill:build or autoskill:update}}"
 }

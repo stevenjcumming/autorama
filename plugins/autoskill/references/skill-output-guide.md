@@ -1,7 +1,9 @@
 # Skill Output Guide
 
-Reference for what good generated skills look like. The `autoskill:build` command
-uses this document as self-reference when generating skill output.
+Reference for what good generated skills look like. Consumed by the
+`autoskill:build` and `autoskill:update` skills as self-reference during
+orchestration, by the synthesizer agent when generating skill output, and by
+the quality-check agent as the authoritative source of the Quality Checklist.
 
 ---
 
@@ -125,11 +127,21 @@ imagined scenarios.>
 
 - `templates/component.md` - structural template for the main artifact
 - `references/edge-cases.md` - detailed edge case documentation
+
+## Related Files
+
+- `config/services_config.yml` - add a new entry under `services:` keyed by the service name
 ```
 
 The `Examples` section grounds the skill in its actual triggering context. For
 code-pattern skills, a pair of "when the user says X, produce Y" moments anchors
 the reader faster than any amount of prose description.
+
+The `Related Files` section lists files in the user's project that must be
+edited for every new instance of the pattern (the companion files discovery
+surfaced), each with a one-line description of the required edit. It is
+distinct from `References`, which points to skill-internal files. Omit the
+section when discovery found no companion files.
 
 The `Quick Checklist` section is a scannable reference for experienced
 implementers and a paste target for PR descriptions. It mirrors the Steps as
@@ -146,6 +158,7 @@ value.
 {
   "skill_name": "<skill-name>",
   "description": "One-line description matching SKILL.md frontmatter",
+  "pattern_description": "The developer's original pattern description, verbatim, so update re-runs can re-seed discovery from it",
   "source_files": [
     "src/features/billing/charge-customer.ts",
     "src/features/onboarding/create-account.ts"
@@ -163,7 +176,8 @@ value.
   "companion_files": [
     {
       "path": "config/betamocks/services_config.yml",
-      "reason": "Central registry. Each service using the :betamocks middleware must add an entry here."
+      "reason": "Central registry. Each service using the :betamocks middleware must add an entry here.",
+      "shape": "add a new entry under services: keyed by the service name, with base_uris and endpoints subkeys"
     }
   ],
   "user_provided_docs": [
@@ -183,10 +197,21 @@ value.
     "structure": "feature-based directory layout under src/features/",
     "testing": "co-located test files with .test suffix"
   },
+  "compatibility": [
+    "sidekiq",
+    "internal-lib/service-base"
+  ],
   "last_updated": "2026-04-09T12:00:00Z",
   "generated_by": "autoskill:build"
 }
 ```
+
+The optional `compatibility` field lists hard dependencies the pattern cannot
+work without (gems, npm packages, CLIs, internal libraries). The update
+skill uses it to warn the developer when a recorded dependency has
+disappeared from the project. Omit the field when no hard dependencies were
+identified. The `generated_by` field records the invoking skill:
+`autoskill:build` on first generation, `autoskill:update` after an update.
 
 Key points about `conventions`:
 - Use the project's actual naming, not a generic label like `rails_conventions`
@@ -267,6 +292,18 @@ fire when relevant and narrow enough to avoid false positives.
 - Reference the pattern shape, not a framework name (unless the project only uses one)
 - Include enough context that Claude can distinguish this pattern from similar ones
 - A trigger should match 2-10 times across a typical month of development, not 0 or 100
+
+### Hard Limits
+
+The skill loader enforces two frontmatter constraints. Violating either one
+does not degrade the skill; it prevents it from loading at all.
+
+- `name` must be lowercase and hyphenated, and must match the skill's
+  directory name exactly.
+- `description` is capped at 1024 characters. The phrase-coverage advice
+  below operates inside this cap: enumerate synonyms and trigger phrasings
+  until the description approaches the limit, then stop. A description that
+  overruns the cap in pursuit of coverage breaks activation entirely.
 
 ### Undertrigger Correction
 
@@ -374,7 +411,7 @@ Only split when the examples are all canonical and parallel.
 
 Before presenting generated skill output, verify:
 
-- [ ] SKILL.md has valid YAML frontmatter with `name` and `description`
+- [ ] SKILL.md has valid YAML frontmatter with `name` and `description`, within the hard limits (`name` lowercase-hyphenated and matching the skill directory; `description` under 1024 characters)
 - [ ] Trigger description is specific and action-oriented (see guidelines above)
 - [ ] Steps describe intent, not tool calls or language-specific commands
 - [ ] No hardcoded file paths that only apply to the source examples
@@ -388,6 +425,6 @@ Before presenting generated skill output, verify:
 - [ ] metadata.json contains a `companion_files` field (empty array acceptable)
 - [ ] If the developer supplied documentation sources, SKILL.md reflects their terminology and framing, and metadata.json `user_provided_docs` lists each source with type and fetched_at
 - [ ] SKILL.md is within the length budget: target under 300 lines, hard ceiling 500
-- [ ] Every file path mentioned in SKILL.md resolves to a known destination (companion file, skill-internal path, or Related Files entry) — no dangling references
+- [ ] Every file path mentioned in SKILL.md resolves to a known destination (companion file, skill-internal path, or Related Files entry); no dangling references
 - [ ] Every edge case says *how* to handle the situation, not just *that* it exists
 - [ ] If a Quick Checklist section is present, its items mirror Steps 1:1 or are a strict subset

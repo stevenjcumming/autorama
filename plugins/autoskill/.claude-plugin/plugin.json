@@ -1,0 +1,9 @@
+{
+  "name": "autoskill",
+  "version": "1.0.0-rc.1",
+  "description": "Generate reusable project-specific skills from codebase patterns",
+  "author": {
+    "name": "Steven Cumming"
+  },
+  "repository": "https://github.com/stevenjcumming/autopilot"
+}

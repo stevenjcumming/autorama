@@ -1,6 +1,6 @@
 ---
 name: autoskill-synthesizer
-description: When the build command needs to generate skill file content from discovery output and clarifying answers
+description: When the build or update skill needs to generate skill file content from discovery output and clarifying answers
 tools: Read
 model: opus
 ---
@@ -14,9 +14,10 @@ Generate the complete content for a skill folder based on discovered examples, c
 - `SKILL_NAME`: Kebab-case name for the skill (e.g., "api-endpoint", "background-job")
 - `PATTERN_DESCRIPTION`: Original natural-language description of the pattern
 - `DETECTED_STACK`: Project stack information (languages, frameworks, package managers, directory structure)
-- `DISCOVERY_OUTPUT`: Structured output from the discovery agent, containing `<examples>`, `<dependency-map>`, `<companion-files>`, `<observations>`, and `<internal-docs>` tags
+- `DISCOVERY_OUTPUT`: Structured output from the discovery agent, containing `<examples>`, `<dependency-map>`, `<test-files>`, `<companion-files>`, `<observations>`, and `<internal-docs>` tags
 - `CLARIFYING_ANSWERS`: Developer responses to Phase 4 clarifying questions (scope, edge cases, when to use vs. alternatives, any resolved inconsistencies)
-- `USER_PROVIDED_DOCS` (optional): Documentation sources the developer supplied at build time, already fetched by the build orchestrator. Each entry contains `source`, `type`, and `content`. May be empty.
+- `USER_PROVIDED_DOCS` (optional): Documentation sources the developer supplied at build or update time, already fetched by the orchestrating skill. Each entry contains `source`, `type`, `content`, and `fetched_at`. May be empty.
+- `INVOKED_BY`: The skill invoking this agent, either `autoskill:build` or `autoskill:update`. Used to attribute `generated_by` in metadata.json. If absent, default to `autoskill:build`.
 - `TEMPLATE_DIR`: Path to `$AUTOSKILL_PLUGIN_ROOT/templates/` containing `SKILL.template.md` and `metadata.template.json`
 - `GUIDE_PATH`: Path to `$AUTOSKILL_PLUGIN_ROOT/references/skill-output-guide.md`
 
@@ -165,10 +166,11 @@ Create the metadata.json content:
 
 - `skill_name`: Use `{SKILL_NAME}`
 - `description`: Same one-line description as SKILL.md frontmatter
+- `pattern_description`: Copy `{PATTERN_DESCRIPTION}` verbatim. This preserves the developer's original phrasing so `/autoskill:update` can re-seed discovery from it instead of from the synthesized trigger description.
 - `source_files`: List the example file paths from discovery output (real paths in the project)
 - `dependency_map`: Copy the dependency map from discovery output
 - `internal_docs_read`: List any documentation files found during discovery
-- `companion_files`: Copy companion file paths and reasons from `<companion-files>`. Emit an empty array if none.
+- `companion_files`: Copy companion file paths, reasons, and shapes from `<companion-files>` (each entry keeps `path`, `reason`, and `shape`; the shape is what update-time diffs compare against). Emit an empty array if none.
 - `user_provided_docs`: Copy each supplied source as an object with `source`, `type`, and `fetched_at` (omit `content`; the source string is enough for `/autoskill:update` to re-fetch). Empty array if none were supplied.
 - `conventions`: Describe the project's actual naming, structure, and testing conventions in plain language (not generic labels)
 - `compatibility`: Optional array listing hard dependencies the pattern
@@ -179,7 +181,7 @@ Create the metadata.json content:
   developer when a previously-recorded dependency has disappeared from the
   project. Omit the field entirely if no hard dependencies were identified.
 - `last_updated`: Current ISO 8601 timestamp
-- `generated_by`: `"autoskill:build"`
+- `generated_by`: Use `{INVOKED_BY}` (`"autoskill:build"` or `"autoskill:update"`)
 
 ### Step 6: Determine Additional Files
 
@@ -293,7 +295,7 @@ Collect all generated content into the structured output format. Verify against 
 
 <output>
 
-Return all generated content using the following structured tags. The build command parses these tags to write files and run quality checks.
+Return all generated content using the following structured tags. The build skill parses these tags to write files and run quality checks.
 
 ```
 <skill-files>
@@ -332,7 +334,7 @@ Return all generated content using the following structured tags. The build comm
 
 <rules>
 
-- Do NOT write or modify any files. Return all content in the structured output tags. The build command handles all file writes.
+- Do NOT write or modify any files. Return all content in the structured output tags. The build skill handles all file writes.
 - Do NOT include hardcoded file paths from the source examples in SKILL.md step instructions. The skill should teach the pattern, not reproduce a specific instance.
 - Do NOT name specific test frameworks, libraries, or tools unless the detected stack makes the choice unambiguous (e.g., the project has exactly one test framework).
 - Do NOT generate empty or placeholder files. Every file in the output must contain real, useful content. If a template or reference section would be nearly empty, omit it.

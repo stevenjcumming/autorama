@@ -1,13 +1,14 @@
 ---
+name: build
 description: Use when the user wants to build a skill from codebase patterns. Triggers on "build a skill for", "capture how we", "make a skill from", "create a skill for", "codify how we do", or similar requests to turn a project pattern into a reusable skill.
-allowed-tools: Bash, Read, Edit, Write, Glob, Grep, Task, WebFetch
+allowed-tools: Read, Edit, Write, Glob, Grep, Task, WebFetch
 argument-hint: <pattern description>
 model: opus
 ---
 
 # Autoskill Build
 
-Generate a reusable, project-specific skill from codebase patterns. This command orchestrates a 7-phase workflow: understand the request, discover examples, handle missing examples, ask clarifying questions, generate and write skill files, update the manifest, and confirm.
+Generate a reusable, project-specific skill from codebase patterns. This skill orchestrates a 7-phase workflow: understand the request, discover examples, handle missing examples, ask clarifying questions, generate and write skill files, update the manifest, and confirm.
 
 ## Arguments
 
@@ -48,7 +49,7 @@ Check whether `.claude/skills/<skill-name>/` already exists.
 
 - If it does not exist, use the name as-is.
 - If it exists, append an incrementing numeric suffix: `<skill-name>-2`, `<skill-name>-3`, etc. Find the first unused suffix.
-- Inform the user of the final name if a suffix was added: "A skill named `<skill-name>` already exists. Creating `<skill-name>-2` instead. Use `/update <skill-name>` to modify an existing skill."
+- Inform the user of the final name if a suffix was added: "A skill named `<skill-name>` already exists. Creating `<skill-name>-2` instead. Use the `autoskill:update` skill to modify an existing skill."
 
 ### 1.4 Collect Supporting Documentation
 
@@ -90,23 +91,33 @@ Task(
   DETECTED_STACK: {detected_stack}
   USER_PROVIDED_DOCS: {user_provided_docs}
 
-  Search the codebase using the strategies in your process steps. Return structured output with <examples>, <dependency-map>, <companion-files>, <observations>, and <internal-docs> tags."
+  Search the codebase using the strategies in your process steps. Return structured output with <status>, <examples>, <dependency-map>, <test-files>, <companion-files>, <observations>, and <internal-docs> tags."
 )
 ```
 
 Parse the agent's response to extract:
 
+- `<status>` tag content (required: `result` of `found`, `empty`, or `search-failed`, plus the `patterns-attempted` list)
 - `<examples>` tag content (list of example files, or "none")
 - `<dependency-map>` tag content
+- `<test-files>` tag content (example-to-test-file pairings, used by the synthesizer to decide whether a test template is warranted)
 - `<companion-files>` tag content (list of companion files, or "none")
 - `<observations>` tag content
 - `<internal-docs>` tag content
 
-If `<examples>` contains "none", proceed to Phase 3. Otherwise, skip Phase 3 and go directly to Phase 4.
+### 2.1 Branch on Discovery Status
+
+Branch on the `result` field of `<status>`:
+
+- **`found`**: Examples exist. Skip Phase 3 and go directly to Phase 4.
+- **`empty`**: The searches ran successfully but the codebase genuinely lacks the pattern. Proceed to Phase 3 (ask the user). Do NOT retry discovery; re-running queries that completed and matched nothing will always return nothing.
+- **`search-failed`**: The search itself could not complete (tool errors, unreadable paths, or every strategy aborted before producing results). Do NOT treat this as empty. Read the `patterns-attempted` list and re-run the discovery Task once with different patterns: broaden or rephrase the structural signals, try alternate naming conventions, or relax directory assumptions that the attempted patterns show were too narrow. If the retry also returns `search-failed`, surface the failure to the developer, listing the patterns attempted in both runs, and ask how to proceed (e.g., point to an example file or a directory to search). Do not silently fall through to Phase 3.
+
+If the `<status>` tag is missing from the response (a non-conforming agent reply), treat it as `search-failed` and follow that branch.
 
 ## Phase 3: Handle No Examples Found
 
-If the discovery agent found no examples, present a graceful message to the developer:
+If discovery returned status `empty`, present a graceful message to the developer:
 
 > I could not find existing examples of this pattern in your codebase. Here are some options:
 >
@@ -151,6 +162,7 @@ Task(
   DISCOVERY_OUTPUT: {discovery_output}
   CLARIFYING_ANSWERS: {clarifying_answers}
   USER_PROVIDED_DOCS: {user_provided_docs}
+  INVOKED_BY: autoskill:build
   TEMPLATE_DIR: $AUTOSKILL_PLUGIN_ROOT/templates/
   GUIDE_PATH: $AUTOSKILL_PLUGIN_ROOT/references/skill-output-guide.md
 
@@ -202,6 +214,8 @@ If the manifest file exists, read it and parse the existing entries. Add or upda
 
 If the manifest file does not exist, create it with this skill as the first entry.
 
+Derive `pattern_type` yourself from the pattern description and discovery observations: a short free-form category label such as `service-integration`, `background-processing`, `data-access`, or `ui-component`. It is not produced by any agent; pick the label a teammate scanning the manifest would find most recognizable.
+
 Each entry has the following fields:
 
 ```json
@@ -234,7 +248,7 @@ If the pattern is complex (more than 3 files generated, or the SKILL.md is longe
 
 ## Notes
 
-- This command acts as an orchestrator. The heavy lifting (discovery, synthesis, quality checking) is delegated to specialized agents via Task().
+- This skill acts as an orchestrator. The heavy lifting (discovery, synthesis, quality checking) is delegated to specialized agents via Task().
 - All phases are intent-driven. No phase prescribes specific tool calls, grep patterns, or language-specific commands. Claude adapts its approach based on the detected stack.
 - The skill-output-guide at `$AUTOSKILL_PLUGIN_ROOT/references/skill-output-guide.md` serves as self-reference for quality standards throughout the workflow.
 - Generated skills use only the files they need. A simple pattern may produce just SKILL.md and metadata.json. A complex pattern may also include templates, references, or scripts.

@@ -2,7 +2,7 @@
 
 ## Build Workflow
 
-The `/autoskill:build` command orchestrates a 7-phase workflow. The build command acts as an orchestrator; the heavy lifting is delegated to specialized agents via `Task()`.
+The `/autoskill:build` skill orchestrates a 7-phase workflow. The build skill acts as an orchestrator; the heavy lifting is delegated to specialized agents via `Task()`.
 
 ```
   Pattern Description
@@ -49,9 +49,11 @@ Companion file detection uses four heuristics:
 - Reverse-reference each example's identifying symbol across the repo
 - Confirm candidates via parallel structure (multiple entries, one per existing instance)
 
+Every discovery response carries a required status (`found`, `empty`, or `search-failed`) along with the search patterns attempted. The build skill branches on it: `found` proceeds to clarifying questions, `empty` goes to Phase 3, and `search-failed` triggers one retry with different patterns (a failed search says nothing about whether the pattern exists). If the retry also fails, the attempted patterns are shown to the developer.
+
 ### Phase 3: Handle No Examples
 
-If discovery found no examples, the developer chooses from:
+If discovery returned status `empty` (the searches ran, the codebase genuinely lacks the pattern), the developer chooses from:
 1. Point to a specific example file
 2. Describe the pattern verbally
 3. Share internal architecture docs
@@ -85,7 +87,7 @@ Summarizes all files written, describes what the skill enables, and notes any qu
 
 ## Update Workflow
 
-The `/autoskill:update` command re-runs discovery against the current codebase, generates updated content, and presents a diff for confirmation before overwriting. Unlike build, update never writes without explicit approval.
+The `/autoskill:update` skill re-runs discovery against the current codebase, generates updated content, and presents a diff for confirmation before overwriting. Unlike build, update never writes without explicit approval.
 
 ```
   Skill Name
@@ -120,7 +122,7 @@ The `/autoskill:update` command re-runs discovery against the current codebase, 
 
 ### Compatibility Check
 
-During re-discovery, the update command reads the `compatibility` field from `metadata.json`. For each entry (gems, npm packages, CLIs, internal libraries), it verifies the dependency still exists in the project. Missing dependencies are flagged as drift, and the developer chooses to proceed, drop the dependency, or investigate.
+During re-discovery, the update skill reads the `compatibility` field from `metadata.json`. For each entry (gems, npm packages, CLIs, internal libraries), it verifies the dependency still exists in the project. Missing dependencies are flagged as drift, and the developer chooses to proceed, drop the dependency, or investigate.
 
 ---
 

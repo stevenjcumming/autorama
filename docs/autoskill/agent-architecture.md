@@ -1,22 +1,22 @@
 # Agent Architecture
 
-Autoskill delegates work through three specialized agents. The build and update commands act as orchestrators, dispatching to agents via `Task()` and parsing their structured output.
+Autoskill delegates work through three specialized agents. The build and update skills act as orchestrators, dispatching to agents via `Task()` and parsing their structured output.
 
 ## Agent Tree
 
 ```
-/autoskill:build (command, Opus)
+/autoskill:build (skill, Opus)
     ├── autoskill-discovery (Sonnet)
     ├── autoskill-synthesizer (Opus)
     └── autoskill-quality-check (Sonnet)
 
-/autoskill:update (command, Opus)
+/autoskill:update (skill, Opus)
     ├── autoskill-discovery (Sonnet)
     ├── autoskill-synthesizer (Opus)
     └── autoskill-quality-check (Sonnet)
 ```
 
-Both commands use the same three agents. The update command seeds discovery with the existing skill's pattern description instead of a new user description.
+Both skills use the same three agents. The update skill seeds discovery with the existing skill's pattern description instead of a new user description.
 
 ## Model Tiers
 
@@ -25,7 +25,7 @@ Both commands use the same three agents. The update command seeds discovery with
 | **Heavy** | Opus | synthesizer | Complex synthesis, pattern distillation, writing voice |
 | **Medium** | Sonnet | discovery, quality-check | Codebase search, structured validation |
 
-The orchestrating commands (build, update) also run on Opus since they manage the multi-phase workflow and make judgment calls about quality check results.
+The orchestrating skills (build, update) also run on Opus since they manage the multi-phase workflow and make judgment calls about quality check results.
 
 ## Agent Reference
 
@@ -38,13 +38,14 @@ Finds concrete examples of a pattern in the codebase.
 | Model | Sonnet |
 | Tools | Read, Glob, Grep |
 | Input | Pattern description, detected stack, user-provided docs |
-| Output | `<examples>`, `<dependency-map>`, `<companion-files>`, `<observations>`, `<internal-docs>` |
+| Output | `<status>` (required), `<examples>`, `<dependency-map>`, `<test-files>`, `<companion-files>`, `<observations>`, `<internal-docs>` |
 
 **Key behaviors:**
 - Searches using four strategies: directory/naming conventions, structural patterns, content patterns, internal documentation
 - Selects 2-5 representative examples (not edge cases or legacy code)
 - Maps dependencies per example, including test files
 - Runs companion file detection using four heuristics (config initializers, middleware registries, reverse-reference, parallel structure confirmation)
+- Always reports a result status (`found`, `empty`, or `search-failed`) with every search pattern attempted, so the orchestrating skill can tell "the codebase lacks this pattern" apart from "the search never ran properly"
 - Read-only; does not write or modify any files
 
 ### `autoskill-synthesizer`
@@ -96,7 +97,7 @@ Issues are categorized as **blocking** (must fix before writing) or **warnings**
 - **Discovery** gets `Read`, `Glob`, `Grep` for searching. No write access.
 - **Synthesizer** gets `Read` only for loading templates and examples. No write access.
 - **Quality-check** gets `Read` only for loading the guide. No write access.
-- All file writes happen in the orchestrating command, not in agents.
+- All file writes happen in the orchestrating skill, not in agents.
 
 ## Related Documentation
 

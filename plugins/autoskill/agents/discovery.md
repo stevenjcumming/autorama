@@ -1,6 +1,6 @@
 ---
 name: autoskill-discovery
-description: When the build command needs to find example files in the codebase that match a pattern description
+description: When the build or update skill needs to find example files in the codebase that match a pattern description
 tools: Read, Glob, Grep
 model: sonnet
 ---
@@ -12,8 +12,8 @@ Find concrete examples of a pattern in the user's codebase by searching for file
 <input>
 
 - `PATTERN_DESCRIPTION`: Natural-language description of the pattern to find (e.g., "how we build API endpoints", "our data access layer pattern")
-- `DETECTED_STACK`: Project stack information detected by the build command (languages, frameworks, package managers, directory structure)
-- `USER_PROVIDED_DOCS` (optional): A list of documentation sources the developer supplied at build time. Each entry has `source` (URL or absolute path), `type` ("url" or "path"), and `content` (full text already fetched by the build orchestrator). May be empty.
+- `DETECTED_STACK`: Project stack information detected by the build skill (languages, frameworks, package managers, directory structure)
+- `USER_PROVIDED_DOCS` (optional): A list of documentation sources the developer supplied at build or update time. Each entry has `source` (URL or absolute path), `type` ("url" or "path"), `content` (full text already fetched by the orchestrating skill), and `fetched_at` (ISO 8601 timestamp of when the content was retrieved). May be empty.
 
 </input>
 
@@ -54,6 +54,8 @@ Apply multiple discovery strategies in order of reliability. Stop early if you f
 - Treat docs as evidence about intent, not as examples themselves
 
 For each strategy, use Glob to find candidate files by path, then Grep to search file contents for structural signals, then Read to inspect the most promising candidates.
+
+**Track every attempt.** For each Glob and Grep query you run, record the pattern and which strategy it belonged to, and note whether the query executed successfully (returned results or a clean "no matches") or failed (tool error, unreadable path, invalid pattern). This attempt log feeds the required `<status>` output: it is how the orchestrating skill distinguishes a codebase that genuinely lacks the pattern from a search that never ran properly, and it is what a retry uses to pick different patterns instead of repeating yours.
 
 ### Step 3: Select Best Examples
 
@@ -159,9 +161,28 @@ Note any docs found for inclusion in the output. When emitting <internal-docs>, 
 
 <output>
 
-Return the following structured sections. The build command parses these tags to pass data to subsequent phases.
+Return the following structured sections. The build skill parses these tags to pass data to subsequent phases.
+
+**The `<status>` tag is required in every response**, emitted first. Set `result` to exactly one of:
+
+- `found`: at least one example was selected in Step 3.
+- `empty`: every search strategy executed successfully, but nothing in the codebase matched the pattern. This is a valid result; the orchestrating skill will ask the developer how to proceed.
+- `search-failed`: the search itself could not complete (tool errors, unreadable paths, invalid patterns, or strategies aborted before producing results), so "no examples" cannot be trusted. The orchestrating skill will retry with different patterns instead of treating this as empty.
+
+If some queries failed but others succeeded and surfaced examples, the result is still `found`. Use `search-failed` only when failures prevented you from determining whether the pattern exists.
 
 ```
+<status>
+result: <found | empty | search-failed>
+patterns-attempted:
+- strategy: <A | B | C | D>
+  pattern: <the Glob or Grep pattern, or the doc path checked>
+  outcome: <matched | no-matches | failed: brief reason>
+- strategy: ...
+  pattern: ...
+  outcome: ...
+</status>
+
 <examples>
 - path: <absolute or project-relative path>
   role: <brief description of what this example demonstrates>
@@ -214,7 +235,7 @@ none
 </internal-docs>
 ```
 
-If no examples are found after exhausting all strategies, return:
+If no examples are found after exhausting all strategies, return the `<status>` tag (with `result: empty` if the searches ran cleanly, or `result: search-failed` if they did not, always including the full `patterns-attempted` list) followed by:
 
 ```
 <examples>
@@ -222,7 +243,7 @@ none
 </examples>
 
 <no-examples-reason>
-<Brief explanation of what was searched and why nothing matched>
+<Brief explanation of what was searched and why nothing matched, or what failed and prevented the search from completing>
 </no-examples-reason>
 ```
 
@@ -236,7 +257,8 @@ When `<examples>` is "none", omit the `<companion-files>` tag entirely; Step 4.5
 - Do NOT write or modify any files. This agent is read-only.
 - Do NOT run shell commands. Use only Glob, Grep, and Read.
 - Prefer breadth over depth in initial discovery. Cast a wide net first, then narrow down.
-- If the pattern description is ambiguous, note the ambiguity in observations rather than guessing. The build command will surface this to the developer in Phase 4 (clarifying questions).
+- If the pattern description is ambiguous, note the ambiguity in observations rather than guessing. The build skill will surface this to the developer in Phase 4 (clarifying questions).
+- Always emit the `<status>` tag, and never report `empty` when any strategy failed to execute; that is `search-failed`. Conflating the two causes the orchestrating skill to ask the developer for help with a pattern that a corrected search would have found.
 - Stop at 5 examples maximum. Quality over quantity.
 - Include both the "happy path" implementation and at least one example that handles edge cases, if available.
 - Step 4.5 (companion files) is mandatory whenever at least one example is selected. A clean dependency map is not sufficient evidence that no companions exist.

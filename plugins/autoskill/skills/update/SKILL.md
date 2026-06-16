@@ -1,6 +1,7 @@
 ---
+name: update
 description: Use when the user wants to update an existing autoskill with current codebase patterns. Triggers on "update skill", "refresh skill", "re-sync skill", or similar requests to bring an existing skill up to date with how the codebase has evolved.
-allowed-tools: Bash, Read, Edit, Write, Glob, Grep, Task, WebFetch
+allowed-tools: Read, Edit, Write, Glob, Grep, Task, WebFetch
 argument-hint: <skill-name>
 model: opus
 ---
@@ -30,7 +31,7 @@ Read the existing skill files:
 - `.claude/skills/<skill-name>/metadata.json` (required)
 - Any additional files in the skill directory (templates, references, scripts)
 
-Extract the pattern description and scope from the existing `SKILL.md` frontmatter and content. Record these as `EXISTING_PATTERN_DESCRIPTION` and `EXISTING_SKILL_FILES`.
+Read `pattern_description` from `metadata.json` and record it as `EXISTING_PATTERN_DESCRIPTION`. This is the original natural-language description the developer gave at build time, which is what discovery should be re-seeded with; the synthesized trigger description in `SKILL.md` frontmatter is a derived artifact and drifts further from the developer's intent on every update. If `metadata.json` has no `pattern_description` field (the skill predates it), fall back to extracting the pattern description from the `SKILL.md` frontmatter and content. Record the full set of existing files as `EXISTING_SKILL_FILES`.
 
 ### 1.3 Detect Project Stack
 
@@ -70,8 +71,8 @@ Show the developer the list:
 Handle each option:
 
 - **refresh**: iterate over the existing list and re-load each via Read (paths) or WebFetch (URLs). Report any that are now unreachable and drop them from the refreshed list
-- **add**: keep the existing list (refreshed or as-is per developer preference), then prompt for additional sources the same way Phase 1.4 in build.md does
-- **replace**: prompt from scratch with the same question build.md asks
+- **add**: keep the existing list (refreshed or as-is per developer preference), then prompt for additional sources the same way Phase 1.4 of the build skill does
+- **replace**: prompt from scratch with the same question the build skill asks
 - **skip**: carry forward the stored content without re-fetching (stale but cheap)
 
 Record the final list as `USER_PROVIDED_DOCS` for Phase 2 and Phase 4. If the existing skill has no `user_provided_docs` field (e.g., it was built before this feature shipped), treat the starting list as empty and offer the build-style "paste or reply 'none'" prompt.
@@ -89,21 +90,27 @@ Task(
   DETECTED_STACK: {detected_stack}
   USER_PROVIDED_DOCS: {user_provided_docs}
 
-  Search the codebase using the strategies in your process steps. Return structured output with <examples>, <dependency-map>, <companion-files>, <observations>, and <internal-docs> tags."
+  Search the codebase using the strategies in your process steps. Return structured output with <status>, <examples>, <dependency-map>, <test-files>, <companion-files>, <observations>, and <internal-docs> tags."
 )
 ```
 
 Parse the agent's response to extract:
 
+- `<status>` tag content (required: `result` of `found`, `empty`, or `search-failed`, plus the `patterns-attempted` list)
 - `<examples>` tag content
 - `<dependency-map>` tag content
+- `<test-files>` tag content (example-to-test-file pairings, used by the synthesizer to decide whether a test template is warranted)
 - `<companion-files>` tag content (list of companion files, or "none")
 - `<observations>` tag content
 - `<internal-docs>` tag content
 
-If `<examples>` contains "none", inform the user: "I could not find examples of this pattern in the current codebase. The pattern may have been removed or significantly changed. Would you like to point me to an example, or keep the skill as-is?"
+Branch on the `result` field of `<status>`:
 
-Wait for the user's response before proceeding. If they choose to keep as-is, skip to Phase 5 with no changes.
+- **`found`**: Examples exist. Proceed to the compatibility check (2.1).
+- **`empty`**: The searches ran successfully but matched nothing. Inform the user: "I could not find examples of this pattern in the current codebase. The pattern may have been removed or significantly changed. Would you like to point me to an example, or keep the skill as-is?" Wait for the user's response before proceeding. If they choose to keep as-is, skip directly to Phase 7 and close out without writing anything; there are no changes to diff or apply. Do NOT retry discovery on `empty`; re-running queries that completed and matched nothing will always return nothing.
+- **`search-failed`**: The search itself could not complete. Do NOT treat this as empty (it does not mean the pattern was removed). Read the `patterns-attempted` list and re-run the discovery Task once with different patterns: broaden or rephrase the structural signals, try alternate naming conventions, or relax directory assumptions that the attempted patterns show were too narrow. If the retry also returns `search-failed`, surface the failure to the developer, listing the patterns attempted in both runs, and ask how to proceed.
+
+If the `<status>` tag is missing from the response (a non-conforming agent reply), treat it as `search-failed` and follow that branch.
 
 ### 2.1 Compatibility Check
 
@@ -158,6 +165,7 @@ Task(
   DISCOVERY_OUTPUT: {discovery_output}
   CLARIFYING_ANSWERS: {update_guidance}
   USER_PROVIDED_DOCS: {user_provided_docs}
+  INVOKED_BY: autoskill:update
   TEMPLATE_DIR: $AUTOSKILL_PLUGIN_ROOT/templates/
   GUIDE_PATH: $AUTOSKILL_PLUGIN_ROOT/references/skill-output-guide.md
 
@@ -230,7 +238,7 @@ Summarize what was updated:
 
 ## Notes
 
-- This command always requires an existing skill. To create a new skill, use `/build`.
+- This skill always requires an existing generated skill. To create a new skill, use the `autoskill:build` skill.
 - The diff-and-confirm step (Phase 5) is mandatory. Unlike build, update never writes without explicit approval.
 - Discovery is re-run from scratch against the current codebase. This catches patterns that have evolved since the skill was first created.
 - The existing skill's pattern description seeds discovery, so results stay focused on the original intent unless the user redirects scope in Phase 3.

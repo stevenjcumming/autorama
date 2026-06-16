@@ -82,7 +82,7 @@ Complex patterns may include additional files:
 
 ## Manifest
 
-The `/autoskill:build` and `/autoskill:update` commands maintain `.claude/skills/autoskill-manifest.json` as a human-readable index of all generated skills.
+The `/autoskill:build` and `/autoskill:update` skills maintain `.claude/skills/autoskill-manifest.json` as a human-readable index of all generated skills.
 
 ```json
 {

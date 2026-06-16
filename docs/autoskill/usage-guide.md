@@ -13,7 +13,21 @@ Run once per project to set up autoskill.
 /autoskill:init
 ```
 
-This resolves the plugin's install path and writes `AUTOSKILL_PLUGIN_ROOT` to `.claude/settings.local.json`. Restart your Claude Code session after running this for the environment variable to take effect.
+This resolves the plugin's install path and writes `AUTOSKILL_PLUGIN_ROOT` to `.claude/settings.local.json`. Restart Claude Code after running this; hooks and settings (including this environment variable) are only loaded when a session starts.
+
+### What Init Writes
+
+Init produces a `settings.local.json` shaped like this `settings.example.json`:
+
+```json
+{
+  "env": {
+    "AUTOSKILL_PLUGIN_ROOT": "/Users/you/.claude/plugins/cache/stevenjcumming/autoskill/1.0.0-rc.1"
+  }
+}
+```
+
+The value on your machine is the absolute path where the plugin is installed. If init fails or you configure manually, follow the same shape and keep the path absolute. The build and update skills resolve templates and references through `$AUTOSKILL_PLUGIN_ROOT` from whatever directory a session happens to run in; a relative path would resolve against the current working directory, silently pointing at the wrong location (or at an attacker-controllable one). Absolute paths are the secure, portable pattern for settings-driven script and hook references.
 
 ---
 

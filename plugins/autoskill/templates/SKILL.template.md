@@ -33,14 +33,16 @@ Steps has fewer than four items.}}
 2. {{Second step}}
 3. {{Continue as needed}}
 
-Each step describes what to accomplish. Claude determines the right approach
+{{Each step describes what to accomplish. Claude determines the right approach
 based on the project's stack and structure. Do not prescribe specific tool calls
-or language-specific commands.
+or language-specific commands. Remove this instruction block from the generated
+skill.}}
 
 ## Inline Context
 
-Key facts Claude needs while executing the pattern. This is not a tutorial;
-it is contextual knowledge that prevents common mistakes.
+{{Key facts Claude needs while executing the pattern. This is not a tutorial;
+it is contextual knowledge that prevents common mistakes. Replace this block
+with the actual context; keep the bullets below.}}
 
 - {{Convention or constraint from the project}}
 - {{Convention or constraint from the project}}
@@ -76,3 +78,13 @@ entirely if the skill only contains SKILL.md and metadata.json.}}
 
 - `templates/example.md` - {{structural template for the main artifact}}
 - `references/edge-cases.md` - {{detailed edge case documentation}}
+
+## Related Files
+
+{{List files in the user's project that must be edited for every new instance
+of this pattern (the companion files discovery surfaced), each with a one-line
+description of the required edit. This is distinct from References, which
+points to skill-internal files. Remove this section entirely if discovery
+found no companion files.}}
+
+- `{{path/to/companion-file}}` - {{one-line description of the required edit}}
