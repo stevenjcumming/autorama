@@ -7,14 +7,14 @@
   "plugins": [
     {
       "name": "autocode",
-      "version": "1.0.0-rc.2",
+      "version": "2.0.0",
       "source": "./plugins/autocode",
-      "description": "semi-autonomous software development toolkit with structured workflows and safety guardrails",
+      "description": "Semi-autonomous development workflow toolkit: TDD execution loop, specs, plans, and PR automation",
       "tags": ["automation", "workflows", "safety", "development", "testing"]
     },
     {
       "name": "autoskill",
-      "version": "0.1.0",
+      "version": "1.0.0-rc.1",
       "source": "./plugins/autoskill",
       "description": "Generate reusable project-specific skills from codebase patterns",
       "tags": ["skills", "automation", "code-generation", "patterns"]

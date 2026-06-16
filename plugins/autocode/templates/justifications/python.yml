@@ -1,3 +1,6 @@
+# Python justification categories
+# Categories are evaluated top to bottom; the first category whose pattern
+# matches the file wins. Order more specific categories first.
 categories:
   dependency:
     title: Dependency Change
@@ -15,6 +18,22 @@ categories:
       - What is the security and maintenance status of this package?
       - Are there lighter alternatives?
       - Does this require approval (e.g., license compatibility)?
+
+  migration:
+    title: Database Migration
+    # Listed before configuration so alembic.ini matches here, not "*.ini".
+    patterns:
+      - "alembic.ini"
+      - "alembic/versions/*.py"
+      - "*/alembic/versions/*.py"
+      - "migrations/versions/*.py"
+      - "*/migrations/versions/*.py"
+    questions:
+      - Is this a new migration?
+      - Is this editing an unmigrated migration?
+      - Is this editing a deployed migration? **(CREATE NEW MIGRATION INSTEAD)**
+      - Is this migration reversible?
+      - Could this migration cause downtime on large tables?
 
   configuration:
     title: Configuration Change
@@ -57,4 +76,5 @@ categories:
     questions:
       - Is this adding new tests for new or extracted code?
       - Is this refactoring test structure (no assertion changes)?
+      - Is this updating test doubles or mocks for extracted collaborators?
       - Are you changing assertions to make a failing test pass? **(STOP IF YES)**

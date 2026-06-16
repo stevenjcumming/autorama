@@ -4,7 +4,7 @@
 
 Convert an implementation plan into a phased TODO checklist. This marks the end of planning—do not start implementation until the task list is reviewed.
 
-## Command
+## Skill
 
 ```
 /autocode:create-tasks <identifier>
@@ -30,7 +30,7 @@ Convert an implementation plan into a phased TODO checklist. This marks the end 
 ## Pipeline
 
 ```
-create-tasks command (inline)
+create-tasks skill (inline)
 ├── Reads PLAN.md
 ├── Extracts phases and changes
 ├── Converts each change to atomic task
@@ -38,19 +38,18 @@ create-tasks command (inline)
 └── Writes TODO.md
 ```
 
-No separate agent is spawned — the command handles task extraction inline.
+No separate agent is spawned; the skill handles task extraction inline.
 
 ## Directory Structure
 
 ```
-.claude/
-└── specs/
-    └── <identifier>/
-        ├── REQUIREMENT.md
-        ├── SPEC.md
-        ├── RESEARCH.md
-        ├── PLAN.md
-        └── TODO.md       <-- Created by create-tasks command
+.specs/
+└── <identifier>/
+    ├── REQUIREMENT.md
+    ├── SPEC.md
+    ├── RESEARCH.md
+    ├── PLAN.md
+    └── TODO.md       <-- Created by create-tasks skill
 ```
 
 ## Task Conversion Rules

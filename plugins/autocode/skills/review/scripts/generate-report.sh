@@ -1,13 +1,26 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Generate summary report of spec artifacts
-set -e
+set -euo pipefail
 
-SPEC_DIR="${1:-.specs/default}"
+SPEC_DIR="${1:-}"
+
+if [ -z "$SPEC_DIR" ]; then
+    echo "Error: spec directory is required" >&2
+    echo "Usage: generate-report.sh <spec_dir>" >&2
+    exit 1
+fi
+
+if [ ! -d "$SPEC_DIR" ]; then
+    echo "Error: spec directory does not exist at $SPEC_DIR" >&2
+    echo "Usage: generate-report.sh <spec_dir>" >&2
+    exit 1
+fi
+
 REPORT="${SPEC_DIR}/SUMMARY.md"
 
 echo "# Spec Summary Report" > "$REPORT"
 echo "" >> "$REPORT"
-echo "Generated: $(date)" >> "$REPORT"
+echo "Generated: $(date -u +"%Y-%m-%dT%H:%M:%SZ")" >> "$REPORT"
 echo "" >> "$REPORT"
 
 # Count artifacts by type
@@ -35,9 +48,9 @@ debt_dir="${SPEC_DIR}/artifacts/debt"
 if [ -d "$debt_dir" ] && [ "$(ls -A "$debt_dir" 2>/dev/null)" ]; then
     for debt in "$debt_dir"/*.md; do
         if [ -f "$debt" ]; then
-            title=$(head -20 "$debt" | grep "^## " | head -1 | sed 's/^## //')
-            tool=$(head -20 "$debt" | grep "^tool:" | sed 's/^tool: //')
-            echo "- **${tool}**: ${title}" >> "$REPORT"
+            # Title comes from the YAML frontmatter (every artifact template has title:)
+            title=$(grep -m1 "^title:" "$debt" 2>/dev/null | sed 's/^title:[[:space:]]*//' || true)
+            echo "- ${title:-$(basename "$debt" .md)}" >> "$REPORT"
         fi
     done
 else
@@ -53,8 +66,9 @@ hints_dir="${SPEC_DIR}/artifacts/review_hints"
 if [ -d "$hints_dir" ] && [ "$(ls -A "$hints_dir" 2>/dev/null)" ]; then
     for hint in "$hints_dir"/*.md; do
         if [ -f "$hint" ]; then
-            title=$(head -1 "$hint" | sed 's/^# //')
-            echo "- ${title}" >> "$REPORT"
+            # Title comes from the YAML frontmatter (same extraction as review.sh)
+            title=$(grep -m1 "^title:" "$hint" 2>/dev/null | sed 's/^title:[[:space:]]*//' || true)
+            echo "- ${title:-$(basename "$hint" .md)}" >> "$REPORT"
         fi
     done
 else

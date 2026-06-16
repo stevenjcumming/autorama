@@ -1,9 +1,18 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-set -e
+set -euo pipefail
 
 PLUGIN_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 TARGET_DIR=".claude"
+
+# Parse arguments: accept both `init.sh <template>` and
+# `init.sh --justifications <template>`
+TEMPLATE_NAME=""
+if [ "${1:-}" = "--justifications" ]; then
+  TEMPLATE_NAME="${2:-}"
+else
+  TEMPLATE_NAME="${1:-}"
+fi
 
 echo "=== Autocode Initialization ==="
 echo ""
@@ -27,19 +36,20 @@ else
     echo "Created config: $CONFIG_TARGET"
   else
     # Fallback: create minimal config if template not found
+    # (schema matches templates/autocode.yml: justification.default has
+    # title and questions only)
     cat > "$CONFIG_TARGET" << 'EOF'
 # Autocode Configuration
 # See docs for full options: https://github.com/stevenjcumming/autopilot
 
 justification:
-  enabled: true
-
+  # Default behavior for files that don't match any category
   default:
-    enabled: true
     title: "File Modification"
     questions:
       - "What is the purpose of this change?"
       - "Does this change affect other parts of the codebase?"
+      - "Is this change reversible?"
 EOF
     echo "Created minimal config: $CONFIG_TARGET"
   fi
@@ -56,17 +66,24 @@ else
   echo "yq is not installed (optional - enables config customization)"
   echo ""
 
-  # Detect OS and offer installation
+  # Detect OS and suggest installation. Prompts only run on a terminal;
+  # non-interactive sessions print the command and continue. Privileged
+  # (sudo) installs are never executed by this script.
   if [[ "$OSTYPE" == "darwin"* ]]; then
     # macOS
     if command -v brew &> /dev/null; then
-      echo "Install yq with Homebrew? (y/n)"
-      read -r INSTALL_YQ
-      if [[ "$INSTALL_YQ" == "y" || "$INSTALL_YQ" == "Y" ]]; then
-        brew install yq
-        echo "yq installed successfully"
+      if [ -t 0 ]; then
+        echo "Install yq with Homebrew? (y/n)"
+        read -r INSTALL_YQ
+        if [[ "$INSTALL_YQ" == "y" || "$INSTALL_YQ" == "Y" ]]; then
+          brew install yq
+          echo "yq installed successfully"
+        else
+          echo "Skipping yq installation"
+          echo "  Install later with: brew install yq"
+        fi
       else
-        echo "Skipping yq installation"
+        echo "Non-interactive session; skipping yq installation."
         echo "  Install later with: brew install yq"
       fi
     else
@@ -75,25 +92,14 @@ else
       echo "  or: https://github.com/mikefarah/yq#install"
     fi
   elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
-    # Linux
-    echo "Install yq? (y/n)"
-    read -r INSTALL_YQ
-    if [[ "$INSTALL_YQ" == "y" || "$INSTALL_YQ" == "Y" ]]; then
-      if command -v snap &> /dev/null; then
-        sudo snap install yq
-        echo "yq installed successfully via snap"
-      elif command -v apt-get &> /dev/null; then
-        sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
-        sudo chmod +x /usr/local/bin/yq
-        echo "yq installed successfully"
-      else
-        echo "Could not auto-install. Install manually:"
-        echo "  sudo wget https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -O /usr/bin/yq && sudo chmod +x /usr/bin/yq"
-      fi
-    else
-      echo "Skipping yq installation"
-      echo "  Install later with: sudo snap install yq"
+    # Linux: installation needs sudo, which this script never runs.
+    # Print the commands for the user instead.
+    echo "Install yq manually with one of:"
+    if command -v snap &> /dev/null; then
+      echo "  sudo snap install yq"
     fi
+    echo "  sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 && sudo chmod +x /usr/local/bin/yq"
+    echo "  or: https://github.com/mikefarah/yq#install"
   else
     echo "Unknown OS. Install yq manually:"
     echo "  https://github.com/mikefarah/yq#install"
@@ -105,7 +111,7 @@ echo ""
 echo "=== Checking .gitignore ==="
 
 if [ -f ".gitignore" ]; then
-  if grep -q ".specs/" .gitignore 2>/dev/null; then
+  if grep -qxF ".specs/" .gitignore 2>/dev/null; then
     echo ".specs/ already in .gitignore"
   else
     echo "" >> .gitignore
@@ -129,20 +135,28 @@ SETTINGS_FILE=".claude/settings.local.json"
 merge_env_setting() {
   local file="$1"
   local plugin_dir="$2"
+  local tmp
 
   if command -v jq &> /dev/null; then
-    # Use jq if available
+    # Use jq if available; write to a temp file and mv so a mid-write
+    # failure cannot truncate the user's settings
+    tmp=$(mktemp "${file}.XXXXXX")
     if [ -f "$file" ]; then
-      local tmp
-      tmp=$(jq --arg dir "$plugin_dir" '.env["AUTOCODE_PLUGIN_ROOT"] = $dir' "$file")
-      echo "$tmp" > "$file"
+      if ! jq --arg dir "$plugin_dir" '.env["AUTOCODE_PLUGIN_ROOT"] = $dir' "$file" > "$tmp"; then
+        rm -f "$tmp"
+        return 1
+      fi
     else
-      jq -n --arg dir "$plugin_dir" '{"env": {"AUTOCODE_PLUGIN_ROOT": $dir}}' > "$file"
+      if ! jq -n --arg dir "$plugin_dir" '{"env": {"AUTOCODE_PLUGIN_ROOT": $dir}}' > "$tmp"; then
+        rm -f "$tmp"
+        return 1
+      fi
     fi
+    mv "$tmp" "$file"
   elif command -v python3 &> /dev/null; then
-    # Fallback to python3
+    # Fallback to python3 (same temp-file-then-replace approach)
     python3 -c "
-import json, os, sys
+import json, os, sys, tempfile
 file_path = sys.argv[1]
 plugin_dir = sys.argv[2]
 data = {}
@@ -152,9 +166,11 @@ if os.path.exists(file_path):
 if 'env' not in data:
     data['env'] = {}
 data['env']['AUTOCODE_PLUGIN_ROOT'] = plugin_dir
-with open(file_path, 'w') as f:
+fd, tmp = tempfile.mkstemp(dir=os.path.dirname(file_path) or '.')
+with os.fdopen(fd, 'w') as f:
     json.dump(data, f, indent=2)
     f.write('\n')
+os.replace(tmp, file_path)
 " "$file" "$plugin_dir"
   else
     echo "WARNING: Neither jq nor python3 found. Cannot write settings."
@@ -164,9 +180,7 @@ with open(file_path, 'w') as f:
   fi
 }
 
-merge_env_setting "$SETTINGS_FILE" "$PLUGIN_DIR"
-
-if [ $? -eq 0 ]; then
+if merge_env_setting "$SETTINGS_FILE" "$PLUGIN_DIR"; then
   echo "Set AUTOCODE_PLUGIN_ROOT=$PLUGIN_DIR"
   echo "  in $SETTINGS_FILE"
 else
@@ -186,6 +200,45 @@ else
   echo "  Usage logging and cross-spec persistence will be available once the plugin is installed."
 fi
 
+# Offer to import autocode.yml from the project CLAUDE.md so every
+# session (and every spawned agent that inherits project context) sees
+# the test/analysis config without a Read round-trip.
+echo ""
+echo "=== CLAUDE.md Import ==="
+
+CLAUDE_MD="CLAUDE.md"
+IMPORT_BLOCK="## Autocode
+
+@.claude/autocode.yml"
+
+append_claude_import() {
+  if [ -f "$CLAUDE_MD" ]; then
+    printf '\n%s\n' "$IMPORT_BLOCK" >> "$CLAUDE_MD"
+    echo "Appended autocode section (with @.claude/autocode.yml import) to $CLAUDE_MD"
+  else
+    printf '%s\n' "$IMPORT_BLOCK" > "$CLAUDE_MD"
+    echo "Created $CLAUDE_MD with the @.claude/autocode.yml import"
+  fi
+}
+
+if [ -f "$CLAUDE_MD" ] && grep -qF "@.claude/autocode.yml" "$CLAUDE_MD" 2>/dev/null; then
+  echo "$CLAUDE_MD already imports .claude/autocode.yml"
+elif [ -t 0 ]; then
+  echo "Add an autocode section to $CLAUDE_MD that imports @.claude/autocode.yml?"
+  echo "  (keeps the config in context for every session and agent) (y/n)"
+  read -r ADD_IMPORT
+  if [[ "$ADD_IMPORT" == "y" || "$ADD_IMPORT" == "Y" ]]; then
+    append_claude_import
+  else
+    echo "Skipping. Add manually later by appending to $CLAUDE_MD:"
+    printf '  %s\n' "## Autocode" "" "  @.claude/autocode.yml"
+  fi
+else
+  echo "Non-interactive session; not modifying $CLAUDE_MD."
+  echo "  Recommended: append this to $CLAUDE_MD so the config loads every session:"
+  printf '  %s\n' "## Autocode" "" "  @.claude/autocode.yml"
+fi
+
 # Create justifications.yml from template if requested
 echo ""
 echo "=== Justifications Setup ==="
@@ -196,9 +249,6 @@ JUSTIFICATION_TEMPLATE_DIR="$PLUGIN_DIR/templates/justifications"
 if [ -f "$JUSTIFICATION_TARGET" ]; then
   echo "Justifications config already exists: $JUSTIFICATION_TARGET"
 else
-  # Check if a template was specified via arguments
-  TEMPLATE_NAME="${1:-}"
-
   if [ -n "$TEMPLATE_NAME" ]; then
     TEMPLATE_FILE="$JUSTIFICATION_TEMPLATE_DIR/$TEMPLATE_NAME.yml"
     if [ -f "$TEMPLATE_FILE" ]; then

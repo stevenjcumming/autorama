@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # build-task-queue.sh - Parse TODO.md and build a filtered task queue
 #
@@ -20,10 +20,10 @@
 #   1 - Error (missing arguments, file not found, invalid filter)
 #
 
-set -e
+set -euo pipefail
 
-SPEC_DIR="$1"
-FILTER="$2"
+SPEC_DIR="${1:-}"
+FILTER="${2:-}"
 
 if [ -z "$SPEC_DIR" ]; then
   echo "Error: spec directory is required"
@@ -55,12 +55,12 @@ while IFS= read -r line; do
   fi
 
   # Match uncompleted tasks: "- [ ] [T1] Description" or "- [ ] Description"
-  if echo "$line" | grep -qE '^\s*- \[ \]'; then
+  if echo "$line" | grep -qE '^[[:space:]]*- \[ \]'; then
     # Extract task ID if present (e.g., [T1], [T2])
     TASK_ID=$(echo "$line" | grep -oE '\[T[0-9]+\]' | tr -d '[]' || echo "")
 
     # Extract description (strip checkbox and task ID)
-    DESCRIPTION=$(echo "$line" | sed 's/^\s*- \[ \]\s*//' | sed 's/\[T[0-9]*\]\s*//')
+    DESCRIPTION=$(echo "$line" | sed 's/^[[:space:]]*- \[ \][[:space:]]*//' | sed 's/\[T[0-9]*\][[:space:]]*//')
 
     # Apply filter
     if [ -n "$FILTER" ]; then
@@ -75,7 +75,7 @@ while IFS= read -r line; do
           continue
         fi
       else
-        echo "Error: Invalid filter '$FILTER'. Use T<n> for tasks or P<n> for phases."
+        echo "Error: Invalid filter '$FILTER'. Use T<n> for tasks or P<n> for phases." >&2
         exit 1
       fi
     fi

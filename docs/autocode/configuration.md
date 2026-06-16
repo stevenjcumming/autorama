@@ -26,7 +26,12 @@ static_analysis:
       format: json                # auto, json, text (default: auto)
   fail_on_warnings: false         # Block on warnings (default: false)
   max_fix_attempts: 2             # Max fix attempts per rule (default: 2)
+  on_edit:
+    enabled: true                 # Per-edit hook toggle (default: true)
+    command: ""                   # Per-file command; edited file path is appended
 ```
+
+**Per-edit quality gate (`on_edit`):** a PostToolUse hook runs a per-file check against each file Claude writes or edits and feeds failures back immediately. `command` is the per-file command (for example `npx eslint` or `rubocop`); when empty, the first simple string under `commands:` is used. Set `enabled: false` if your linter is too slow to run per edit. See [Hook System](hook-system.md).
 
 Commands can be specified as a simple string or as an object with an explicit `format` field:
 
@@ -122,9 +127,58 @@ Questions can include `**(STOP IF YES)**` or similar directives to block work wh
 
 The `default` section applies to files not matching any category. Remove it to only require justifications for explicitly listed categories.
 
+### Artifact Judge
+
+Optional, default off. After a task-runner completes a task, a read-only Agent SDK call judges whether the task's artifacts are substantive or template stubs and emits a structured warning for stubs. Costs tokens and requires `node` with `@anthropic-ai/claude-agent-sdk`.
+
+```yaml
+artifact_judge:
+  enabled: false
+```
+
 Feature sections are active when present. To disable a feature, remove the section entirely.
 
 Requires `yq` for full functionality. Falls back to built-in defaults without it.
+
+## Keeping the Config in Context (CLAUDE.md import)
+
+`/autocode:init` offers to append this to the project `CLAUDE.md`:
+
+```markdown
+## Autocode
+
+@.claude/autocode.yml
+```
+
+The `@` import loads `.claude/autocode.yml` into context at session start, so every session and every spawned agent sees the test command and analysis config without a Read round-trip. Add it manually if init was skipped or ran non-interactively.
+
+## Settings Bootstrap (settings.local.json)
+
+`/autocode:init` writes the plugin's install path into `.claude/settings.local.json` so scripts and skills can resolve `$AUTOCODE_PLUGIN_ROOT`:
+
+```json
+{
+  "env": {
+    "AUTOCODE_PLUGIN_ROOT": "/Users/you/.claude/plugins/cache/stevenjcumming/autopilot/plugins/autocode"
+  }
+}
+```
+
+If you configure this manually (or init fails), follow the same pattern with these rules:
+
+- The path MUST be absolute. Hook and script commands resolved from relative paths can be intercepted by whatever directory the session happens to start in; absolute paths remove that ambiguity.
+- Use `settings.local.json` (personal, gitignored), not the shared `settings.json`. The install path is machine-specific.
+- Restart Claude Code after editing; `env` values are read at session start.
+
+A portable `settings.example.json` for teams that want to document the shape without committing machine paths:
+
+```json
+{
+  "env": {
+    "AUTOCODE_PLUGIN_ROOT": "<ABSOLUTE_PATH_TO>/plugins/autocode"
+  }
+}
+```
 
 ## Full Example
 

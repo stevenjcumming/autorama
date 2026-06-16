@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # read-handoff.sh - Read condensed handoff context for next agent
 #
@@ -8,9 +8,9 @@
 # Usage: read-handoff.sh <spec_dir>
 #
 
-set -e
+set -euo pipefail
 
-SPEC_DIR="$1"
+SPEC_DIR="${1:-}"
 
 if [ -z "$SPEC_DIR" ]; then
   echo "Error: spec directory is required"
@@ -72,7 +72,7 @@ fi
 TODO_FILE="$SPEC_DIR/TODO.md"
 if [ -f "$TODO_FILE" ]; then
   # Extract first uncompleted task
-  NEXT_TASK=$(grep -m1 '^- \[ \]' "$TODO_FILE" 2>/dev/null || echo "")
+  NEXT_TASK=$(grep -m1 '^[[:space:]]*- \[ \]' "$TODO_FILE" 2>/dev/null || echo "")
 
   if [ -n "$NEXT_TASK" ]; then
     echo "<current-task>"
@@ -80,8 +80,8 @@ if [ -f "$TODO_FILE" ]; then
     echo "</current-task>"
   fi
 
-  # Compact progress line
-  REMAINING=$(grep -c '^- \[ \]' "$TODO_FILE" 2>/dev/null || echo "0")
-  COMPLETED=$(grep -c '^- \[x\]' "$TODO_FILE" 2>/dev/null || echo "0")
+  # Compact progress line (grep -c prints 0 on no match but exits 1, hence || true)
+  REMAINING=$(grep -c '^[[:space:]]*- \[ \]' "$TODO_FILE" || true)
+  COMPLETED=$(grep -c '^[[:space:]]*- \[x\]' "$TODO_FILE" || true)
   echo "<progress-summary>$COMPLETED done, $REMAINING remaining</progress-summary>"
 fi

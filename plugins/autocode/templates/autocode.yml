@@ -1,24 +1,65 @@
 # Autocode Configuration
 # Copy this file to .claude/autocode.yml and customize for your project
-# Requires `yq` to be installed; falls back to built-in defaults without it
+# Agents read this file directly; no external parser (such as yq) is required
 
 # Static analysis configuration (optional)
 # Customize what static analysis is run during TDD loop
 static_analysis:
   enabled: true                   # Master switch (default: true)
-  commands:                       # Commands to run
-    - rubocop                     # Simple string form
-    - npm run lint
-    - command: eslint --format json src/
-      format: json                # auto, json, text (default: auto)
-    - command: reek -c .reek.yml --format json
-      format: json
-    - npm run typecheck
+  # Commands to run during the analysis step. The examples below cover a
+  # mixed Ruby/JavaScript project; uncomment only the ones your project
+  # actually uses, otherwise a fresh project inherits failing linters.
+  commands: []
+  # commands:
+  #   - rubocop                   # Simple string form
+  #   - npm run lint
+  #   - command: eslint --format json src/
+  #     format: json              # auto, json, text (default: auto)
+  #   - command: reek -c .reek.yml --format json
+  #     format: json
+  #   - npm run typecheck
   fail_on_warnings: false         # Block on warnings (default: false)
   max_fix_attempts: 2             # Max fix attempts per issue (default: 2)
+  # Per-edit quality gate: a PostToolUse hook runs a per-file check
+  # against each file Claude writes or edits, and feeds failures back
+  # immediately (exit 2). The full-project pass still runs via the
+  # analyzer agent. Disable if your linter is slow.
+  on_edit:
+    enabled: true                 # Toggle for the per-edit hook (default: true)
+    command: ""                   # Per-file command; the edited file path is
+                                  # appended (e.g. "npx eslint" or "rubocop").
+                                  # When empty, the first simple string under
+                                  # `commands:` above is used instead.
+
+# Artifact judge (optional, default OFF)
+# After a task-runner completes a task, a read-only Agent SDK call
+# (allowedTools: Read, Glob) judges whether the task's artifact files
+# are substantive or template stubs, and emits a structured warning for
+# stubs. Costs tokens and requires node with @anthropic-ai/claude-agent-sdk.
+artifact_judge:
+  enabled: false
+
+# Code review configuration (optional)
+# /autocode:code-review resolves its checklist in priority order:
+#   1. code_review.checklist below
+#   2. .claude/code-review-checklist.md in the project
+#   3. The plugin default at skills/code-review/code-review-checklist.md
+# code_review:
+#   checklist: .claude/my-review-checklist.md   # Path to a custom checklist file
 
 # Justification configuration (optional)
 # Customize when and how justifications are required for file modifications
+#
+# The category defaults below are Rails-flavored (Gemfile, db/migrate, *_spec.rb).
+# Framework-specific templates for other stacks live in the plugin at
+# templates/justifications/ (ruby, rails, python, django, typescript, react, go);
+# install one with `/autocode:init --justifications <template>`.
+#
+# Precedence:
+#   - If `.claude/justifications.yml` exists in the project, its top-level
+#     `categories:` replaces `justification.categories` defined here.
+#   - Within a file, categories are evaluated in order and the first category
+#     whose pattern matches the file wins.
 justification:
   # Custom categories for file pattern matching
   # Each category defines patterns (glob) and prompting questions

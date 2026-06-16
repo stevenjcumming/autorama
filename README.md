@@ -21,6 +21,8 @@ Claude Code is powerful but project-ignorant. It does not know your coding patte
 /plugin install autoskill@stevenjcumming
 ```
 
+After installing, restart Claude Code so the plugins' hooks and settings take effect. The same applies after running each plugin's init skill (`/autoskill:init`, `/autocode:init`): both write settings that are only loaded when a session starts.
+
 ---
 
 ## autocode
@@ -28,13 +30,15 @@ Claude Code is powerful but project-ignorant. It does not know your coding patte
 A structured TDD workflow with specialized agents for autonomous execution and human-gated submission.
 
 - [Usage Guide](docs/autocode/usage-guide.md) - Quick start, safety principles, configuration
-- [Workflow Overview](docs/autocode/workflow-overview.md) - Stage-by-stage breakdown with command reference
+- [Workflow Overview](docs/autocode/workflow-overview.md) - Stage-by-stage breakdown with skill reference
 - [Workflow Stages](docs/autocode/workflow-stages/) - Deep-dive per stage
 - [Agent Architecture](docs/autocode/agent-architecture.md) - Agent harness and task runner design
 - [Agent Handoff](docs/autocode/agent-handoff.md) - Context preservation between tasks
 - [Artifact System](docs/autocode/artifacts.md) - Decisions, risks, justifications, review hints
 - [Hook System](docs/autocode/hook-system.md) - Pre/post tool hooks
 - [Configuration](docs/autocode/configuration.md) - Full config reference
+- [GitHub Integration](docs/autocode/github-integration.md) - GitHub app setup and CI review alignment
+- [Migrating to v2](docs/autocode/migrating-to-v2.md) - Breaking changes and upgrade steps
 - [Justification Categories](docs/autocode/justifications.md) - When and why justifications are required
 - [Human Review](docs/autocode/human_review.md) - Review stage and approval flow
 - [Rules](docs/autocode/rules.md) - Cross-session learning via `.claude/rules/`
@@ -47,7 +51,7 @@ A structured TDD workflow with specialized agents for autonomous execution and h
 
 A skill generation engine that discovers codebase patterns and generates Claude Code skills so future sessions follow your team's conventions automatically.
 
-- [Overview](docs/autoskill/overview.md) - What autoskill does and command summary
+- [Overview](docs/autoskill/overview.md) - What autoskill does and skill summary
 - [Usage Guide](docs/autoskill/usage-guide.md) - Step-by-step init, build, and update instructions
 - [How It Works](docs/autoskill/how-it-works.md) - Build and update workflows under the hood
 - [Agent Architecture](docs/autoskill/agent-architecture.md) - Discovery, synthesizer, and quality-check agents

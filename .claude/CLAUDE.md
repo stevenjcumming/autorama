@@ -4,18 +4,19 @@
 
 The plugin uses `${CLAUDE_PLUGIN_DATA}` for cross-session and cross-spec persistence:
 
-- `usage.jsonl` — Event log of command/agent invocations (logged via `log-skill-usage.sh` hook)
-- `failures.jsonl` — Failure patterns for cross-spec learning (logged by task-runner on failure)
+- `usage.jsonl`: Event log of agent spawns (logged via the `log-skill-usage.sh` PreToolUse hook on Task calls)
+- `failures.jsonl`: Failure patterns for cross-spec learning (logged by task-runner on failure)
 - Scripts: `log-usage.sh`, `log-failure.sh`, `read-history.sh`
 
 ## Frontmatter Requirements
 
-Commands and agents require YAML frontmatter with specific fields:
+Skills and agents require YAML frontmatter with specific fields:
 
-**Commands** (`plugins/autocode/commands/*.md`):
+**Skills** (`plugins/autocode/skills/<name>/SKILL.md`):
 ```yaml
 ---
-description: Trigger condition describing WHEN to use this command (not a summary)
+name: skill-name
+description: Trigger condition describing WHEN to use this skill (not a summary)
 allowed-tools: Bash(bash $AUTOCODE_PLUGIN_ROOT/scripts/example.sh:*), Read, Task
 argument-hint: [identifier]
 model: opus  # optional
@@ -36,11 +37,11 @@ skills: skill-name  # skills to load into subagent context
 ```
 
 Key differences:
-- Commands: no `name` field, use `allowed-tools`, use `argument-hint` for expected args
-- Agents: require `name`, use `tools` (not `allowed-tools`), can specify `permissionMode` and `skills`
+- Skills: use `allowed-tools` and `argument-hint`; supporting files live in the skill's directory
+- Agents: use `tools` (not `allowed-tools`), can specify `permissionMode` and `skills`
 
 ## Artifacts
 
 Artifacts are generated per spec in the user's project at `.specs/<SPEC_ID>/artifacts/`. The plugin provides artifact templates at `plugins/autocode/templates/artifacts/`.
 
-Artifact template files (justifications, risks, etc.) are created on disk by the PostToolUse hook. The `task-runner` fills these in after sub-agents complete their work (Step 2.6).
+Artifact directories are created by `scripts/setup-artifacts.sh` (run by the execute skill and again, idempotently, by the task-runner). The `task-runner` writes and fills artifact files itself (Step 6: Generate Artifacts). The SubagentStop hook (`on-agent-complete.sh`) then audits that the trail exists and emits a structured warning when it is missing. The only PostToolUse hook is `check-edit.sh` (per-edit static analysis); it does not create artifacts.

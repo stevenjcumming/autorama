@@ -4,7 +4,7 @@
 
 Create a `PLAN.md` implementation plan from the contents of the specified spec folder using automated research and analysis.
 
-## Command
+## Skill
 
 ```
 /autocode:create-plan <identifier>
@@ -52,13 +52,12 @@ plan-builder
 ## Directory Structure
 
 ```
-.claude/
-└── specs/
-    └── <identifier>/
-        ├── REQUIREMENT.md
-        ├── SPEC.md
-        ├── RESEARCH.md   <-- Created by plan-researcher
-        └── PLAN.md       <-- Created and filled by plan-builder
+.specs/
+└── <identifier>/
+    ├── REQUIREMENT.md
+    ├── SPEC.md
+    ├── RESEARCH.md   <-- Created by plan-researcher
+    └── PLAN.md       <-- Created and filled by plan-builder
 ```
 
 ## PLAN.md Sections

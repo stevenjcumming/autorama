@@ -4,7 +4,7 @@
 
 Create a new spec folder with `REQUIREMENT.md` and `SPEC.md` files to begin the requirements analysis process.
 
-## Command
+## Skill
 
 ```
 /autocode:new-spec <identifier>
@@ -31,11 +31,10 @@ Create a new spec folder with `REQUIREMENT.md` and `SPEC.md` files to begin the 
 ## Directory Structure
 
 ```
-.claude/
-└── specs/
-    └── <identifier>/
-        ├── REQUIREMENT.md
-        └── SPEC.md
+.specs/
+└── <identifier>/
+    ├── REQUIREMENT.md
+    └── SPEC.md
 ```
 
 ## Next Steps

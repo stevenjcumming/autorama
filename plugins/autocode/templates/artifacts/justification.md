@@ -1,8 +1,9 @@
 ---
+title: {Justification Title}
+date: {YYYY-MM-DD}
 category: {category}
 file: {file_path}
 tool: {edit|write}
-timestamp: {ISO 8601}
 ---
 
 ## {Category Title}

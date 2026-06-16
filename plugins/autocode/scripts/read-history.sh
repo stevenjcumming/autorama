@@ -12,6 +12,10 @@
 
 set -euo pipefail
 
+usage() {
+  echo "Usage: read-history.sh [--project <name>] [--recent <n>] [--failures] [--stats]"
+}
+
 # Require CLAUDE_PLUGIN_DATA
 if [ -z "${CLAUDE_PLUGIN_DATA:-}" ]; then
   echo "CLAUDE_PLUGIN_DATA not set. Run /autocode:init to configure."
@@ -27,13 +31,34 @@ SHOW_STATS=false
 # Parse args
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --project) PROJECT_FILTER="$2"; shift 2 ;;
-    --recent) RECENT="$2"; shift 2 ;;
+    --project)
+      if [ -z "${2:-}" ]; then
+        echo "Error: --project requires a value" >&2
+        usage >&2
+        exit 1
+      fi
+      PROJECT_FILTER="$2"; shift 2 ;;
+    --recent)
+      if [[ ! "${2:-}" =~ ^[0-9]+$ ]]; then
+        echo "Error: --recent requires a numeric value" >&2
+        usage >&2
+        exit 1
+      fi
+      RECENT="$2"; shift 2 ;;
     --failures) SHOW_FAILURES=true; shift ;;
     --stats) SHOW_STATS=true; shift ;;
-    *) shift ;;
+    *)
+      echo "Error: unknown option '$1'" >&2
+      usage >&2
+      exit 1 ;;
   esac
 done
+
+# The project filter needs jq; warn once if it will be ignored
+if [ -n "$PROJECT_FILTER" ] && ! command -v jq &>/dev/null; then
+  echo "Note: --project filter ignored because jq is not installed." >&2
+  PROJECT_FILTER=""
+fi
 
 USAGE_FILE="$CLAUDE_PLUGIN_DATA/usage.jsonl"
 FAILURE_FILE="$CLAUDE_PLUGIN_DATA/failures.jsonl"
@@ -102,8 +127,9 @@ if $SHOW_FAILURES; then
   echo "## Recent Failures"
   echo ""
 
-  if [ -n "$PROJECT_FILTER" ] && command -v jq &>/dev/null; then
-    jq -r "select(.project == \"$PROJECT_FILTER\")" "$FAILURE_FILE" | tail -n "$RECENT"
+  if [ -n "$PROJECT_FILTER" ]; then
+    # jq -c keeps each record on one line so tail counts records, not lines
+    jq -c --arg project "$PROJECT_FILTER" 'select(.project == $project)' "$FAILURE_FILE" | tail -n "$RECENT"
   else
     tail -n "$RECENT" "$FAILURE_FILE"
   fi
@@ -120,8 +146,9 @@ fi
 echo "## Recent Activity"
 echo ""
 
-if [ -n "$PROJECT_FILTER" ] && command -v jq &>/dev/null; then
-  jq -r "select(.project == \"$PROJECT_FILTER\")" "$USAGE_FILE" | tail -n "$RECENT"
+if [ -n "$PROJECT_FILTER" ]; then
+  # jq -c keeps each record on one line so tail counts records, not lines
+  jq -c --arg project "$PROJECT_FILTER" 'select(.project == $project)' "$USAGE_FILE" | tail -n "$RECENT"
 else
   tail -n "$RECENT" "$USAGE_FILE"
 fi

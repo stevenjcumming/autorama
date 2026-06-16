@@ -1,5 +1,6 @@
 ---
-allowed-tools: Bash, Read, Edit
+name: create-tasks
+allowed-tools: Bash(bash $AUTOCODE_PLUGIN_ROOT/skills/create-tasks/scripts/create-tasks.sh:*), Read, Edit
 description: Use when the user has a completed PLAN.md and wants to break it into actionable tasks. Generates a phased TODO.md checklist with task IDs ([T1], [T2]) for execution. Does NOT start implementation.
 argument-hint: <identifier>
 ---
@@ -15,8 +16,10 @@ Convert an implementation plan into an actionable TODO checklist.
 Run the create-tasks script:
 
 ```bash
-bash $AUTOCODE_PLUGIN_ROOT/scripts/create-tasks.sh $ARGUMENTS
+bash $AUTOCODE_PLUGIN_ROOT/skills/create-tasks/scripts/create-tasks.sh $ARGUMENTS
 ```
+
+If the script exits with an error because TODO.md already exists, stop and ask the user whether to keep the existing TODO.md or regenerate it. Only if they choose to regenerate, delete the existing TODO.md, re-run the script, and continue; otherwise stop. For any other script error (missing spec or PLAN.md), surface the error message and stop.
 
 ## Step 2: Read the Plan
 
@@ -70,7 +73,13 @@ Write concise, actionable descriptions:
 
 ## Step 4: Write TODO.md
 
-Replace the template content in `TODO.md` with **numbered tasks**:
+First read the generated template (Edit requires a prior Read):
+
+```
+Read(".specs/$ARGUMENTS/TODO.md")
+```
+
+Then replace the template content in `TODO.md` with **numbered tasks**:
 
 - **Phases**: Use `## P1:`, `## P2:`, etc.
 - **Tasks**: Prefix each task with `[T1]`, `[T2]`, etc. (global numbering across all phases)

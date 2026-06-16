@@ -35,7 +35,7 @@ if [ -n "${SPEC_DIR:-}" ]; then
   SPEC_ID=$(basename "$SPEC_DIR")
 fi
 
-# Build JSON line (no jq dependency — printf is sufficient for structured fields)
+# Build JSON line: jq when available, printf fallback otherwise
 if command -v jq &>/dev/null; then
   echo "{}" | jq -c \
     --arg ts "$TIMESTAMP" \
@@ -48,8 +48,9 @@ if command -v jq &>/dev/null; then
     '{timestamp: $ts, type: $type, name: $name, status: $status, details: $details, project: $project, spec: $spec}' \
     >> "$LOG_FILE"
 else
-  # Fallback: escape quotes in details
-  SAFE_DETAILS=$(printf '%s' "$DETAILS" | sed 's/"/\\"/g' | head -c 500)
+  # Fallback writer: truncate, strip newlines, then escape backslashes
+  # and double quotes so the output stays valid JSONL
+  SAFE_DETAILS=$(printf '%s' "$DETAILS" | head -c 500 | tr -d '\n\r' | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g')
   printf '{"timestamp":"%s","type":"%s","name":"%s","status":"%s","details":"%s","project":"%s","spec":"%s"}\n' \
     "$TIMESTAMP" "$EVENT_TYPE" "$EVENT_NAME" "$STATUS" "$SAFE_DETAILS" "$PROJECT_DIR" "$SPEC_ID" \
     >> "$LOG_FILE"

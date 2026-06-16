@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # find-active-spec.sh - Find the most recently active spec directory
 #
@@ -15,11 +15,10 @@
 #   NOT_FOUND                     - No specs found
 #
 # Exit codes:
-#   0 - Success (spec found or not found)
-#   1 - Error (specs root doesn't exist)
+#   0 - Always; a missing specs root prints NOT_FOUND rather than failing
 #
 
-set -e
+set -euo pipefail
 
 SPECS_ROOT="${1:-.specs}"
 
@@ -37,7 +36,7 @@ NEWEST_TODO_TIME=0
 
 for todo_file in "$SPECS_ROOT"/*/TODO.md; do
   if [ -f "$todo_file" ]; then
-    if stat --version &>/dev/null 2>&1; then
+    if stat --version >/dev/null 2>&1; then
       # GNU stat (Linux)
       MOD_TIME=$(stat -c '%Y' "$todo_file" 2>/dev/null || echo "0")
     else

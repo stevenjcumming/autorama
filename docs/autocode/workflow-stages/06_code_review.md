@@ -2,9 +2,9 @@
 
 ## Purpose
 
-Perform a structured code review of recent changes against a configurable checklist. The command delegates to a reviewer agent that analyzes the diff, explores the codebase for context, and produces a severity-bucketed report. Unlike the Review stage (which summarizes artifacts for human oversight), Code Review focuses on finding specific checklist violations in the code itself.
+Perform a structured code review of recent changes against a configurable checklist. The skill delegates to a reviewer agent that analyzes the diff, explores the codebase for context, and produces a severity-bucketed report. Unlike the Review stage (which summarizes artifacts for human oversight), Code Review focuses on finding specific checklist violations in the code itself.
 
-## Command
+## Skill
 
 ```
 /autocode:code-review [identifier] [--ref <ref>]
@@ -42,8 +42,10 @@ Perform a structured code review of recent changes against a configurable checkl
 
 1. **Gathers diff**: Runs `git diff` and `git diff --stat` for the changes to review
 2. **Loads checklist**: Resolves the checklist from config, project file, or built-in default
-3. **Spawns reviewer**: Passes the diff, diff stat, checklist, and output path to the agent
-4. **Presents results**: Reads the generated report and displays findings to the user
+3. **Reads any existing report**: If a report already exists at `OUTPUT_PATH`, it is passed to the reviewer as `PREVIOUS_FINDINGS` so re-reviews report only new or unaddressed issues
+4. **Splits large diffs**: Diffs over 10 files or 1000 changed lines are split into parallel per-group reviewer passes, followed by a final integration pass for cross-file issues
+5. **Spawns reviewer**: Passes the diff, diff stat, checklist, previous findings, and output path to the agent
+6. **Presents results**: Reads the generated report and displays findings to the user
 
 ## Review Process
 
@@ -120,14 +122,14 @@ The checklist is resolved in priority order:
 |----------|--------|------|
 | 1 | Config | Path specified in `code_review.checklist` in `.claude/autocode.yml` |
 | 2 | Project | `.claude/code-review-checklist.md` |
-| 3 | Default | `$AUTOCODE_PLUGIN_ROOT/templates/code-review-checklist.md` |
+| 3 | Default | `$AUTOCODE_PLUGIN_ROOT/skills/code-review/code-review-checklist.md` |
 
 The default checklist covers five areas: Security, Testing, Error Handling, Code Quality, and Performance (5 items each, 25 total).
 
 To customize, copy the default and modify:
 
 ```bash
-cp plugins/autocode/templates/code-review-checklist.md .claude/code-review-checklist.md
+cp plugins/autocode/skills/code-review/code-review-checklist.md .claude/code-review-checklist.md
 ```
 
 Or point to a custom path in config:
@@ -153,7 +155,7 @@ Both can be used together: run `/autocode:code-review` first for automated check
 
 ## Key Characteristics
 
-- **Agent-delegated**: The command orchestrates; the reviewer agent does the analysis
+- **Agent-delegated**: The skill orchestrates; the reviewer agent does the analysis
 - **Customizable**: Both the checklist and the agent can be swapped out
 - **Codebase-aware**: The agent can explore beyond the diff for context
 - **Non-blocking**: Produces a report but does not approve or reject — that's the human's job

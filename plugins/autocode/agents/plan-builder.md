@@ -1,6 +1,6 @@
 ---
 name: plan-builder
-description: Creates a detailed implementation plan from a spec using research and analysis agents
+description: When the create-plan skill needs a complete PLAN.md built from a finished SPEC.md, including codebase research and plan validation.
 tools: Read, Edit, Task
 model: opus
 ---
@@ -37,7 +37,7 @@ Spawn the `plan-researcher` agent to analyze the codebase:
 ```
 Task(
   subagent_type="autocode:plan-researcher",
-  prompt="SPEC_DIR=<spec_dir>
+  prompt="SPEC_DIR={SPEC_DIR}
 
   Research the codebase based on the spec and write findings to RESEARCH.md"
 )
@@ -50,6 +50,8 @@ The researcher will:
 - Estimate scope
 
 Wait for research to complete, then read `RESEARCH.md`.
+
+**Fallback:** If `RESEARCH.md` is missing after the researcher completes (the agent failed or could not write the file), do not stop. Note the gap in the output summary ("research unavailable") and proceed to Step 3 using SPEC.md alone; flag in the plan's Current State Analysis that codebase research was not performed.
 
 ### Step 3: Write Implementation Plan
 
@@ -104,7 +106,7 @@ Spawn the `plan-analyzer` agent to validate the plan:
 ```
 Task(
   subagent_type="autocode:plan-analyzer",
-  prompt="SPEC_DIR=<spec_dir>
+  prompt="SPEC_DIR={SPEC_DIR}
 
   Analyze the implementation plan and provide feedback"
 )
@@ -116,7 +118,7 @@ After both agents complete, output:
 
 1. **Plan Location**: Path to the completed PLAN.md
 2. **Research Summary**: Key findings from RESEARCH.md
-3. **Analysis Results**: Full output from analyze-plan agent
+3. **Analysis Results**: Full output from the plan-analyzer agent
 
 </process>
 
@@ -134,7 +136,7 @@ After both agents complete, output:
 
 ### Plan Analysis
 
-<Full analysis output from analyze-plan agent>
+<Full analysis output from the plan-analyzer agent>
 
 ---
 

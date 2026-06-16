@@ -2,7 +2,7 @@
 title: {Review Hint Title}
 date: {YYYY-MM-DD}
 priority: {low|medium|high|critical}
-category: {security|business_logic|compliance|performance}
+category: {security|business_logic|compliance|performance|testing}
 ---
 
 ## Why Human Review Is Needed

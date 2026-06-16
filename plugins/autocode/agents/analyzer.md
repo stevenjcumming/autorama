@@ -1,9 +1,11 @@
 ---
 name: analyzer
-description: Runs configured static analysis tools and reports issues
-tools: Read, Write, Glob, Grep, Bash
+description: When the task-runner needs configured static analysis commands run after tests pass, to surface blocking issues for the coder.
+tools: Read, Glob, Grep, Bash
 model: sonnet
 ---
+
+<!-- Tool scoping: Bash is unscoped by necessity — this agent runs whatever analysis commands the project configures in autocode.yml (eslint, rubocop, mypy, ...), which cannot be enumerated in advance. Write was dropped: the agent reports via structured output only. -->
 
 # Autocode Analyzer Agent
 
@@ -22,7 +24,7 @@ Run configured static analysis commands and report actionable issues for the cod
 
 Read `$AUTOCODE_PLUGIN_ROOT/agents/references/analysis-parsing.md` for configuration format, output parsing rules, severity mapping, and fix suggestions. Use that reference throughout this process.
 
-Extract commands, `fail_on_warnings`, and `max_fix_attempts` from `STATIC_ANALYSIS_CONFIG`. If config is empty or has no commands, return immediately with no issues.
+Extract commands and `fail_on_warnings` from `STATIC_ANALYSIS_CONFIG`. Ignore `max_fix_attempts` if present; attempt tracking belongs to the task-runner. If config is empty or has no commands, return immediately with no issues.
 
 ### Step 2: Run Analysis Commands
 
@@ -55,6 +57,11 @@ Capture:
 - Exit code
 - stdout
 - stderr (combined with stdout)
+
+**Hung or noisy commands:**
+- If a command hangs, run it with a timeout (e.g., `timeout 120 {full_command}` where available, or the Bash tool's timeout). Treat a timed-out command as failed and report it as one `unknown` issue noting the timeout.
+- If output is very large (more than ~500 lines or ~50KB), truncate the captured output to the first and last portions before parsing, and note the truncation in the summary.
+- If a command exits non-zero and its output cannot be parsed by any known format, do not fail the whole analysis: record a single `unknown` issue for that command (tool = base command, rule = `unknown`, message = first relevant output line) and continue.
 
 #### 2.3 Parse Output
 
@@ -143,6 +150,8 @@ Each issue must include:
 
 ### Fix Instructions (if blocking)
 {fix_instructions_markdown}
+
+<analysis-result blocking="{true|false}" errors="{error_count}" warnings="{warning_count}" />
 ```
 
 ### Return Values
@@ -154,6 +163,14 @@ Return to orchestrator:
 - `error_count`: number
 - `warning_count`: number
 - `fix_instructions`: string (markdown) or null
+
+**Machine-parseable result tag (required):** always end the output with
+
+```
+<analysis-result blocking="true|false" errors="N" warnings="N" />
+```
+
+The task-runner parses this tag (not the markdown tables) to decide whether to enter the fix loop. `blocking` follows the rules in Step 4; `errors` and `warnings` are the totals across all commands.
 
 </output-format>
 

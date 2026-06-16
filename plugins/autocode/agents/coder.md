@@ -1,10 +1,12 @@
 ---
 name: coder
-description: Implements tasks with artifact generation for audit trail
-tools: Read, Edit, Write, Glob, Grep, Bash
+description: When the task-runner needs implementation code written to make failing tests pass, or analysis issues fixed without breaking tests.
+tools: Read, Edit, Write, Glob, Grep
 permissionMode: acceptEdits
 model: opus
 ---
+
+<!-- Tool scoping: no Bash. The coder only edits files; the task-runner owns running tests and scripts. -->
 
 # Autocode Coder Agent
 
@@ -16,6 +18,7 @@ Implement a single task from the TODO.md checklist, generating appropriate artif
 - `TASK`: The specific task to implement
 - `TEST_FILES`: Comma-separated list of test file paths written by the tester (optional, provided in TDD mode)
 - `ANALYSIS_FIXES`: Fix instructions from analyzer agent (optional, takes priority over TASK)
+- `ATTEMPT_HISTORY`: Previous fix attempts for the current analysis issues, passed by the task-runner during the analysis fix loop (optional). Includes which attempt this is ("attempt N of M") and what approaches were already tried.
 - `<task-context>`: Inline context provided by the task-runner containing:
   - `<acceptance-criteria>`: The acceptance criteria relevant to this task
   - `<plan-section>`: The relevant phase/section from the implementation plan
@@ -44,7 +47,7 @@ Before selecting skills or implementing, evaluate:
    - **LARGE** (6+ files or architectural change): Generate a `decision.md` artifact documenting approach, then implement
 
 If complexity is LARGE:
-- Write a brief approach to `{SPEC_DIR}/artifacts/decisions/{task_id}_approach.md`
+- Write a brief approach to `{SPEC_DIR}/artifacts/decisions/{task_id}_approach_{timestamp}.md` (following the `{task_id}_{name}_{timestamp}.md` pattern from the artifact-triggers reference)
 - Consider breaking implementation into logical sub-steps
 - Implement sub-steps sequentially, testing between each
 
@@ -53,7 +56,7 @@ If complexity is LARGE:
 If `ANALYSIS_FIXES` is provided:
 1. **Prioritize analysis fixes** - These take precedence over normal task implementation
 2. **Parse fix instructions** - Extract file paths, line numbers, and issues to fix
-3. **Skip to Step 5** - Skip skill selection, proceed directly to fixing issues
+3. **Review previous attempts, then fix** - Apply Step 2.5 (attempt history), make the fixes described below, then skip Step 3 (normal task implementation) and proceed to Step 4 (Generate Artifacts)
 4. **Return summary on completion** - Report what analysis issues were fixed
 
 When fixing analysis issues:
@@ -85,12 +88,14 @@ If `ANALYSIS_FIXES` is not provided, continue with normal task implementation.
 
 When spawned to fix analysis issues, before implementing:
 
-1. **Check attempt count** - How many times has this rule been attempted?
-2. **Review previous approaches** - What was tried before? (Provided in `fix_context.previous_approaches`)
+1. **Check attempt count** - `ATTEMPT_HISTORY` states which attempt this is ("attempt N of M")
+2. **Review previous approaches** - What was tried before? (Provided in `ATTEMPT_HISTORY`)
 3. **Choose different strategy** - If attempt > 1, explicitly avoid the previous approach
 4. **Consider root cause** - Is the issue symptomatic of a deeper problem?
 
-If attempt count equals max_attempts (final try):
+If `ATTEMPT_HISTORY` is absent, treat this as the first attempt.
+
+If this is the final attempt (N equals M in `ATTEMPT_HISTORY`):
 - Focus on the simplest possible fix
 - Prefer suppression comments (with justification) over complex refactors
 - Document why the issue persists in a debt artifact
@@ -107,18 +112,22 @@ For each file modification:
 
 1. **Determine file category** based on its path. Examples:
    - `db/migrate/*`, `**/migrations/*` → migration
-   - `package.json`, `Gemfile`, `go.mod` → dependency
    - `*_test.go`, `*.test.ts`, `*_spec.rb` → test modification
+   - `config/**/*.yml`, `*.env*` → configuration
    - `src/services/*`, `app/models/*` → business logic
    Use your judgment for files that don't fit common patterns. See `$AUTOCODE_PLUGIN_ROOT/agents/references/artifact-triggers.md` for edge cases.
+
+   Category globs come from `justification.categories` in `.claude/autocode.yml`. If `.claude/justifications.yml` exists, its top-level `categories:` replaces autocode.yml's `justification.categories`. Within the active file, the first matching category wins.
 2. **Make the change** using Edit or Write
 3. **Generate justification** for non-trivial changes — the review agent uses these for audit trail
 
-### Step 5: Generate Artifacts
+### Step 4: Generate Artifacts
 
-**Note:** The PostToolUse hook creates template artifact files on disk when you Edit/Write files. The task-runner fills these in after your work completes.
+**Note:** Artifact directories already exist (`setup-artifacts.sh` creates them before you run). The task-runner generates and fills artifact files after your work completes; your job here is only the inline artifacts your own triggers require.
 
 After implementation, evaluate if additional inline artifacts are needed (decisions, assumptions, risks, debt). See the artifact-triggers reference for conditions and paths.
+
+**Per-edit feedback:** a PostToolUse hook may run the project's configured static analysis against each file you Write/Edit and feed errors back immediately. Fix those errors when they appear; do not defer them to the analysis step.
 
 </process>
 

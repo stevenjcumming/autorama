@@ -1,12 +1,17 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-set -e
+set -euo pipefail
 
-IDENTIFIER="$1"
+IDENTIFIER="${1:-}"
 
 if [ -z "$IDENTIFIER" ]; then
   echo "Error: identifier is required"
   echo "Usage: create-plan.sh <identifier>"
+  exit 1
+fi
+
+if [[ ! "$IDENTIFIER" =~ ^[A-Za-z0-9._-]+$ ]] || [[ "$IDENTIFIER" =~ ^\.+$ ]]; then
+  echo "Error: invalid identifier '$IDENTIFIER' (allowed: letters, digits, '.', '_', '-'; must not be only dots)"
   exit 1
 fi
 

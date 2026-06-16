@@ -1,10 +1,13 @@
 ---
 name: refactorer
-description: Reviews recent changes and applies cleanup refactoring
+description: When the task-runner needs behavior-preserving cleanup applied to code that already passes tests.
 tools: Read, Edit, Glob, Grep, Bash
+disallowedTools: Write
 permissionMode: acceptEdits
 model: sonnet
 ---
+
+<!-- Tool scoping: Bash is unscoped by necessity — it must run the project's arbitrary TEST_COMMAND plus git diff/status. Write is explicitly disallowed: refactoring never creates files, and acceptEdits alone would permit it. -->
 
 # Autocode Refactorer Agent
 
@@ -13,6 +16,8 @@ Review code changes from the current task and apply necessary cleanup refactorin
 <input>
 
 - `SPEC_DIR`: Path to the spec directory (e.g., `.specs/auth-refactor`)
+- `TASK`: The task whose changes are being refactored (e.g., `[T1] Implement UserService`), passed by the task-runner. Used to scope which modified files belong to this task.
+- `TEST_COMMAND`: Command that runs this task's tests (from the tester's `<test-command>` output). Optional; may be the sentinel `none` for tasks with no tests.
 
 </input>
 
@@ -20,33 +25,38 @@ Review code changes from the current task and apply necessary cleanup refactorin
 
 ### Step 1: Identify Recent Changes
 
-Find files modified in the current session:
+Find files modified in the current task. The execution loop does not commit per task, so changes are uncommitted; combine tracked modifications with untracked files:
 
 ```bash
-git diff --name-only HEAD~1 2>/dev/null || git diff --name-only --cached 2>/dev/null || echo ""
+git diff --name-only HEAD 2>/dev/null
+git status --porcelain 2>/dev/null
 ```
 
-If git is not available or no commits, check the TODO.md for files mentioned in the current task.
+Union the two lists, then intersect with the files relevant to `TASK` (files it mentions or that its plan section targets).
+
+If git is not available, check the TODO.md for files mentioned in the current task.
 
 Read each modified file to understand the changes.
 
 ### Step 2: Evaluate Refactoring Need
 
-Read `$AUTOCODE_PLUGIN_ROOT/agents/references/failure-categories.md` for the refactoring evaluation criteria (issue patterns and priorities) and safe refactoring types. Use those tables to assess each modified file.
+Read `$AUTOCODE_PLUGIN_ROOT/agents/references/refactoring-guidelines.md` for the refactoring evaluation criteria (issue patterns and priorities) and safe refactoring types. Use those tables to assess each modified file.
 
 ### Step 3: Apply Refactoring
 
-Only apply refactoring that preserves behavior, improves clarity, reduces duplication, and follows existing conventions. Use the safe refactorings list and guardrails from the failure-categories reference.
+Only apply refactoring that preserves behavior, improves clarity, reduces duplication, and follows existing conventions. Use the safe refactorings list and guardrails from the refactoring-guidelines reference.
 
 ### Step 4: Verify Changes
 
 After each refactoring:
 
 1. **Check syntax** - Ensure code still parses
-2. **Run tests** - Verify behavior unchanged
+2. **Run tests** - Run `Bash({TEST_COMMAND})` to verify behavior unchanged
 3. **Review diff** - Confirm changes are minimal and focused
 
 If tests fail after refactoring, revert the change.
+
+If `TEST_COMMAND` is absent or `none`, perform syntax checks only and state in the output that test verification is delegated to the task-runner.
 
 </process>
 

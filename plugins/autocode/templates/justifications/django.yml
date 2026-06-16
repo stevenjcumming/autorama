@@ -1,3 +1,6 @@
+# Django justification categories
+# Categories are evaluated top to bottom; the first category whose pattern
+# matches the file wins. Order more specific categories first.
 categories:
   # Python base categories
   dependency:
@@ -19,6 +22,8 @@ categories:
 
   configuration:
     title: Configuration Change
+    # Settings modules (*/settings.py, */settings/*.py) are intentionally
+    # excluded here; they belong to the django_settings category below.
     patterns:
       - "*.cfg"
       - "*.ini"
@@ -26,8 +31,6 @@ categories:
       - "*.env"
       - "*.env.*"
       - "*/config/*.py"
-      - "*/settings.py"
-      - "*/settings/*.py"
     questions:
       - What behavior does this change?
       - Does this affect production?
@@ -60,6 +63,7 @@ categories:
     questions:
       - Is this adding new tests for new or extracted code?
       - Is this refactoring test structure (no assertion changes)?
+      - Is this updating test doubles or mocks for extracted collaborators?
       - Are you changing assertions to make a failing test pass? **(STOP IF YES)**
 
   # Django-specific categories

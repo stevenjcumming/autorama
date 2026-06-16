@@ -4,7 +4,7 @@
 
 Commit code changes and synchronize with GitHub pull requests. The Submit stage finalizes implementation by creating conventional commits and managing PRs for code review.
 
-## Commands
+## Skills
 
 ### /autocode:commit
 
@@ -24,8 +24,8 @@ Create or update a GitHub pull request for the current branch.
 
 ## Arguments
 
-| Command | Argument | Required | Description |
-|---------|----------|----------|-------------|
+| Skill | Argument | Required | Description |
+|-------|----------|----------|-------------|
 | `/autocode:commit` | None | - | No arguments required |
 | `/autocode:sync-pr` | `pr-number` | No | Existing PR number to update |
 
@@ -49,7 +49,7 @@ Create or update a GitHub pull request for the current branch.
 - GitHub CLI (`gh`) installed and authenticated (for `/autocode:sync-pr`)
 - Remote repository configured (for `/autocode:sync-pr`)
 
-## What Each Command Does
+## What Each Skill Does
 
 ### /autocode:commit
 
@@ -138,7 +138,7 @@ If `.claude/templates/pr_description.md` exists in the user's project, it is use
 - [ ] <Requirement 2>
 ```
 
-If no template file exists, the command falls back to a minimal format:
+If no template file exists, the skill falls back to a minimal format:
 
 ```markdown
 ## Summary
@@ -178,10 +178,12 @@ If no template file exists, the command falls back to a minimal format:
 ## Directory Structure
 
 ```
-.claude/
-├── commands/
-│   ├── commit.md               # Commit command
-│   └── sync-pr.md              # PR sync command
+plugins/autocode/
+├── skills/
+│   ├── commit/
+│   │   └── SKILL.md            # Commit skill
+│   └── sync-pr/
+│       └── SKILL.md            # PR sync skill
 └── templates/
     └── pr_description.md       # PR template
 ```

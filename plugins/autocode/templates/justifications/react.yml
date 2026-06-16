@@ -1,3 +1,10 @@
+# React justification categories
+# Categories are evaluated top to bottom; the first category whose pattern
+# matches the file wins. Order more specific categories first.
+#
+# Ordering matters here: the component category's "*.tsx" glob is a superset
+# of the test and hook globs, so spec_modification and hook are listed before
+# component to ensure test files and hooks match their specific categories.
 categories:
   # TypeScript base categories
   dependency:
@@ -57,20 +64,12 @@ categories:
     questions:
       - Is this adding new tests for new or extracted code?
       - Is this refactoring test structure (no assertion changes)?
+      - Is this updating test doubles or mocks for extracted collaborators?
       - Are you changing assertions to make a failing test pass? **(STOP IF YES)**
 
   # React-specific categories
-  component:
-    title: React Component
-    patterns:
-      - "*.tsx"
-      - "*.jsx"
-      - "*/components/**"
-    questions:
-      - Does this component handle user input safely (XSS prevention)?
-      - Is this component accessible (ARIA attributes, keyboard navigation)?
-      - Does this affect rendering performance (unnecessary re-renders)?
-
+  # hook is listed before component because "use*.tsx" files would otherwise
+  # match the component category's broader "*.tsx" glob first.
   hook:
     title: React Hook
     patterns:
@@ -81,6 +80,17 @@ categories:
       - Does this hook follow the Rules of Hooks?
       - Are dependencies in useEffect/useMemo/useCallback correct?
       - Could this cause infinite render loops?
+
+  component:
+    title: React Component
+    patterns:
+      - "*.tsx"
+      - "*.jsx"
+      - "*/components/**"
+    questions:
+      - Does this component handle user input safely (XSS prevention)?
+      - Is this component accessible (ARIA attributes, keyboard navigation)?
+      - Does this affect rendering performance (unnecessary re-renders)?
 
   state:
     title: State Management

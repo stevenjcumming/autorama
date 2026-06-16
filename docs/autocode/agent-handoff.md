@@ -9,7 +9,7 @@ Task N completes
     ↓
 task-runner → Writes handoff.md directly (Step 8)
     ↓
-on-agent-complete.sh (SubagentStop) → Checks context limits
+on-agent-complete.sh (SubagentStop) → Parses <task-completed>, audits artifacts, checks context
     ↓  (if critical)
 session-summarizer → Writes SESSION_SUMMARY.md
     ↓
@@ -23,6 +23,8 @@ Task runner initializes with previous context
 ## 1. Handoff Artifact
 
 The central artifact is `handoff.md`, written to `{SPEC_DIR}/artifacts/handoff/handoff.md` after each task completes. It contains everything the next agent needs to continue work without re-reading the full codebase.
+
+It leads with a verbatim **Facts** block (spec ID, current task ID, test command, test file paths, files changed, failure categories) that must never be summarized or paraphrased. The narrative sections below follow the Facts block.
 
 ### Sections
 
@@ -49,7 +51,7 @@ Two hooks coordinate the handoff lifecycle. They are defined in `plugins/autocod
 
 ### `load-context.sh` (PreToolUse)
 
-Fires before each `autocode-*` Task agent is spawned. Loads context from the previous task into the new agent's prompt.
+Fires before each `autocode-*` Task agent is spawned. It injects context by rewriting the Task prompt through `hookSpecificOutput.updatedInput` in its JSON output; plain stdout from a PreToolUse hook never reaches the model, so the rewrite is the only way the context lands in the agent.
 
 **What it loads:**
 
@@ -63,17 +65,19 @@ The hook delegates to `read-handoff.sh` when available, falling back to manual f
 
 ### `on-agent-complete.sh` (SubagentStop)
 
-Fires when a subagent finishes. Checks context limits and signals completion.
+Fires when a subagent finishes. It recovers the agent output from the transcript, parses the structured `<task-completed>` tag, audits the artifact trail, and checks context limits. All signals are emitted as JSON `additionalContext`/`systemMessage`, never plain stdout.
 
-1. **Check context limits** -- calls `check-context.sh` and emits `<context-warning>` or `<context-critical>` tags
+1. **Recover output and parse the tag** -- reads the completed agent's output from the transcript and parses its `<task-completed>` tag (defined in `agents/references/failure-categories.md`)
+2. **Audit artifacts** -- checks `{SPEC_DIR}/artifacts/` for the completed task and emits an `<artifact-audit>` warning when the expected trail is missing
+3. **Check context limits** -- calls `check-context.sh` and emits `<context-warning>` or `<context-critical>` tags
 
 **Output tags:**
 
 | Tag | Meaning |
 |-----|---------|
+| `<artifact-audit>` | Expected artifact trail for the task is missing |
 | `<context-warning>` | Context usage is high |
 | `<context-critical>` | Context usage is critical, summarization needed |
-| `<agent-completed>` | Agent finished (always emitted) |
 
 Use `/autocode:commit` to commit changes after tasks complete.
 
@@ -90,7 +94,7 @@ The session summarizer is triggered when:
 
 ### Output
 
-The summarizer writes `{SPEC_DIR}/artifacts/handoff/SESSION_SUMMARY.md`, targeting 500-1000 tokens (2000-4000 characters). It extracts:
+The summarizer writes `{SPEC_DIR}/artifacts/handoff/SESSION_SUMMARY.md`, targeting 500-1000 tokens (2000-4000 characters). Like `handoff.md`, it leads with a verbatim **Facts** block (spec ID, current task ID, test command, test file paths, files changed, failure categories) that must never be summarized or paraphrased. It extracts:
 
 - Completed work and current progress
 - Key decisions and their rationale
@@ -130,4 +134,4 @@ Feature sections are active when present. To disable a feature, remove the secti
 
 - [Orchestration Flow](orchestration_flow.md)
 - [Evaluation Pipeline](evaluation_pipeline.md)
-- [Autocode Workflow](workflow-stages/04_autocode.md)
+- [Execute Workflow](workflow-stages/04_execute.md)

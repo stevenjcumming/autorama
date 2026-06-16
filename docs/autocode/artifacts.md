@@ -190,7 +190,7 @@ plugins/autocode/templates/artifacts/   # Template files for each type
 
 | Agent | Artifacts Generated |
 |-------|---------------------|
-| `task-runner` | All artifact types (fills in hook-created templates after sub-agents complete) |
+| `task-runner` | All artifact types (fills in the artifact directories created by `scripts/setup-artifacts.sh`, after sub-agents complete in Step 6) |
 | `coder` | Justification, Decision, Assumption, Risk, Debt, Dependency |
 | `refactorer` | Debt (for significant deferred refactoring opportunities) |
 

@@ -11,9 +11,9 @@ The autocode plugin delegates work through a tree of specialized agents. Each ag
                     ├── plan-researcher (sonnet)
                     └── plan-analyzer (sonnet)
 
-/autocode:create-tasks ──── (inline, no agent — command writes TODO.md directly)
+/autocode:create-tasks ──── (inline, no agent; skill writes TODO.md directly)
 
-/autocode:execute (command — lightweight loop owner)
+/autocode:execute (skill, lightweight loop owner)
                   ├── task-runner (opus, fresh per task)
                   │     ├── tester (sonnet)
                   │     ├── coder (opus)
@@ -55,7 +55,7 @@ Analyzes the spec and researches the codebase for existing patterns, conventions
 | Field | Value |
 |-------|-------|
 | Model | Sonnet |
-| Tools | Read, Glob, Grep, Bash(find, wc) |
+| Tools | Read, Glob, Grep, Bash(wc) |
 | Spawns | (none) |
 
 #### `plan-analyzer`
@@ -70,7 +70,7 @@ Reviews and validates the draft plan against the spec, checking for gaps, risks,
 
 ### Task Stage
 
-The `create-tasks` command reads `PLAN.md` and writes `TODO.md` directly (inline) without spawning a separate agent.
+The `create-tasks` skill reads `PLAN.md` and writes `TODO.md` directly (inline) without spawning a separate agent.
 
 ### Autopilot Stage
 
@@ -81,7 +81,7 @@ Executes a single task through the full test/code/analyze/refactor loop. Spawned
 | Field | Value |
 |-------|-------|
 | Model | Opus |
-| Tools | Read, Edit, Write, Task, Glob, Grep, Bash |
+| Tools | Read, Edit, Write, Task, Glob, Bash |
 | Spawns | tester, coder, analyzer, refactorer |
 
 Inner loop:
@@ -104,7 +104,7 @@ Writes tests for a task based on requirements and acceptance criteria. Handles t
 | Field | Value |
 |-------|-------|
 | Model | Sonnet |
-| Tools | Read, Edit, Write, Glob, Grep, Bash |
+| Tools | Read, Write, Glob, Grep, Bash (scoped to syntax checks) |
 | Spawns | (none) |
 | Produces | Test files |
 
@@ -115,7 +115,7 @@ Implements the task. Generates audit trail artifacts (justifications, decisions,
 | Field | Value |
 |-------|-------|
 | Model | Opus |
-| Tools | Read, Edit, Write, Glob, Grep, Bash |
+| Tools | Read, Edit, Write, Glob, Grep |
 | Spawns | (none) |
 | Produces | Justifications, decisions, assumptions, risks, debt, review hints |
 
@@ -126,7 +126,7 @@ Runs configured static analysis tools and reports blocking issues.
 | Field | Value |
 |-------|-------|
 | Model | Sonnet |
-| Tools | Read, Write, Glob, Grep, Bash |
+| Tools | Read, Glob, Grep, Bash |
 | Spawns | (none) |
 | Produces | Analysis report with fix instructions |
 
@@ -171,9 +171,9 @@ Utility agents like session-summarizer produce a file and exit. The caller doesn
 ## Tool Access Principles
 
 - **Orchestrators** (execute.md command, plan-builder) delegate work — they don't implement
-- **Implementers** (coder, refactorer) get `Edit` and `Write` -- they modify files
-- **Test writers** (tester) get `Read`, `Edit`, `Write`, `Glob`, `Grep`, `Bash` -- they create test files
-- **Analyzers** (analyzer, researcher) get `Read`, `Grep`, `Glob`, `Bash` -- they observe and report
+- **Implementers** (coder, refactorer) get `Edit` to modify files. The coder also gets `Write` (for new files) but no `Bash`; the refactorer disallows `Write` so it only edits existing files
+- **Test writers** (tester) get `Read`, `Write`, `Glob`, `Grep`, and `Bash` scoped to syntax checks -- they create test files but do not edit existing ones or run the suite
+- **Analyzers** (analyzer, researcher) get `Read`, `Grep`, `Glob`, `Bash` -- they observe and report (the analyzer has no `Write`)
 - **Generators** (session-summarizer) get `Write` for their specific output files
 - No agent gets tools it doesn't need
 
@@ -182,4 +182,4 @@ Utility agents like session-summarizer produce a file and exit. The caller doesn
 - [Orchestration Flow](orchestration_flow.md)
 - [Agent Handoff](agent-handoff.md)
 - [Evaluation Pipeline](evaluation_pipeline.md)
-- [Autocode Workflow](workflow-stages/04_autocode.md)
+- [Execute Workflow](workflow-stages/04_execute.md)

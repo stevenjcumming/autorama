@@ -1,9 +1,11 @@
 ---
 name: session-summarizer
-description: Generates concise session summary for context preservation when approaching context limits
-tools: Read, Glob, Bash
+description: When a task-runner or the execute loop is approaching context limits, or a session ends mid-spec, and progress must be compressed into SESSION_SUMMARY.md for the next agent.
+tools: Read, Write, Glob, Bash(git diff:*), Bash(git status:*), Bash(date:*), Bash(mkdir:*), Bash(mv:*)
 model: haiku
 ---
+
+<!-- Tool scoping: Bash is limited to the exact commands this agent runs — git diff/status for session changes, date for the archive timestamp, mkdir/mv for archiving the previous summary. -->
 
 # Session Summarizer Agent
 
@@ -12,8 +14,8 @@ Generate compressed session summaries to preserve context when approaching token
 <input>
 
 - `SPEC_DIR`: Path to the spec directory (e.g., `.specs/auth-refactor`)
-- `TASKS_COMPLETED`: List of task IDs completed this session (e.g., `T1,T2,T3`)
-- `TRIGGER_REASON`: Why summarization was triggered (`context_limit`, `session_end`, `manual`)
+- `TASKS_COMPLETED`: Optional list of task IDs completed this session (e.g., `T1,T2,T3`). If absent, derive it from the checked items (`- [x]`) in `{SPEC_DIR}/TODO.md`.
+- `TRIGGER_REASON`: Optional reason summarization was triggered (`context_limit`, `session_end`, `manual`). Defaults to `manual` if absent.
 
 </input>
 
@@ -31,15 +33,18 @@ Read("{SPEC_DIR}/TODO.md")
 
 ### Step 2: Get Git Changes
 
-Analyze changes made during the session:
+Analyze changes made during the session. The execution loop does not commit per task, so session work is uncommitted; diff against `HEAD` and include untracked files:
 
 ```bash
-# Get all files changed since session start
-git diff --name-only HEAD~{num_tasks_completed} 2>/dev/null || git diff --name-only
+# Get all files changed this session (tracked changes plus untracked files)
+git diff --name-only HEAD 2>/dev/null
+git status --porcelain 2>/dev/null
 
 # Get summary statistics
-git diff --stat HEAD~{num_tasks_completed} 2>/dev/null || git diff --stat
+git diff --stat HEAD 2>/dev/null
 ```
+
+If the caller recorded a session-start SHA (e.g., in the handoff), diff against that SHA instead of `HEAD` to also capture any commits made during the session.
 
 ### Step 3: Read Recent Artifacts
 
@@ -84,10 +89,18 @@ From the gathered context, identify:
 
 ### Step 5: Generate Compressed Summary
 
-Create a summary targeting 500-1000 tokens that captures:
+Create a summary targeting 500-1000 tokens. The summary MUST lead with the **Facts** block below, copied verbatim from sources, never paraphrased. Summarization systematically destroys identifiers, numbers, and exact strings; this block holds them outside the summarized prose so downstream agents (and any future re-summarization) preserve them untouched. Pull values from TODO.md, the handoff, and the tester's `<test-command>`/`<test-files>` output; write `unknown` rather than guessing.
 
 ```markdown
 # Session Summary
+
+## Facts (never summarize, never paraphrase; copy exactly)
+- Spec ID: {spec_id}
+- Current task ID: {current_task_id}
+- Test command: `{test_command}`
+- Test file paths: {test_file_paths}
+- Files changed: {files_changed}
+- Failure categories this session: {failure_categories_or_none}
 
 ## Context
 - Spec: {spec_id}
@@ -125,7 +138,7 @@ Write("{SPEC_DIR}/artifacts/handoff/SESSION_SUMMARY.md", summary)
 ```
 
 If a previous session summary exists, archive it:
-- Move to `{SPEC_DIR}/artifacts/handoff/archive/SESSION_SUMMARY_{timestamp}.md`
+- Move to `{SPEC_DIR}/artifacts/handoff/archive/SESSION_SUMMARY_{timestamp}.md`, where `{timestamp}` comes from `date +%Y%m%d%H%M%S`
 
 </process>
 
@@ -191,6 +204,7 @@ Target summary length: 2000-4000 characters (500-1000 tokens)
 
 <rules>
 
+- **Facts block first, verbatim** - The leading Facts block holds identifiers (spec ID, task ID, test command, paths, failure categories) outside the summarized prose. Copy them exactly; never compress, round, or paraphrase them.
 - **Stay concise** - Every sentence must add value. Target 500-1000 tokens; anything longer defeats the purpose of summarization.
 - **Be specific** - File paths > descriptions, task IDs > vague references
 - **Preserve decisions** - Rationale is harder to reconstruct than code. The "why" behind choices is easily lost across sessions.

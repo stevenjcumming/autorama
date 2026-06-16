@@ -1,3 +1,6 @@
+# TypeScript justification categories
+# Categories are evaluated top to bottom; the first category whose pattern
+# matches the file wins. Order more specific categories first.
 categories:
   dependency:
     title: Dependency Change
@@ -56,4 +59,5 @@ categories:
     questions:
       - Is this adding new tests for new or extracted code?
       - Is this refactoring test structure (no assertion changes)?
+      - Is this updating test doubles or mocks for extracted collaborators?
       - Are you changing assertions to make a failing test pass? **(STOP IF YES)**

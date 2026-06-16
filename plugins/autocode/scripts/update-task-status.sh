@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # update-task-status.sh - Mark a task as completed in TODO.md
 #
@@ -22,11 +22,11 @@
 #   1 - Error (missing arguments, file not found, task not found)
 #
 
-set -e
+set -euo pipefail
 
-SPEC_DIR="$1"
-TASK_ID="$2"
-FLAG="$3"
+SPEC_DIR="${1:-}"
+TASK_ID="${2:-}"
+FLAG="${3:-}"
 
 if [ -z "$SPEC_DIR" ] || [ -z "$TASK_ID" ]; then
   echo "Error: spec directory and task ID are required"
@@ -54,14 +54,14 @@ if ! grep -q "$TASK_PATTERN" "$TODO_FILE"; then
 fi
 
 # Check if already completed
-if grep -q "^\s*- \[x\] $TASK_PATTERN" "$TODO_FILE"; then
-  DESCRIPTION=$(grep "$TASK_PATTERN" "$TODO_FILE" | sed "s/.*$TASK_PATTERN\s*//" | head -1)
+if grep -q "^[[:space:]]*- \[x\] $TASK_PATTERN" "$TODO_FILE"; then
+  DESCRIPTION=$(grep "$TASK_PATTERN" "$TODO_FILE" | sed "s/.*${TASK_PATTERN}[[:space:]]*//" | head -1)
   echo "ALREADY_DONE:$TASK_ID:$DESCRIPTION"
   exit 0
 fi
 
 # Check if it's an uncompleted task
-if ! grep -q "^\s*- \[ \] $TASK_PATTERN" "$TODO_FILE"; then
+if ! grep -q "^[[:space:]]*- \[ \] $TASK_PATTERN" "$TODO_FILE"; then
   # Task ID exists but not as a checkbox item
   echo "NOT_FOUND:$TASK_ID"
   exit 1
@@ -71,7 +71,7 @@ fi
 # Extract description before modifying
 # ============================================================================
 
-DESCRIPTION=$(grep "^\s*- \[ \] $TASK_PATTERN" "$TODO_FILE" | sed "s/.*$TASK_PATTERN\s*//" | head -1)
+DESCRIPTION=$(grep "^[[:space:]]*- \[ \] $TASK_PATTERN" "$TODO_FILE" | sed "s/.*${TASK_PATTERN}[[:space:]]*//" | head -1)
 
 # ============================================================================
 # Update the task status
@@ -80,15 +80,21 @@ DESCRIPTION=$(grep "^\s*- \[ \] $TASK_PATTERN" "$TODO_FILE" | sed "s/.*$TASK_PAT
 if [ "$FLAG" = "--timestamp" ]; then
   ISO_TIMESTAMP=$(date -u '+%Y-%m-%dT%H:%M:%SZ')
   # Replace checkbox and append timestamp
-  sed -i.bak "s/^\(\s*\)- \[ \] \($TASK_PATTERN\)/\1- [x] \2/" "$TODO_FILE"
+  sed -i.bak "s/^\([[:space:]]*\)- \[ \] \($TASK_PATTERN\)/\1- [x] \2/" "$TODO_FILE"
   # Add timestamp comment on the same line (after description)
-  sed -i.bak "s/^\(\s*- \[x\] $TASK_PATTERN.*\)$/\1 <!-- completed: $ISO_TIMESTAMP -->/" "$TODO_FILE"
+  sed -i.bak "s/^\([[:space:]]*- \[x\] $TASK_PATTERN.*\)$/\1 <!-- completed: $ISO_TIMESTAMP -->/" "$TODO_FILE"
 else
   # Just replace the checkbox
-  sed -i.bak "s/^\(\s*\)- \[ \] \($TASK_PATTERN\)/\1- [x] \2/" "$TODO_FILE"
+  sed -i.bak "s/^\([[:space:]]*\)- \[ \] \($TASK_PATTERN\)/\1- [x] \2/" "$TODO_FILE"
 fi
 
 # Clean up backup file created by sed -i
 rm -f "$TODO_FILE.bak"
+
+# Verify the rewrite actually happened (sed exits 0 even when nothing matched)
+if ! grep -q "^[[:space:]]*- \[x\] $TASK_PATTERN" "$TODO_FILE"; then
+  echo "Error: failed to mark task $TASK_ID complete in $TODO_FILE" >&2
+  exit 1
+fi
 
 echo "UPDATED:$TASK_ID:$DESCRIPTION"

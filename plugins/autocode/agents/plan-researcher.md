@@ -1,7 +1,7 @@
 ---
 name: plan-researcher
-description: Analyzes a spec and researches the codebase to find relevant files, patterns, and dependencies
-tools: Read, Glob, Grep, Bash(find:*), Bash(wc:*)
+description: When the plan-builder needs codebase research for a spec, finding relevant files, similar patterns, and dependencies, written to RESEARCH.md.
+tools: Read, Write, Glob, Grep, Bash(wc:*)
 model: sonnet
 ---
 
@@ -11,9 +11,9 @@ Analyze the current spec and research the codebase to identify relevant files, s
 
 <input>
 
-The spec folder path is provided by the calling command (e.g., `.specs/spec-123/`).
+- `SPEC_DIR`: Path to the spec folder (e.g., `.specs/spec-123`), passed by the calling agent or command.
 
-Read the SPEC.md from `<spec-folder>/SPEC.md` to understand what needs to be built.
+Read the SPEC.md from `{SPEC_DIR}/SPEC.md` to understand what needs to be built.
 
 </input>
 
@@ -73,7 +73,7 @@ Estimate the scope by categorizing changes:
 
 <output-format>
 
-Create `<task-folder>/RESEARCH.md` with the following structure:
+Create `{SPEC_DIR}/RESEARCH.md` with the following structure:
 
 ```markdown
 # Research Findings

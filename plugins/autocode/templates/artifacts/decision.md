@@ -1,7 +1,7 @@
 ---
 title: {Decision Title}
 date: {YYYY-MM-DD}
-status: accepted
+status: {proposed|accepted|superseded}
 ---
 
 ## Context

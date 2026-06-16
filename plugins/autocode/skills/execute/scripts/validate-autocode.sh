@@ -1,13 +1,18 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-set -e
+set -euo pipefail
 
-IDENTIFIER="$1"
-FILTER="$2"
+IDENTIFIER="${1:-}"
+FILTER="${2:-}"
 
 if [ -z "$IDENTIFIER" ]; then
   echo "Error: spec identifier is required"
   echo "Usage: validate-autocode.sh <identifier> [T<n>|P<n>]"
+  exit 1
+fi
+
+if [[ ! "$IDENTIFIER" =~ ^[A-Za-z0-9._-]+$ ]] || [[ "$IDENTIFIER" =~ ^\.+$ ]]; then
+  echo "Error: invalid identifier '$IDENTIFIER' (allowed: letters, digits, '.', '_', '-'; must not be only dots)"
   exit 1
 fi
 
@@ -21,24 +26,24 @@ fi
 
 if [ ! -f "$SPEC_DIR/SPEC.md" ]; then
   echo "Error: SPEC.md not found in $SPEC_DIR"
-  echo "Run '/new-spec' to create the spec first"
+  echo "Run '/autocode:new-spec' to create the spec first"
   exit 1
 fi
 
 if [ ! -f "$SPEC_DIR/PLAN.md" ]; then
   echo "Error: PLAN.md not found in $SPEC_DIR"
-  echo "Run '/create-plan' to create the plan first"
+  echo "Run '/autocode:create-plan' to create the plan first"
   exit 1
 fi
 
 if [ ! -f "$SPEC_DIR/TODO.md" ]; then
   echo "Error: TODO.md not found in $SPEC_DIR"
-  echo "Run '/create-tasks' to create the task list first"
+  echo "Run '/autocode:create-tasks' to create the task list first"
   exit 1
 fi
 
 # Check for uncompleted tasks (lines with "- [ ]", including indented sub-tasks)
-UNCOMPLETED_TASKS=$(grep -cE '^\s*- \[ \]' "$SPEC_DIR/TODO.md" 2>/dev/null || echo "0")
+UNCOMPLETED_TASKS=$(grep -cE '^[[:space:]]*- \[ \]' "$SPEC_DIR/TODO.md" || true)
 
 if [ "$UNCOMPLETED_TASKS" -eq "0" ]; then
   echo "Error: No uncompleted tasks found in $SPEC_DIR/TODO.md"
@@ -54,7 +59,7 @@ if [ -n "$FILTER" ]; then
       echo "Error: Task $FILTER not found in TODO.md"
       exit 1
     fi
-    if ! grep -qE "^\s*- \[ \] \[$FILTER\]" "$SPEC_DIR/TODO.md"; then
+    if ! grep -qE "^[[:space:]]*- \[ \] \[$FILTER\]" "$SPEC_DIR/TODO.md"; then
       echo "Error: Task $FILTER is already completed"
       exit 1
     fi

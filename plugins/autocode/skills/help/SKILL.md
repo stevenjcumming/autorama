@@ -1,30 +1,38 @@
 ---
-description: Use when the user asks about available autocode commands, workflow order, or how to use the plugin. Displays the command table and typical workflow.
+name: help
+description: Use when the user asks about available autocode skills, workflow order, or how to use the plugin. Displays the skill table and typical workflow.
 ---
 
 # Autocode Help
 
-Display the available Autocode commands in the order they should be used.
+Display the available Autocode skills in the order they should be used. Each skill is invoked as a slash command (`/autocode:<name>`); Claude can also trigger them automatically when a request matches a skill's description.
 
-## Workflow Commands (in order)
+## Workflow Skills (in order)
 
-| # | Command | Purpose |
-|---|---------|---------|
+| # | Skill | Purpose |
+|---|-------|---------|
 | 1 | `/autocode:init` | Initialize Autocode configuration and install optional dependencies |
 | 2 | `/autocode:new-spec <id>` | Create a new spec folder and SPEC.md file |
 | 3 | `/autocode:create-plan <id>` | Generate an implementation plan from a spec |
 | 4 | `/autocode:create-tasks <id>` | Convert the plan into a phased TODO checklist |
-| 5 | `/autocode:execute <path>` | Execute TDD loop (Write Tests / Red / Code / Green / Analysis / Refactor) |
+| 5 | `/autocode:execute <id>` | Execute TDD loop (Write Tests / Red / Code / Green / Analysis / Refactor) |
 | 6 | `/autocode:review <id>` | Generate a review summary of changes and artifacts |
 | 7 | `/autocode:code-review [id]` | Structured code review against a configurable checklist |
 | 8 | `/autocode:commit` | Create a commit with a conventional commit message |
 | 9 | `/autocode:sync-pr` | Create or update a PR for the current branch |
 
-## Utility Commands
+## Utility Skills
 
-| Command | Purpose |
-|---------|---------|
+| Skill | Purpose |
+|-------|---------|
 | `/autocode:spec-archive <id>` | Archive spec files to `~/.autocode/specs/` |
+
+## Context Hygiene
+
+| When | Do | Why |
+|------|----|-----|
+| Switching to a new spec | `/clear` | A new spec shares nothing with the previous one |
+| Between planning and `/autocode:execute` | `/compact` | Execute re-reads SPEC.md, PLAN.md, and TODO.md from disk; the planning conversation is not needed |
 
 ## Typical Workflow
 

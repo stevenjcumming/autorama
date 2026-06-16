@@ -1,17 +1,65 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
-# autocode task completion
+# on-agent-complete.sh - SubagentStop hook for autocode agent completion
 #
-# Handles post-task-completion actions:
-# 1. Check context limits and signal if summarization needed
-# 2. Signal completion to execute command
+# SubagentStop fires for EVERY subagent stop in any project; hooks.json
+# cannot express a matcher for this event, so this script self-filters
+# and exits fast (well under the 60s hook timeout) for non-autocode
+# agents.
 #
-# Triggered by: SubagentStop hook
+# Payload (stdin JSON): session_id, transcript_path, cwd,
+# hook_event_name, agent_type (recent CLIs), stop_hook_active. The
+# payload does NOT include the subagent's output, so it is recovered
+# from the transcript JSONL at transcript_path: the agent name comes
+# from agent_type when present (most recent Task tool invocation
+# otherwise), and the agent's final output from the most recent
+# sidechain assistant entry (falling back to the most recent Task
+# tool result).
+#
+# Output mechanism (see docs/autocode/hook-system.md "Hook I/O
+# Decision"): plain stdout from SubagentStop is NOT added to model
+# context, so signals are emitted as JSON with `additionalContext`
+# (reaches Claude) and `systemMessage` (shown to the user).
+#
+# Behaviors for autocode agents:
+# 1. Detect task completion or failure from the agent's final output
+#    using the structured contract in agents/references/failure-categories.md
+# 2. Log task failures to failures.jsonl as a deterministic backstop
+#    (the task-runner normally logs them itself)
+# 3. Verify the artifact audit trail exists for completed tasks and
+#    emit a structured warning when it is missing (deterministic
+#    enforcement; the execute loop's check is prompt-based)
+# 4. Optionally judge artifact substance via a read-only Agent SDK call
+#    (gated by artifact_judge.enabled in autocode.yml, default off)
+# 5. Check context limits via check-context.sh and signal if high
+# 6. Emit <agent-completed> additional context for the parent session
+#
+# Every failure mode exits 0 silently; this hook must never block.
 #
 
-set -e
+set -euo pipefail
 
-# Check for jq dependency
+HOOK_NAME="on-agent-complete"
+
+# Log unparseable/unexpected payloads so hook failures are observable
+# instead of silent. Never fails the hook.
+log_hook_error() {
+  [ -z "${CLAUDE_PLUGIN_DATA:-}" ] && return 0
+  mkdir -p "$CLAUDE_PLUGIN_DATA" 2>/dev/null || return 0
+  local ts
+  ts=$(date -u +"%Y-%m-%dT%H:%M:%SZ" 2>/dev/null || echo "")
+  if command -v jq &> /dev/null; then
+    jq -cn --arg ts "$ts" --arg hook "$HOOK_NAME" --arg reason "$1" --arg payload "${INPUT:-}" \
+      '{timestamp: $ts, hook: $hook, reason: $reason, payload: $payload[0:2000]}' \
+      >> "$CLAUDE_PLUGIN_DATA/hook-errors.jsonl" 2>/dev/null || true
+  else
+    printf '{"timestamp":"%s","hook":"%s","reason":"%s"}\n' "$ts" "$HOOK_NAME" "$1" \
+      >> "$CLAUDE_PLUGIN_DATA/hook-errors.jsonl" 2>/dev/null || true
+  fi
+  return 0
+}
+
+# Check for jq dependency (required for parsing JSON input and transcript)
 if ! command -v jq &> /dev/null; then
   exit 0
 fi
@@ -19,12 +67,81 @@ fi
 # Read JSON input from stdin
 INPUT=$(cat)
 
-# Extract agent info
-AGENT_NAME=$(echo "$INPUT" | jq -r '.agent_name // empty')
-AGENT_OUTPUT=$(echo "$INPUT" | jq -r '.agent_output // empty')
+# Validate the payload is JSON; log and bail if not
+if ! echo "$INPUT" | jq -e . >/dev/null 2>&1; then
+  log_hook_error "stdin payload is not valid JSON"
+  exit 0
+fi
 
-# Only trigger for autocode agents
-if [[ "$AGENT_NAME" != autocode-* ]]; then
+# Do nothing if another stop hook is already active (prevents loops)
+STOP_HOOK_ACTIVE=$(echo "$INPUT" | jq -r '.stop_hook_active // false' 2>/dev/null || true)
+if [ "$STOP_HOOK_ACTIVE" = "true" ]; then
+  exit 0
+fi
+
+TRANSCRIPT_PATH=$(echo "$INPUT" | jq -r '.transcript_path // empty' 2>/dev/null || true)
+if [ -z "$TRANSCRIPT_PATH" ] || [ ! -r "$TRANSCRIPT_PATH" ]; then
+  log_hook_error "transcript_path missing or unreadable"
+  exit 0
+fi
+
+# ============================================================================
+# Recover agent name and output from the transcript JSONL
+# ============================================================================
+
+# Bound the work: only inspect the tail of the transcript. A few hundred
+# lines is enough to cover the latest Task invocation and the agent's
+# final output, and keeps runtime negligible on long sessions.
+TRANSCRIPT_TAIL=$(tail -n 400 "$TRANSCRIPT_PATH" 2>/dev/null || true)
+if [ -z "$TRANSCRIPT_TAIL" ]; then
+  exit 0
+fi
+
+# Agent name: prefer the documented agent_type payload field; fall back
+# to the subagent_type of the most recent Task tool invocation in the
+# transcript. fromjson? makes malformed lines yield nothing.
+AGENT_NAME=$(echo "$INPUT" | jq -r '.agent_type // empty' 2>/dev/null || true)
+if [ -z "$AGENT_NAME" ]; then
+  AGENT_NAME=$(printf '%s\n' "$TRANSCRIPT_TAIL" | jq -Rr '
+    fromjson? | .message.content[]? |
+    select(.type? == "tool_use" and .name? == "Task") |
+    .input.subagent_type // empty
+  ' 2>/dev/null | tail -n 1 || true)
+fi
+
+# Shared convention (also used by load-context.sh and log-skill-usage.sh):
+# an autocode agent is one spawned with subagent_type "autocode:<name>".
+if [ -z "$AGENT_NAME" ] || [[ "$AGENT_NAME" != autocode:* ]]; then
+  exit 0
+fi
+
+# Agent output: text of the most recent sidechain assistant entry
+AGENT_OUTPUT=$(printf '%s\n' "$TRANSCRIPT_TAIL" | jq -Rrs '
+  [split("\n")[] | fromjson? | select(.type? == "assistant" and .isSidechain? == true)]
+  | last
+  | if . == null then ""
+    else ([.message.content[]? | select(.type? == "text") | .text] | join("\n"))
+    end
+' 2>/dev/null || true)
+
+# Fallback: the most recent Task tool result in the parent chain
+if [ -z "$AGENT_OUTPUT" ]; then
+  AGENT_OUTPUT=$(printf '%s\n' "$TRANSCRIPT_TAIL" | jq -Rrs '
+    [split("\n")[] | fromjson? | .message.content[]? | select(.type? == "tool_result")]
+    | last
+    | if . == null then ""
+      else (.content
+            | if type == "array" then ([.[] | select(.type? == "text") | .text] | join("\n"))
+              elif type == "string" then .
+              else "" end)
+      end
+  ' 2>/dev/null || true)
+fi
+
+# If the output cannot be recovered, log it (observable, per the
+# missing-tag fallback rule) and exit
+if [ -z "$AGENT_OUTPUT" ]; then
+  log_hook_error "could not recover output for $AGENT_NAME from transcript"
   exit 0
 fi
 
@@ -32,8 +149,7 @@ fi
 # Find spec directory using shared utility
 # ============================================================================
 
-SCRIPT_DIR="$(dirname "${BASH_SOURCE[0]}")"
-PLUGIN_DIR="$(dirname "$SCRIPT_DIR")"
+PLUGIN_DIR="${CLAUDE_PLUGIN_ROOT:-${AUTOCODE_PLUGIN_ROOT:-$(dirname "$(dirname "$0")")}}"
 FIND_SPEC_SCRIPT="$PLUGIN_DIR/scripts/find-active-spec.sh"
 
 SPEC_DIR=""
@@ -57,25 +173,46 @@ if [ -z "$SPEC_DIR" ] || [ ! -d "$SPEC_DIR" ]; then
   exit 0
 fi
 
+# Extract spec_id from path
+SPEC_ID=$(basename "$SPEC_DIR")
+
 # ============================================================================
-# Detect task completion from agent output
+# Detect task completion or failure from agent output
+# (contract: agents/references/failure-categories.md)
 # ============================================================================
 
 TASK_COMPLETED="false"
+TASK_FAILED="false"
 TASK_ID=""
 
-if [ -n "$AGENT_OUTPUT" ]; then
-  if echo "$AGENT_OUTPUT" | grep -qE '<task-completed[^>]*status="completed"'; then
-    TASK_COMPLETED="true"
-  elif echo "$AGENT_OUTPUT" | grep -qiE '## Task Completed|task.*complete'; then
-    TASK_COMPLETED="true"
-  fi
+if echo "$AGENT_OUTPUT" | grep -qE '<task-completed[^>]*status="completed"'; then
+  TASK_COMPLETED="true"
+elif echo "$AGENT_OUTPUT" | grep -qE '^##[[:space:]]+Task Completed[[:space:]]*$'; then
+  # Anchored heading only; loose phrases like "task could not be
+  # completed" must not count as completion.
+  TASK_COMPLETED="true"
+elif echo "$AGENT_OUTPUT" | grep -qE '<task-completed[^>]*status="failed"'; then
+  TASK_FAILED="true"
+fi
 
-  # Try structured tag first, then bracketed ID
-  TASK_ID=$(echo "$AGENT_OUTPUT" | grep -oE '<task-completed[^>]*task="[^"]*"' | grep -oE 'task="[^"]*"' | head -1 | tr -d 'task="' || echo "")
-  if [ -z "$TASK_ID" ]; then
-    TASK_ID=$(echo "$AGENT_OUTPUT" | grep -oE '\[T[0-9]+\]' | head -1 || echo "")
+# Try structured tag first, then bracketed ID
+TASK_ID=$(echo "$AGENT_OUTPUT" | grep -oE '<task-completed[^>]*task="[^"]*"' | grep -oE 'task="[^"]*"' | head -1 | sed 's/^task="//; s/"$//' || true)
+if [ -z "$TASK_ID" ]; then
+  TASK_ID=$(echo "$AGENT_OUTPUT" | grep -oE '\[T[0-9]+\]' | head -1 || true)
+fi
+
+# ============================================================================
+# Log failures for cross-spec learning (backstop for the task-runner)
+# ============================================================================
+
+if [ "$TASK_FAILED" = "true" ]; then
+  REASON=$(echo "$AGENT_OUTPUT" | grep -oE '<task-completed[^>]*reason="[^"]*"' | grep -oE 'reason="[^"]*"' | head -1 | sed 's/^reason="//; s/"$//' || true)
+  CATEGORY=$(echo "$AGENT_OUTPUT" | grep -oE '<task-completed[^>]*category="[^"]*"' | grep -oE 'category="[^"]*"' | head -1 | sed 's/^category="//; s/"$//' || true)
+  LOG_FAILURE_SCRIPT="$PLUGIN_DIR/scripts/log-failure.sh"
+  if [ -x "$LOG_FAILURE_SCRIPT" ]; then
+    "$LOG_FAILURE_SCRIPT" "$AGENT_NAME" "${CATEGORY:-task_failed}" "${REASON:-${TASK_ID:-unknown}}" "$SPEC_ID" >/dev/null 2>&1 || true
   fi
+  exit 0
 fi
 
 # Only proceed if task was completed
@@ -83,8 +220,67 @@ if [ "$TASK_COMPLETED" != "true" ]; then
   exit 0
 fi
 
-# Extract spec_id from path
-SPEC_ID=$(basename "$SPEC_DIR")
+# Accumulators for the JSON output emitted at the end
+CONTEXT_OUT=""
+SYS_MSG=""
+
+append_context() {
+  if [ -z "$CONTEXT_OUT" ]; then
+    CONTEXT_OUT="$1"
+  else
+    CONTEXT_OUT="$CONTEXT_OUT
+$1"
+  fi
+}
+
+# ============================================================================
+# Verify the artifact audit trail (deterministic enforcement)
+# ============================================================================
+
+# Only the task-runner owns artifact generation (its Step 6); auditing
+# other agents would produce noise.
+if [ "$AGENT_NAME" = "autocode:task-runner" ]; then
+  HANDOFF_FILE="$SPEC_DIR/artifacts/handoff/handoff.md"
+  TASK_ARTIFACT_COUNT=0
+  if [ -n "$TASK_ID" ] && [ -d "$SPEC_DIR/artifacts" ]; then
+    TASK_ARTIFACT_COUNT=$(find "$SPEC_DIR/artifacts" -type f -name "${TASK_ID}_*" -size +1c 2>/dev/null | wc -l | tr -d ' ')
+  fi
+
+  AUDIT_STATUS=""
+  AUDIT_DETAIL=""
+  if [ ! -s "$HANDOFF_FILE" ] && [ "$TASK_ARTIFACT_COUNT" -eq 0 ]; then
+    AUDIT_STATUS="missing"
+    AUDIT_DETAIL="no non-empty handoff.md and no non-empty ${TASK_ID:-task}-scoped artifact files"
+  elif [ ! -s "$HANDOFF_FILE" ]; then
+    AUDIT_STATUS="incomplete"
+    AUDIT_DETAIL="handoff.md is missing or empty"
+  fi
+
+  if [ -n "$AUDIT_STATUS" ]; then
+    append_context "<artifact-audit task=\"$TASK_ID\" spec=\"$SPEC_ID\" status=\"$AUDIT_STATUS\" detail=\"$AUDIT_DETAIL\" />"
+    SYS_MSG="autocode: task $TASK_ID completed but its artifact audit trail is $AUDIT_STATUS ($AUDIT_DETAIL)"
+  fi
+
+  # Optional: judge artifact substance with a read-only Agent SDK call.
+  # Gated behind artifact_judge.enabled in .claude/autocode.yml (default
+  # off: costs tokens and requires node with @anthropic-ai/claude-agent-sdk).
+  CONFIG_FILE=".claude/autocode.yml"
+  JUDGE_ENABLED="false"
+  if [ -f "$CONFIG_FILE" ] && grep -A3 '^artifact_judge:' "$CONFIG_FILE" 2>/dev/null | grep -qE '^[[:space:]]+enabled:[[:space:]]*true'; then
+    JUDGE_ENABLED="true"
+  fi
+
+  JUDGE_SCRIPT="$PLUGIN_DIR/hooks/judge-artifacts.mjs"
+  if [ "$JUDGE_ENABLED" = "true" ] && [ -z "$AUDIT_STATUS" ] && command -v node &>/dev/null && [ -f "$JUDGE_SCRIPT" ]; then
+    JUDGE_RESULT=$(node "$JUDGE_SCRIPT" "$SPEC_DIR" "$TASK_ID" 2>/dev/null || true)
+    JUDGE_PASS=$(echo "$JUDGE_RESULT" | jq -r '.pass // empty' 2>/dev/null || true)
+    JUDGE_REASON=$(echo "$JUDGE_RESULT" | jq -r '.reason // empty' 2>/dev/null || true)
+    if [ "$JUDGE_PASS" = "false" ]; then
+      append_context "<artifact-audit task=\"$TASK_ID\" spec=\"$SPEC_ID\" status=\"insubstantial\" detail=\"$JUDGE_REASON\" />"
+      SYS_MSG="autocode: artifact judge flagged task $TASK_ID artifacts as insubstantial: $JUDGE_REASON"
+    fi
+  fi
+fi
 
 # ============================================================================
 # Check context limits and trigger session summary if needed
@@ -93,24 +289,27 @@ SPEC_ID=$(basename "$SPEC_DIR")
 CHECK_CONTEXT_SCRIPT="$PLUGIN_DIR/scripts/check-context.sh"
 
 if [ -x "$CHECK_CONTEXT_SCRIPT" ]; then
-  CONTEXT_RESULT=$("$CHECK_CONTEXT_SCRIPT" "$SPEC_DIR" 2>/dev/null || echo "OK:0")
+  # Contract: check-context.sh always exits 0 and prints a single line
+  # prefixed OK:, WARNING:, or CRITICAL:. The || true only tolerates a
+  # broken or unexecutable script.
+  CONTEXT_RESULT=$("$CHECK_CONTEXT_SCRIPT" "$SPEC_DIR" 2>/dev/null || true)
 
   case "$CONTEXT_RESULT" in
     CRITICAL:*)
       # Context is critically high - signal for immediate summarization
       ESTIMATED_TOKENS=$(echo "$CONTEXT_RESULT" | cut -d: -f3)
-      echo "<context-critical tokens=\"$ESTIMATED_TOKENS\" spec=\"$SPEC_ID\">"
-      echo "  Context usage is critically high. Session summarization required."
-      echo "  Consider spawning session-summarizer agent before continuing."
-      echo "</context-critical>"
+      append_context "<context-critical tokens=\"$ESTIMATED_TOKENS\" spec=\"$SPEC_ID\">
+  Context usage is critically high. Session summarization required.
+  Consider spawning session-summarizer agent before continuing.
+</context-critical>"
       ;;
     WARNING:*)
       # Context is approaching limit - signal warning
       ESTIMATED_TOKENS=$(echo "$CONTEXT_RESULT" | cut -d: -f3)
-      echo "<context-warning tokens=\"$ESTIMATED_TOKENS\" spec=\"$SPEC_ID\" />"
+      append_context "<context-warning tokens=\"$ESTIMATED_TOKENS\" spec=\"$SPEC_ID\" />"
       ;;
-    OK:*)
-      # Context is fine - no action needed
+    *)
+      # OK, empty, or unparseable - no action needed
       ;;
   esac
 fi
@@ -119,4 +318,14 @@ fi
 # Signal completion
 # ============================================================================
 
-echo "<agent-completed agent=\"$AGENT_NAME\" task=\"$TASK_ID\" spec=\"$SPEC_ID\" />"
+append_context "<agent-completed agent=\"$AGENT_NAME\" task=\"$TASK_ID\" spec=\"$SPEC_ID\" />"
+
+# Plain stdout from SubagentStop never reaches model context; emit the
+# documented JSON output instead. additionalContext reaches Claude,
+# systemMessage is shown to the user.
+jq -cn --arg ctx "$CONTEXT_OUT" --arg msg "$SYS_MSG" '
+  {additionalContext: $ctx}
+  + (if $msg != "" then {systemMessage: $msg} else {} end)
+' 2>/dev/null || log_hook_error "failed to build JSON output"
+
+exit 0

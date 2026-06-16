@@ -1,3 +1,6 @@
+# Go justification categories
+# Categories are evaluated top to bottom; the first category whose pattern
+# matches the file wins. Order more specific categories first.
 categories:
   dependency:
     title: Dependency Change
@@ -12,13 +15,17 @@ categories:
 
   configuration:
     title: Configuration Change
+    # YAML globs are scoped to config/deploy directories on purpose;
+    # a bare "*.yaml" would match every YAML file in the repo.
     patterns:
-      - "*.yaml"
-      - "*.yml"
+      - "config/**"
+      - "configs/**"
+      - "*/config/*"
+      - "deploy/**/*.yaml"
+      - "deploy/**/*.yml"
       - "*.toml"
       - "*.env"
       - "*.env.*"
-      - "*/config/*"
     questions:
       - What behavior does this change?
       - Does this affect production?
@@ -50,4 +57,5 @@ categories:
     questions:
       - Is this adding new tests for new or extracted code?
       - Is this refactoring test structure (no assertion changes)?
+      - Is this updating test doubles or mocks for extracted collaborators?
       - Are you changing assertions to make a failing test pass? **(STOP IF YES)**

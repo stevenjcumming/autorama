@@ -38,6 +38,16 @@ Run once per project to create the config file, install `yq`, and update `.gitig
 /autocode:sync-pr
 ```
 
+All autocode commands are skills; invoke them as slash commands as shown, or describe what you want and Claude will trigger the matching skill.
+
+## Context Hygiene
+
+The workflow spans five or more skill invocations per spec; managing the conversation context between them keeps quality high (too much irrelevant context degrades performance):
+
+- **`/clear` between specs.** A new spec shares nothing with the previous one.
+- **`/compact` between planning and execution.** Planning conversations (new-spec, create-plan, create-tasks) are long; execution does not need their history because `/autocode:execute` re-reads SPEC.md, PLAN.md, and TODO.md from disk. No conversational context is required to start it.
+- Each task-runner gets a fresh context window per task automatically; hygiene applies to your top-level session.
+
 ## Safety Principles
 
 - **Human checkpoints** - Review stage requires approval before submission

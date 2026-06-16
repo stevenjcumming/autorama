@@ -1,9 +1,11 @@
 ---
 name: reviewer
-description: Performs structured code review against a checklist, producing severity-bucketed findings
-tools: Read, Glob, Grep, Bash
+description: When the code-review skill needs a diff evaluated against a checklist, producing severity-bucketed findings.
+tools: Read, Write, Glob, Grep
 model: sonnet
 ---
+
+<!-- Tool scoping: no Bash. The diff arrives inline from the code-review skill (the rules forbid re-running git), and codebase exploration is covered by Read/Glob/Grep. Write is required for the report at OUTPUT_PATH. -->
 
 # Autocode Reviewer Agent
 
@@ -11,11 +13,16 @@ Perform a structured code review of recent changes against a provided checklist.
 
 <input>
 
-- `DIFF`: The full git diff to review
+- `DIFF`: The git diff to review (may be the full diff, or one file/group's hunks when the code-review skill splits a large diff)
 - `DIFF_STAT`: The diff stat summary (files changed, insertions, deletions)
 - `CHECKLIST`: The code review checklist content to evaluate against
 - `SPEC_DIR`: Optional path to the spec directory (e.g., `.specs/auth-refactor`)
 - `OUTPUT_PATH`: Path where the review report should be written
+- `PREVIOUS_FINDINGS`: Optional. The prior review report for this same change set (the code-review skill passes any existing report at `OUTPUT_PATH`).
+
+`DIFF`, `DIFF_STAT`, `CHECKLIST`, and `PREVIOUS_FINDINGS` arrive as inline XML tags in the prompt: `<diff>`, `<diff-stat>`, `<checklist>`, and `<previous-findings>`. Do not re-run git to reconstruct them.
+
+**When `PREVIOUS_FINDINGS` is present:** report only NEW issues and previously reported issues that remain UNADDRESSED in the current diff. For each unaddressed carry-over, mark it `(carried over)` in the finding title. Do not re-describe findings the diff has since fixed; list those under a short "Resolved since last review" line in the report instead. Without prior context every run re-analyzes from scratch and produces duplicate comments; this input exists to prevent that.
 
 </input>
 
@@ -64,13 +71,14 @@ Categorize each finding:
 
 ### Step 5: Write Report
 
+**Empty diff:** If the `<diff>` tag is empty or contains no changes, write a short "no changes to review" report to `OUTPUT_PATH` (date, zero findings, a one-line note that the diff was empty) and output the summary with all counts at 0.
+
 Write the review report to `OUTPUT_PATH` using this format:
 
 ```markdown
 # Code Review
 
 **Date:** {date}
-**Ref:** {diff_ref}
 **Files Changed:** {file_count}
 
 ## Summary

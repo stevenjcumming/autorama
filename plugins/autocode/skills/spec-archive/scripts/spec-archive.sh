@@ -1,12 +1,17 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-set -e
+set -euo pipefail
 
-IDENTIFIER="$1"
+IDENTIFIER="${1:-}"
 
 if [ -z "$IDENTIFIER" ]; then
-  echo "ERROR: No identifier provided"
+  echo "Error: identifier is required"
   echo "Usage: spec-archive.sh <identifier>"
+  exit 1
+fi
+
+if [[ ! "$IDENTIFIER" =~ ^[A-Za-z0-9._-]+$ ]] || [[ "$IDENTIFIER" =~ ^\.+$ ]]; then
+  echo "Error: invalid identifier '$IDENTIFIER' (allowed: letters, digits, '.', '_', '-'; must not be only dots)"
   exit 1
 fi
 
@@ -33,6 +38,11 @@ fi
 
 ARCHIVE_DIR="$HOME/.autocode/specs/$PROJECT_NAME/$IDENTIFIER"
 
+# Never overwrite a prior archive; suffix with a timestamp instead
+if [ -d "$ARCHIVE_DIR" ]; then
+  ARCHIVE_DIR="${ARCHIVE_DIR}-$(date +%Y%m%d%H%M%S)"
+fi
+
 echo "=== Spec Archive ==="
 echo ""
 echo "Project: $PROJECT_NAME"
@@ -42,7 +52,7 @@ echo ""
 
 # Check for REVIEW.md
 if [ ! -f "$SPEC_DIR/REVIEW.md" ]; then
-  echo "WARNING: REVIEW.md not found in $SPEC_DIR"
+  echo "ERROR: REVIEW.md not found in $SPEC_DIR"
   echo "Run /autocode:review $IDENTIFIER first"
   exit 1
 fi
@@ -50,42 +60,32 @@ fi
 # Create archive directory
 mkdir -p "$ARCHIVE_DIR"
 
-# Copy files to archive
-COPIED=0
+# Move everything except REVIEW.md to the archive (mv is the safe path:
+# no copy-then-delete window where a failed copy loses files)
+MOVED=0
 
-for file in SPEC.md PLAN.md TODO.md; do
-  if [ -f "$SPEC_DIR/$file" ]; then
-    cp "$SPEC_DIR/$file" "$ARCHIVE_DIR/"
-    COPIED=$((COPIED + 1))
-    echo "Archived: $file"
+for entry in "$SPEC_DIR"/*; do
+  [ -e "$entry" ] || continue
+  NAME=$(basename "$entry")
+
+  if [ "$NAME" = "REVIEW.md" ]; then
+    continue
+  fi
+
+  if [ -d "$entry" ]; then
+    FILE_COUNT=$(find "$entry" -type f | wc -l | tr -d ' ')
+    mv "$entry" "$ARCHIVE_DIR/"
+    MOVED=$((MOVED + FILE_COUNT))
+    echo "Archived: $NAME/ ($FILE_COUNT files)"
+  else
+    mv "$entry" "$ARCHIVE_DIR/"
+    MOVED=$((MOVED + 1))
+    echo "Archived: $NAME"
   fi
 done
-
-# Copy artifacts directory if it exists
-if [ -d "$SPEC_DIR/artifacts" ]; then
-  cp -r "$SPEC_DIR/artifacts" "$ARCHIVE_DIR/"
-  ARTIFACT_COUNT=$(find "$SPEC_DIR/artifacts" -type f | wc -l | tr -d ' ')
-  COPIED=$((COPIED + ARTIFACT_COUNT))
-  echo "Archived: artifacts/ ($ARTIFACT_COUNT files)"
-fi
-
-echo ""
-
-# Remove archived files from spec directory (keep REVIEW.md)
-for file in SPEC.md PLAN.md TODO.md; do
-  if [ -f "$SPEC_DIR/$file" ]; then
-    rm "$SPEC_DIR/$file"
-    echo "Removed: $SPEC_DIR/$file"
-  fi
-done
-
-if [ -d "$SPEC_DIR/artifacts" ]; then
-  rm -rf "$SPEC_DIR/artifacts"
-  echo "Removed: $SPEC_DIR/artifacts/"
-fi
 
 echo ""
 echo "=== Archive Complete ==="
-echo "Files archived: $COPIED"
+echo "Files archived: $MOVED"
 echo "Location: $ARCHIVE_DIR"
 echo "Preserved: $SPEC_DIR/REVIEW.md"

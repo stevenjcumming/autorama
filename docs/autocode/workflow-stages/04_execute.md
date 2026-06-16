@@ -9,7 +9,7 @@ Execute the Write Tests -> Red -> Code -> Green -> Analysis -> Refactor loop aut
 Autopilot uses an **Agent Harness** inspired architecture where background agents complete individual tasks with clean handoffs between them:
 
 ```
-/autocode:execute (command — lightweight loop owner)
+/autocode:execute (skill, lightweight loop owner)
     │
     ├── Step 3: setup-artifacts.sh + build-task-queue.sh
     │
@@ -30,12 +30,14 @@ Autopilot uses an **Agent Harness** inspired architecture where background agent
     │   │   │   ├── 5. analyzer (static analysis)
     │   │   │   └── 6. refactorer (cleanup)
     │   │   │
+    │   │   ├── PostToolUse Hook: check-edit.sh (Write|Edit|MultiEdit)
+    │   │   │   └── Per-file static analysis; exits 2 to feed errors back
     │   │   └── SubagentStop Hook: on-agent-complete.sh
-    │   │       └── Checks context limits
+    │   │       └── Parses <task-completed> tag, audits artifacts, checks context
     │   │
-    │   └── Parse <task-completed> / <task-failed> status
+    │   └── Parse the single <task-completed> tag (status=completed|failed)
     │
-    └── Step 5: Present final summary
+    └── Step 5: Present final summary (Completed / Failed / Skipped)
 ```
 
 **Key benefits:**
@@ -44,7 +46,7 @@ Autopilot uses an **Agent Harness** inspired architecture where background agent
 - **Manual commits** - Use `/autocode:commit` after tasks complete
 - **Background execution** - Task agents run in background via Task tool
 
-## Command
+## Skill
 
 ```
 /autocode:execute <identifier> [T<n>|P<n>]
@@ -147,8 +149,6 @@ Customize when and how justifications are required for file modifications:
 
 ```yaml
 justification:
-  enabled: true  # Set to false to disable all justifications
-
   categories:
     # Override built-in category or add custom ones
     spec_modification:
@@ -170,7 +170,6 @@ justification:
         - "Has platform team reviewed?"
 
   default:
-    enabled: true  # false = skip unmatched files
     title: "File Modification"
     questions:
       - "What is the purpose of this change?"
@@ -218,10 +217,11 @@ justification:
 │   ├── analyzer - Runs static analysis, reports issues
 │   └── refactorer - Cleans up code
 ├── Hooks:
-│   ├── load-context.sh (PreToolUse/Task) - Loads handoff context and current task
+│   ├── load-context.sh (PreToolUse/Task) - Rewrites the Task prompt (via updatedInput) with handoff context and current task
 │   ├── log-skill-usage.sh (PreToolUse/Task) - Logs agent spawn to usage.jsonl
-│   └── on-agent-complete.sh (SubagentStop) - Context limit check
-└── Repeats until all tasks done or failure
+│   ├── check-edit.sh (PostToolUse/Write|Edit|MultiEdit) - Per-file static analysis, exits 2 to feed errors back
+│   └── on-agent-complete.sh (SubagentStop) - Parses <task-completed> tag, audits artifacts, checks context
+└── Repeats until all tasks done; a setup failure stops the loop, other failures skip dependents and continue
 ```
 
 ### Agents
@@ -253,13 +253,15 @@ for each task in tasks:
         run(test_command)  # Expect failure
 
         # Step 3: Implement (Code → Green, max retries)
+        # output_failure() emits a body (partial results + suggested
+        # alternatives) followed by one <task-completed status="failed" ...> tag
         for attempt in 1..MAX_CODE_RETRIES:
             coder = spawn(coder, task, test_files)
             test_result = run(test_command)
             if tests_pass: break  # GREEN
             category = categorize_failure(test_result)
-            if category == "setup": output_failure(); exit  # Not retryable
-            if attempt == MAX_CODE_RETRIES: output_failure(); exit
+            if category == "setup": output_failure(category="setup"); exit  # Not retryable
+            if attempt == MAX_CODE_RETRIES: output_failure(category); exit
 
         # Step 4: Analysis Phase (after tests pass) — per-rule tracking
         if static_analysis.commands configured:
@@ -289,11 +291,18 @@ for each task in tasks:
         mark_task_complete()
         # Step 8: Write handoff.md directly
         write_handoff(task)
-        output <task-completed>
+        output <task-completed status="completed">
 
     # After task-runner completes:
-    parse result status
-    if failed: output failure, exit loop
+    status, category = parse_task_completed_tag()  # missing/unparseable → failed, unknown
+    if status == "failed":
+        record_failure(task, category, partial_results, alternatives)
+        if category == "setup": break  # setup stops the whole loop
+        else: skip_remaining_same_phase_tasks_after(task) and skip_dependents(task)
+              # independent tasks in later phases still run
+    # else: continue to next task
+
+# Final summary lists Completed, Failed (category + partial results + alternatives), Skipped
 ```
 
 ## Exit Conditions
@@ -301,8 +310,9 @@ for each task in tasks:
 | Condition | Action |
 |-----------|--------|
 | All filtered tasks completed | Exit with success summary |
-| Category retry limit exceeded | Output failure, exit task |
-| Setup error | Pause immediately (no retries) |
+| Category retry limit exceeded (non-setup) | Emit failure tag; skip same-phase tasks after this one plus its dependents; continue independent tasks |
+| Setup error | Emit failure tag and stop the whole loop (no retries) |
+| Missing/unparseable `<task-completed>` tag | Treat as `status=failed category=unknown`; surface raw tail of runner output |
 | Refactor stuck (oscillation) | Accept current state, continue to next task |
 | Refactor stuck (diminishing returns) | Accept current state, continue to next task |
 | All analysis issues deferred | Log warning, continue |
@@ -382,7 +392,6 @@ For LARGE tasks, the coder writes an approach document to `{SPEC_DIR}/artifacts/
 | Justifications | Flagged file modified | `.specs/<identifier>/artifacts/justifications/` |
 | Decisions | Multiple approaches possible | `.specs/<identifier>/artifacts/decisions/` |
 | Assumptions | Inferring unstated requirements | `.specs/<identifier>/artifacts/assumptions/` |
-| Dependencies | Code interconnections | `.specs/<identifier>/artifacts/dependencies/` |
 | Risks | Potential problems identified | `.specs/<identifier>/artifacts/risks/` |
 | Review Hints | Human judgment needed | `.specs/<identifier>/artifacts/review_hints/` |
 | Technical Debt | Shortcuts taken | `.specs/<identifier>/artifacts/debt/` |
@@ -404,8 +413,9 @@ For LARGE tasks, the coder writes an approach document to `{SPEC_DIR}/artifacts/
 
 ```
 plugins/autocode/
-├── commands/
-│   └── execute.md              # Command definition
+├── skills/
+│   └── execute/
+│       └── SKILL.md            # Execute skill definition
 ├── agents/
 │   ├── task-runner.md # Single-task executor (fresh per task)
 │   ├── tester.md     # Test writing (TDD red phase)
@@ -418,10 +428,11 @@ plugins/autocode/
 │       ├── artifact-triggers.md
 │       ├── analysis-parsing.md
 │       └── failure-categories.md
+├── skills/execute/scripts/
+│   ├── validate-autocode.sh   # Prerequisite validation (execute skill)
+│   └── build-task-queue.sh    # Parse TODO.md into task queue (execute skill)
 ├── scripts/
-│   ├── validate-autocode.sh   # Prerequisite validation
 │   ├── setup-artifacts.sh      # Create artifact directories
-│   ├── build-task-queue.sh     # Parse TODO.md into task queue
 │   ├── update-task-status.sh   # Mark tasks complete in TODO.md
 │   ├── check-context.sh        # Context limit detection
 │   ├── read-handoff.sh         # Handoff reader utility
@@ -431,9 +442,11 @@ plugins/autocode/
 │   └── read-history.sh         # Read past usage/failures
 ├── hooks/
 │   ├── hooks.json              # Hook definitions
-│   ├── load-context.sh         # PreToolUse context loader (Task)
+│   ├── load-context.sh         # PreToolUse context loader (Task, rewrites prompt via updatedInput)
 │   ├── log-skill-usage.sh      # PreToolUse agent spawn logger (Task)
-│   └── on-agent-complete.sh    # SubagentStop handler
+│   ├── check-edit.sh           # PostToolUse per-file static analysis (Write|Edit|MultiEdit)
+│   ├── on-agent-complete.sh    # SubagentStop handler (tag parse, artifact audit, context check)
+│   └── judge-artifacts.mjs     # Optional read-only SDK artifact judge (off by default)
 └── templates/
     ├── autocode.yml           # Config template for user projects
     └── artifacts/
@@ -441,35 +454,35 @@ plugins/autocode/
             └── handoff.md      # Handoff template
 ```
 
-### User Project Structure (in `.claude/`)
+### User Project Structure
 
 ```
 .claude/
 ├── autocode.yml              # Configuration (optional, copy from template)
-├── artifacts/                 # Curated/promoted artifacts (user-managed)
-│   └── ...
-└── specs/
-    └── <identifier>/
-        ├── REQUIREMENT.md
-        ├── SPEC.md
-        ├── RESEARCH.md
-        ├── PLAN.md
-        ├── TODO.md            # Updated by autocode
-        └── artifacts/         # Generated during loop
-            ├── justifications/
-            ├── decisions/
-            ├── assumptions/
-            ├── dependencies/
-            ├── risks/
-            ├── review_hints/
-            ├── debt/
-            └── handoff/
-                └── handoff.md
+└── artifacts/                 # Curated/promoted artifacts (user-managed)
+    └── ...
+
+.specs/
+└── <identifier>/
+    ├── REQUIREMENT.md
+    ├── SPEC.md
+    ├── RESEARCH.md
+    ├── PLAN.md
+    ├── TODO.md            # Updated by autocode
+    └── artifacts/         # Generated during loop
+        ├── justifications/
+        ├── decisions/
+        ├── assumptions/
+        ├── risks/
+        ├── review_hints/
+        ├── debt/
+        └── handoff/
+            └── handoff.md
 ```
 
 ## Output
 
-The command provides:
+The skill provides:
 - Progress updates as tasks complete
 - Summary of artifacts generated
 - Final status with completed task count

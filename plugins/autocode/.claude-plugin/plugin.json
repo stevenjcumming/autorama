@@ -1,24 +1,14 @@
 {
   "name": "autocode",
-  "version": "1.0.0-rc.2",
-  "description": "semi-autonomous development workflow toolkit: TDD execution loop, specs, plans, and PR automation",
+  "version": "2.0.0",
+  "description": "Semi-autonomous development workflow toolkit: TDD execution loop, specs, plans, and PR automation",
   "author": {
     "name": "Steven Cumming"
   },
+  "homepage": "https://github.com/stevenjcumming/autopilot",
   "repository": "https://github.com/stevenjcumming/autopilot",
-  "commands": [
-    "./commands/help.md",
-    "./commands/init.md",
-    "./commands/new-spec.md",
-    "./commands/create-plan.md",
-    "./commands/create-tasks.md",
-    "./commands/execute.md",
-    "./commands/review.md",
-    "./commands/code-review.md",
-    "./commands/commit.md",
-    "./commands/sync-pr.md",
-    "./commands/spec-archive.md"
-  ],
+  "license": "MIT",
+  "keywords": ["tdd", "workflow", "automation", "specs", "code-review", "pull-requests"],
   "agents": [
     "./agents/plan-builder.md",
     "./agents/plan-analyzer.md",

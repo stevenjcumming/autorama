@@ -1,8 +1,9 @@
 ---
+name: execute
 description: Use when the user wants to run the autonomous TDD loop (Write Tests / Red / Code / Green / Analysis / Refactor) for a spec that already has SPEC.md, PLAN.md, and TODO.md. Optionally filter by task ID (T<n>) or phase (P<n>).
-allowed-tools: Bash, Read, Edit, Write, Task, Glob, Grep
+allowed-tools: Bash(bash $AUTOCODE_PLUGIN_ROOT/skills/execute/scripts/validate-autocode.sh:*), Bash(bash $AUTOCODE_PLUGIN_ROOT/scripts/log-usage.sh:*), Bash(bash $AUTOCODE_PLUGIN_ROOT/scripts/read-history.sh:*), Bash(bash $AUTOCODE_PLUGIN_ROOT/scripts/setup-artifacts.sh:*), Bash(bash $AUTOCODE_PLUGIN_ROOT/skills/execute/scripts/build-task-queue.sh:*), Read, Task
 argument-hint: <identifier> [T<n>|P<n>]
-model: sonnet
+model: sonnet # the orchestration loop only parses script output and status tags; it does not need a larger model, and sonnet keeps the long loop cheap
 ---
 
 # Autocode
@@ -21,14 +22,14 @@ Execute the Test -> Code -> Refactor loop autonomously until all tasks are compl
 Extract from `$ARGUMENTS`:
 - `IDENTIFIER`: The spec identifier (first argument, e.g., `auth-refactor`)
 - `FILTER`: Optional task/phase filter (second argument, e.g., `T3` or `P1`)
-- Construct `SPEC_DIR` as `.specs/$IDENTIFIER`
+- Construct `SPEC_DIR` as `.specs/{IDENTIFIER}`
 
 ## Step 2: Validate Prerequisites
 
 Run the validation script with both arguments:
 
 ```bash
-bash $AUTOCODE_PLUGIN_ROOT/scripts/validate-autocode.sh $ARGUMENTS
+bash $AUTOCODE_PLUGIN_ROOT/skills/execute/scripts/validate-autocode.sh $ARGUMENTS
 ```
 
 This validates:
@@ -42,7 +43,7 @@ This validates:
 Log execution start and check for relevant history from previous runs:
 
 ```bash
-bash $AUTOCODE_PLUGIN_ROOT/scripts/log-usage.sh "command" "execute" "started" "$IDENTIFIER"
+bash $AUTOCODE_PLUGIN_ROOT/scripts/log-usage.sh "command" "execute" "started" "{IDENTIFIER}"
 ```
 
 Optionally, check for past failures on this spec to inform the run:
@@ -60,7 +61,7 @@ bash $AUTOCODE_PLUGIN_ROOT/scripts/setup-artifacts.sh {SPEC_DIR}
 ```
 
 ```bash
-bash $AUTOCODE_PLUGIN_ROOT/scripts/build-task-queue.sh {SPEC_DIR} {FILTER}
+bash $AUTOCODE_PLUGIN_ROOT/skills/execute/scripts/build-task-queue.sh {SPEC_DIR} {FILTER}
 ```
 
 Parse the output:
@@ -94,12 +95,14 @@ Task(
 
 ### 4.2: Parse Result
 
-Inspect the task-runner result for status tags:
+Inspect the task-runner result for the structured status tag defined in `$AUTOCODE_PLUGIN_ROOT/agents/references/failure-categories.md`:
 - `<task-completed task="{task_id}" status="completed" type="{commit_type}" />` — task succeeded (type is the conventional commit type chosen by the task-runner)
-- `<task-completed task="{task_id}" status="failed" reason="{reason}" />` — task failed
+- `<task-completed task="{task_id}" status="failed" category="{category}" retryable="{true|false}" reason="{reason}" />` — task failed; the body above the tag carries partial results and suggested alternatives
+
+**Missing or unparseable tag:** if the result contains no `<task-completed>` tag, or the tag cannot be parsed (agent died, context exhausted, malformed output), treat the task as `status="failed" category="unknown"`. Never treat a missing tag as success. Include the raw last ~20 lines of the runner output in the failure report so the cause is visible.
 
 Also check for the artifact generation tag:
-- `<artifacts-generated count="N" />` — indicates N artifacts were written/filled by the task-runner's Step 3
+- `<artifacts-generated count="N" />` — indicates N artifacts were written/filled by the task-runner's Step 6
 
 If the task succeeded (`status="completed"`) but the `<artifacts-generated>` tag is missing or `count="0"`, log a warning:
 ```
@@ -110,29 +113,40 @@ This is an observability signal, not a hard gate — do not fail the task or spa
 
 ### 4.3: Handle Failure
 
-If the task failed:
-1. Output failure message:
-   ```markdown
-   ## Autocode Stopped
+Do not exit the loop on every failure. Assess the failure category from the tag and apply this policy:
 
-   **Reason:** Task {task_id} failed
-   **Details:** {reason}
+**`category="setup"` — stop the loop.** An environment problem (missing dependency, broken config) will hit every subsequent task identically. Output:
 
-   ### Current State
-   - Task: {task_id} - {description}
-   - Progress: {completed}/{total} tasks complete
+```markdown
+## Autocode Stopped (setup failure)
 
-   ### To Resume
-   Address the issue and run:
-   ```
-   /autocode:execute {IDENTIFIER}
-   ```
-   ```
-2. Exit the loop
+**Reason:** Task {task_id} failed
+**Category:** setup (environment problem — every remaining task would hit the same wall)
+**Details:** {reason}
+
+### Preserved Progress
+Completed tasks (work is on disk, nothing is rolled back):
+- [x] [{task_id}] {description}
+- ...
+
+### Failure Details
+{partial results and suggested alternatives from the task-runner's failure body}
+
+### To Resume
+Fix the environment issue, then run:
+/autocode:execute {IDENTIFIER}
+```
+
+**Any other category (task-specific failure) — skip dependents, continue independents:**
+1. Record the task as failed (keep the reason, category, and the runner's partial results for the final summary).
+2. Determine which queued tasks to skip:
+   - Tasks in the **same phase** after the failed task (within a phase, ordering is dependency order, so later tasks likely build on the failed one).
+   - Tasks in later phases that **explicitly depend on the failed task** (their description references the failed task's files or output).
+3. Mark those tasks as skipped (do not spawn runners for them) and continue the loop with the remaining independent tasks.
 
 ### 4.4: Continue
 
-Move to the next task in the queue.
+Move to the next non-skipped task in the queue.
 
 ## Step 5: Present Results
 
@@ -153,12 +167,28 @@ After all tasks in the queue have been processed, present a final summary:
 - Total tasks: {total}
 - Completed: {completed_count}
 - Failed: {failed_count}
+- Skipped (dependent on a failed task): {skipped_count}
+
+### Completed Tasks (preserved progress)
+- [x] [{task_id}] {description}
+- ...
+
+### Failed Tasks
+- [ ] [{task_id}] {description} — category={category}, {reason}
+  - Partial results: {from the runner's failure body}
+  - Suggested alternatives: {from the runner's failure body}
+
+### Skipped Tasks
+- [ ] [{task_id}] {description} — skipped because {failed_task_id} failed
 
 ### Next Steps
 1. Review artifacts in `{SPEC_DIR}/artifacts/`
-2. Run `/autocode:review {IDENTIFIER}` to generate a review summary
-3. Run `/autocode:commit` to commit changes
+2. Address failed tasks (see suggested alternatives), then re-run `/autocode:execute {IDENTIFIER}` to pick up failed and skipped tasks
+3. Run `/autocode:review {IDENTIFIER}` to generate a review summary
+4. Run `/autocode:commit` to commit changes
 ```
+
+Omit the Failed/Skipped sections when every task completed.
 
 ## Key Principles
 

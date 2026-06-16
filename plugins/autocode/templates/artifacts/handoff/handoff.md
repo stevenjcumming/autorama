@@ -1,12 +1,25 @@
 ---
 task_id: {task_id}
-status: {completed|failed|paused}
+status: {completed|failed}
 timestamp: {YYYY-MM-DDTHH:MM:SS}
 spec_id: {spec_id}
 agent: {agent_name}
 ---
 
 # Task Handoff
+
+## Facts (never summarize, never paraphrase; copy exactly)
+
+<!-- Identifiers survive summarization only if held verbatim in this block.
+     Fill from real values; write "unknown" rather than guessing. -->
+
+- Spec ID: {spec_id}
+- Current task ID: {task_id}
+- Next task ID: {next_task_id}
+- Test command: `{test_command}`
+- Test file paths: {test_file_paths}
+- Files changed: {files_changed}
+- Failure categories so far: {failure_categories_or_none}
 
 ## Completed Task
 

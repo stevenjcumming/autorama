@@ -1,14 +1,19 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # review.sh - Gather review data for the Review stage
-# Usage: bash $PLUGIN_DIR/scripts/review.sh <spec-identifier>
+# Usage: review.sh <spec-identifier>
 
-set -e
+set -euo pipefail
 
 SPEC_ID="${1:-}"
 
 if [ -z "$SPEC_ID" ]; then
     echo "Error: Spec identifier required"
-    echo "Usage: bash $PLUGIN_DIR/scripts/review.sh <spec-identifier>"
+    echo "Usage: bash $0 <spec-identifier>"
+    exit 1
+fi
+
+if [[ ! "$SPEC_ID" =~ ^[A-Za-z0-9._-]+$ ]] || [[ "$SPEC_ID" =~ ^\.+$ ]]; then
+    echo "Error: invalid identifier '$SPEC_ID' (allowed: letters, digits, '.', '_', '-'; must not be only dots)"
     exit 1
 fi
 
@@ -41,11 +46,31 @@ echo -e "${BLUE}## Changes Summary${NC}"
 echo ""
 
 if git rev-parse --git-dir > /dev/null 2>&1; then
-    # Check if there's a base branch to compare against
-    BASE_BRANCH=$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's@^refs/remotes/origin/@@' || echo "main")
+    # Find a base branch to compare against: origin/HEAD when resolvable,
+    # then origin/main, then a local main
+    BASE_BRANCH=""
+    if ORIGIN_HEAD=$(git symbolic-ref --quiet refs/remotes/origin/HEAD 2>/dev/null); then
+        BASE_BRANCH="origin/${ORIGIN_HEAD#refs/remotes/origin/}"
+    elif git rev-parse --verify --quiet origin/main > /dev/null 2>&1; then
+        BASE_BRANCH="origin/main"
+    elif git rev-parse --verify --quiet main > /dev/null 2>&1; then
+        BASE_BRANCH="main"
+    fi
+
+    CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "")
 
     # Get changed files
-    CHANGED_FILES=$(git diff --name-only "$BASE_BRANCH"...HEAD 2>/dev/null || git diff --name-only HEAD 2>/dev/null || echo "")
+    if [ -z "$BASE_BRANCH" ]; then
+        echo "No base branch found (origin/HEAD, origin/main, or main)."
+        echo "Showing uncommitted changes only."
+        CHANGED_FILES=$(git diff --name-only HEAD 2>/dev/null || echo "")
+    elif [ "$CURRENT_BRANCH" = "${BASE_BRANCH#origin/}" ]; then
+        echo "Currently on the base branch ($CURRENT_BRANCH), so there is no branch diff."
+        echo "Showing uncommitted changes only."
+        CHANGED_FILES=$(git diff --name-only HEAD 2>/dev/null || echo "")
+    else
+        CHANGED_FILES=$(git diff --name-only "$BASE_BRANCH"...HEAD 2>/dev/null || git diff --name-only HEAD 2>/dev/null || echo "")
+    fi
 
     if [ -n "$CHANGED_FILES" ]; then
         FILE_COUNT=$(echo "$CHANGED_FILES" | wc -l | tr -d ' ')
@@ -166,13 +191,15 @@ if [ -d "$REVIEW_HINTS_DIR" ]; then
                 # Extract files to review table
                 echo ""
                 echo "Files to Review:"
-                # Look for the table after "## Files to Review"
-                awk '/^## Files to Review/,/^##/{if(/^\|/ && !/File.*Lines.*Focus/) print}' "$hint_file" 2>/dev/null || true
+                # Print table rows between "## Files to Review" and the next
+                # heading (flag-based: an awk range pattern would start and
+                # end on the same line and never print)
+                awk '/^## Files to Review/{flag=1; next} /^##/{flag=0} flag && /^\|/ && !/File.*Lines.*Focus/' "$hint_file" 2>/dev/null || true
 
                 # Extract specific questions
                 echo ""
                 echo "Questions:"
-                awk '/^## Specific Questions/,/^##/{if(/^[0-9]+\./) print "  "$0}' "$hint_file" 2>/dev/null || true
+                awk '/^## Specific Questions/{flag=1; next} /^##/{flag=0} flag && /^[0-9]+\./{print "  "$0}' "$hint_file" 2>/dev/null || true
 
                 echo ""
                 echo "---"

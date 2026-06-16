@@ -165,7 +165,7 @@ EOF
 **Expected Results:**
 - [ ] Task runner spawns via Task tool
 - [ ] SubagentStop hook (on-agent-complete.sh) triggers on agent stop
-- [ ] Context check and completion signal are emitted after task completes
+- [ ] The `<task-completed>` tag is parsed and the artifact audit and context check run after task completes
 
 **Verification:**
 ```bash
@@ -196,8 +196,9 @@ test -f .specs/test-background/artifacts/handoff/handoff.md
 
 **Test:**
 1. Run a task to completion
-2. Verify `<agent-completed>` signal is emitted
-3. Verify context check runs and emits `<context-warning>` or `<context-critical>` signals when appropriate
+2. Verify the hook parses the `<task-completed>` structured tag from the agent output
+3. Verify the artifact audit runs and emits `<artifact-audit>` when the trail is missing
+4. Verify context check runs and emits `<context-warning>` or `<context-critical>` signals when appropriate
 
 ---
 

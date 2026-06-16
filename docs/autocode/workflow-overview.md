@@ -45,7 +45,7 @@ Gather and document the original requirements for the feature or task. This is t
 
 ### 2. Spec
 
-**Command**: `/autocode:new-spec <identifier>`
+**Skill**: `/autocode:new-spec <identifier>`
 
 Create a specification folder with structured documentation of the requirements.
 
@@ -64,7 +64,7 @@ Create a specification folder with structured documentation of the requirements.
 
 ### 3. Plan
 
-**Command**: `/autocode:create-plan <identifier>`
+**Skill**: `/autocode:create-plan <identifier>`
 
 Generate an implementation plan from the spec using automated research and analysis.
 
@@ -85,7 +85,7 @@ Generate an implementation plan from the spec using automated research and analy
 
 ### 4. Tasks
 
-**Command**: `/autocode:create-tasks <identifier>`
+**Skill**: `/autocode:create-tasks <identifier>`
 
 Convert the implementation plan into a phased TODO checklist.
 
@@ -105,7 +105,7 @@ Convert the implementation plan into a phased TODO checklist.
 
 ### 5. Test → Code → Analysis → Refactor Loop
 
-**Command**: `/autocode:execute <identifier> [T<n>|P<n>]`
+**Skill**: `/autocode:execute <identifier> [T<n>|P<n>]`
 
 Execute the implementation loop autonomously for a spec using the Agent Harness architecture.
 
@@ -114,7 +114,7 @@ Execute the implementation loop autonomously for a spec using the Agent Harness 
 Autopilot uses background agents with clean handoffs between tasks:
 
 ```
-Execute Command
+Execute Skill
     ├── Load context (handoff)
     ├── Spawn Task Agent (background)
     │   └── Test → Code → Analysis → Refactor
@@ -170,16 +170,17 @@ Execute Command
 - **Generates handoff** with session summary for next task
 - Marks task complete in `TODO.md`
 - Moves to next task
+- **Does not halt on the first task failure.** A `category=setup` failure stops the loop; any other failure skips only the remaining same-phase tasks after the failed one plus tasks that explicitly depend on it, then continues with independent tasks
+- The final summary lists Completed, Failed (with category, partial results, and suggested alternatives), and Skipped tasks
 - **Pauses automatically** on:
-  - Repeated analyzer violations (same rule 3+ times)
+  - `category=setup` failures (environment issues)
   - Explicit human review flags
-- Pauses for human input on repeated failures or spec gaps
 
 ---
 
 ### 6. Review
 
-**Command**: `/autocode:review <identifier>`
+**Skill**: `/autocode:review <identifier>`
 
 Human checkpoint to review all changes and artifacts before finalizing.
 
@@ -203,7 +204,7 @@ Human checkpoint to review all changes and artifacts before finalizing.
 
 ### 7. Submit
 
-**Commands**: `/autocode:commit`, `/autocode:sync-pr`
+**Skills**: `/autocode:commit`, `/autocode:sync-pr`
 
 Finalize implementation by creating commits and managing pull requests.
 
@@ -231,8 +232,8 @@ Finalize implementation by creating commits and managing pull requests.
 
 ## Quick Reference
 
-| Stage | Command | Input | Output |
-|-------|---------|-------|--------|
+| Stage | Skill | Input | Output |
+|-------|-------|-------|--------|
 | Spec | `/autocode:new-spec <id>` | Requirements | `REQUIREMENT.md`, `SPEC.md` |
 | Plan | `/autocode:create-plan <id>` | Spec | `RESEARCH.md`, `PLAN.md` |
 | Tasks | `/autocode:create-tasks <id>` | Plan | `TODO.md` |

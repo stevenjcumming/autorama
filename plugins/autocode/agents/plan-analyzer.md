@@ -1,6 +1,6 @@
 ---
 name: plan-analyzer
-description: Analyzes and validates an implementation plan against the codebase
+description: When the plan-builder needs a draft PLAN.md validated against the codebase for gaps, risks, and missed patterns before user review.
 tools: Read, Glob, Grep
 model: sonnet
 ---
@@ -13,7 +13,7 @@ Review the implementation plan, validate assumptions against the codebase, and p
 
 <input>
 
-The spec folder path is provided by the calling agent (e.g., `.specs/spec-123/`).
+- `SPEC_DIR`: Path to the spec folder (e.g., `.specs/spec-123`), passed by the plan-builder.
 
 </input>
 

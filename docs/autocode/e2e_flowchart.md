@@ -1,6 +1,6 @@
 # Master Flowchart
 
-Complete flow of the Autopilot workflow pipeline showing commands, agents, hooks, artifacts, handoffs, and human checkpoints.
+Complete flow of the Autopilot workflow pipeline showing skills, agents, hooks, artifacts, handoffs, and human checkpoints.
 
 ---
 
@@ -42,12 +42,13 @@ Requirements ──> [1] Spec ──> HUMAN ──> [2] Plan ──> HUMAN ─�
            [4] Autocode (/autocode:execute) ──────────────────────────┐
                |                                                        |
                |  ┌──────────────────────────────────────────────┐      |
-               |  │  Execute Command (per task, fresh context)   │      |
+               |  │  Execute Skill (per task, fresh context)     │      |
                |  │     Test → Code → Analysis → Refactor ─┐     │      |
                |  │      ^                                 |     │      |
                |  │      └──── if changes made ────────────┘     │      |
                |  │                                              │      |
-               |  │  Hook: on-agent-complete (context check)     │      |
+               |  │  Hook: on-agent-complete (tag parse,         │      |
+               |  │         artifact audit, context check)       │      |
                |  └──────────────────────────────────────────────┘      |
                |                                                        |
                |  (repeats for each task)                               |
@@ -90,7 +91,7 @@ HUMAN ACTION
     └── Fill out SPEC.md (overview, acceptance criteria, scope)
 ```
 
-**Command**: `/autocode:new-spec <id>`
+**Skill**: `/autocode:new-spec <id>`
 **Agents**: None (script only)
 **Artifacts Generated**: `REQUIREMENT.md`, `SPEC.md`
 **Human Action**: Fill in requirements and spec details
@@ -122,7 +123,7 @@ HUMAN ACTION
     └── Approve plan before proceeding
 ```
 
-**Command**: `/autocode:create-plan <id>`
+**Skill**: `/autocode:create-plan <id>`
 **Agents**: `plan-builder` -> `plan-researcher`, `plan-analyzer`
 **Artifacts Generated**: `RESEARCH.md`, `PLAN.md`
 **Human Action**: Review plan, address gaps, approve
@@ -135,7 +136,7 @@ HUMAN ACTION
 /autocode:create-tasks <id>
     |
     v
-create-tasks command (inline)
+create-tasks skill (inline)
     |
     ├── Reads PLAN.md
     └── Creates TODO.md (phased, atomic tasks with IDs)
@@ -149,8 +150,8 @@ HUMAN ACTION
         └── (Loop back to Spec if tasks reveal missing requirements)
 ```
 
-**Command**: `/autocode:create-tasks <id>`
-**Agents**: None (command writes TODO.md inline)
+**Skill**: `/autocode:create-tasks <id>`
+**Agents**: None (skill writes TODO.md inline)
 **Artifacts Generated**: `TODO.md`
 **Human Action**: Review tasks, verify ordering, approve
 
@@ -203,16 +204,20 @@ HUMAN ACTION
 │  │  │       ├── If changes made ──> loop back to tester + tests    │  │  │
 │  │  │       └── If no changes ──> task complete                    │  │  │
 │  │  │                                                              │  │  │
-│  │  │   Exit: 3+ consecutive test failures = task failure          │  │  │
+│  │  │   Exit: retry limit exceeded = structured failure tag        │  │  │
 │  │  │   Exit: all checks pass, no refactoring = task success       │  │  │
 │  │  └──────────────────────────────────────────────────────────────┘  │  │
 │  │                          |                                         │  │
 │  │                          v                                         │  │
 │  │  ┌─── HOOK: SubagentStop (on-agent-complete.sh) ─────────────────┐ │  │
-│  │  │  1. Check context limits (check-context.sh)                   │ │  │
+│  │  │  1. Recover agent output from transcript                      │ │  │
+│  │  │  2. Parse <task-completed> structured failure tag             │ │  │
+│  │  │  3. Audit artifacts/; emit <artifact-audit> if trail missing  │ │  │
+│  │  │  4. Check context limits (check-context.sh)                   │ │  │
 │  │  │     ├── OK (<150k tokens): continue                           │ │  │
 │  │  │     ├── WARNING (150-200k): emit <context-warning>            │ │  │
 │  │  │     └── CRITICAL (>200k): emit <context-critical>             │ │  │
+│  │  │  (signals emitted as JSON additionalContext/systemMessage)    │ │  │
 │  │  └───────────────────────────────────────────────────────────────┘ │  │
 │  │                          |                                         │  │
 │  │                          v                                         │  │
@@ -229,7 +234,7 @@ HUMAN ACTION
 └──────────────────────────────────────────────────────────────────────────┘
 ```
 
-**Command**: `/autocode:execute <id> [T<n>|P<n>]`
+**Skill**: `/autocode:execute <id> [T<n>|P<n>]`
 **Agents**: `task-runner` (fresh per task) -> `tester`, `coder`, `analyzer`, `refactorer`; `session-summarizer` (on context-critical)
 **Human Action**: Optional review between tasks
 
@@ -265,8 +270,8 @@ HUMAN DECISION
     └── REJECT ───────────> Return to Spec (fundamental issues)
 ```
 
-**Command**: `/autocode:review`
-**Agents**: None (script + command orchestration)
+**Skill**: `/autocode:review`
+**Agents**: None (script + skill orchestration)
 **Human Action**: Review all items, make approve/change/reject decision
 
 ---
@@ -296,8 +301,8 @@ HUMAN ACTION
     └── Merge when approved
 ```
 
-**Command**: `/autocode:commit`, `/autocode:sync-pr`
-**Agents**: None (command orchestration)
+**Skill**: `/autocode:commit`, `/autocode:sync-pr`
+**Agents**: None (skill orchestration)
 **Human Action**: Monitor PR, address feedback, merge
 
 ---
@@ -309,22 +314,29 @@ HUMAN ACTION
 │                    HOOK LIFECYCLE PER TASK                      │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
-│  1. PreToolUse ─── load-context.sh (10s timeout)                │
+│  1. PreToolUse ─── load-context.sh + log-skill-usage.sh         │
 │     │  Matcher: Task                                            │
 │     │  Input: handoff.md, TODO.md                               │
-│     │  Output (injected into agent prompt):                     │
+│     │  load-context rewrites the Task prompt via                │
+│     │  hookSpecificOutput.updatedInput (plain stdout from       │
+│     │  PreToolUse never reaches model context), injecting:      │
 │     │    <handoff-context>   Previous task summary              │
 │     │    <current-task>      Next uncompleted task              │
 │     │    <progress-summary>  Completed/remaining counts         │
+│     │  log-skill-usage logs the agent spawn to usage.jsonl      │
 │     │                                                           │
 │  2. (Agent executes task)                                       │
+│     │  PostToolUse ─── check-edit.sh (Write|Edit|MultiEdit)     │
+│     │    Runs per-file static analysis from                     │
+│     │    static_analysis.on_edit; exits 2 to feed errors back   │
 │     │                                                           │
-│  3. SubagentStop ─── on-agent-complete.sh (60s timeout)         │
+│  3. SubagentStop ─── on-agent-complete.sh                       │
 │     │  Matcher: None (fires for all subagents, filters inside)  │
-│     │  Actions:                                                 │
-│     │    a) Check context ──> <context-warning> or              │
+│     │  Actions (emitted as JSON additionalContext/systemMessage)│
+│     │    a) Recover output, parse <task-completed> tag          │
+│     │    b) Audit artifacts ──> <artifact-audit> if missing     │
+│     │    c) Check context ──> <context-warning> or              │
 │     │                         <context-critical>                │
-│     │    b) Always ──> <agent-completed>                        │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
 ```
@@ -375,12 +387,12 @@ All artifacts written to `.specs/<id>/artifacts/` unless noted.
 | `risks/` | coder | Potential problem identified |
 | `debt/` | coder | Shortcut taken |
 | `review_hints/` | coder | Human judgment needed |
-### Generated by Hooks
+### Generated by Handoff Pipeline
 
-| Artifact | Hook | Trigger |
-|----------|------|---------|
+| Artifact | Writer | Trigger |
+|----------|--------|---------|
 | `handoff/handoff.md` | task-runner (Step 8) | After each task completes |
-| `handoff/SESSION_SUMMARY.md` | session-summarizer (via execute command) | Context usage critical (>200k tokens) |
+| `handoff/SESSION_SUMMARY.md` | session-summarizer (via execute skill) | Context usage critical (>200k tokens) |
 
 ### Generated During Other Stages
 
@@ -425,9 +437,9 @@ All artifacts written to `.specs/<id>/artifacts/` unless noted.
                        ├── plan-researcher (sonnet)
                        └── plan-analyzer (sonnet)
 
-/autocode:create-tasks ────── (inline, no agent — command writes TODO.md directly)
+/autocode:create-tasks ────── (inline, no agent; skill writes TODO.md directly)
 
-/autocode:execute (command — lightweight loop owner)
+/autocode:execute (skill, lightweight loop owner)
                        ├── task-runner (opus, fresh per task)
                        │     ├── tester (sonnet)
                        │     ├── coder (opus)

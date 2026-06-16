@@ -3,7 +3,7 @@
 # Usage: log-failure.sh <agent_name> <failure_type> <description> [spec_id]
 #
 # Failures are appended to $CLAUDE_PLUGIN_DATA/failures.jsonl.
-# The gotchas-report.sh script aggregates these into common patterns.
+# read-history.sh consumes these for cross-spec failure summaries.
 
 set -euo pipefail
 
@@ -39,7 +39,9 @@ if command -v jq &>/dev/null; then
     '{timestamp: $ts, agent: $agent, failure_type: $type, description: $desc, project: $project, spec: $spec}' \
     >> "$LOG_FILE"
 else
-  SAFE_DESC=$(printf '%s' "$DESCRIPTION" | sed 's/"/\\"/g' | head -c 500)
+  # Fallback writer: truncate, strip newlines, then escape backslashes
+  # and double quotes so the output stays valid JSONL
+  SAFE_DESC=$(printf '%s' "$DESCRIPTION" | head -c 500 | tr -d '\n\r' | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g')
   printf '{"timestamp":"%s","agent":"%s","failure_type":"%s","description":"%s","project":"%s","spec":"%s"}\n' \
     "$TIMESTAMP" "$AGENT_NAME" "$FAILURE_TYPE" "$SAFE_DESC" "$PROJECT_DIR" "$SPEC_ID" \
     >> "$LOG_FILE"

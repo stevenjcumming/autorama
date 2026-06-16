@@ -2,17 +2,24 @@
 
 ## Configuration Format
 
+Each entry under `commands:` takes one of two forms: a plain string command, or an object with `command:` and an optional `format:` key (the object form is what the format-detection rules below key off). The block-level `enabled:` switch turns analysis on or off.
+
 ```yaml
 static_analysis:
+  enabled: true                   # Master switch (default: true)
   commands:                       # Commands to run
-    - rubocop                     # Simple string
+    - rubocop                     # Plain string form
     - npm run lint
-    - eslint --format json
-    - reek -c .reek.yml --format json
+    - command: eslint --format json src/   # Object form
+      format: json                # auto, json, text (default: auto)
+    - command: reek -c .reek.yml --format json
+      format: json
     - npm run typecheck
   fail_on_warnings: false         # Block on warnings (default: false)
   max_fix_attempts: 2             # Max fix attempts per issue (default: 2)
 ```
+
+Skip analysis entirely when `enabled: false` or `commands` is empty.
 
 ## Output Format Detection
 
@@ -47,6 +54,8 @@ src/bar.rb:20: [W] Unused variable
 | `error`, `fatal`, `E`, `2` | `error` |
 | `warning`, `warn`, `W`, `1` | `warning` |
 | `info`, `convention`, `C`, `0` | `info` |
+
+Note: ESLint severity `0` means "off"; rules set to 0 produce no messages, so `0` never appears in ESLint output. The `0` mapping exists for other tools that emit it.
 
 ## Blocking Status
 
