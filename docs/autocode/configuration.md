@@ -159,7 +159,7 @@ The `@` import loads `.claude/autocode.yml` into context at session start, so ev
 ```json
 {
   "env": {
-    "AUTOCODE_PLUGIN_ROOT": "/Users/you/.claude/plugins/cache/stevenjcumming/autopilot/plugins/autocode"
+    "AUTOCODE_PLUGIN_ROOT": "/Users/you/.claude/plugins/cache/stevenjcumming/autorama/plugins/autocode"
   }
 }
 ```

@@ -1,6 +1,6 @@
 # Master Flowchart
 
-Complete flow of the Autopilot workflow pipeline showing skills, agents, hooks, artifacts, handoffs, and human checkpoints.
+Complete flow of the Autorama workflow pipeline showing skills, agents, hooks, artifacts, handoffs, and human checkpoints.
 
 ---
 
@@ -157,7 +157,7 @@ HUMAN ACTION
 
 ---
 
-### [4] Autopilot
+### [4] Autorama
 
 ```
 /autocode:execute <id> [T<n>|P<n>]
@@ -307,7 +307,7 @@ HUMAN ACTION
 
 ---
 
-## Hook Lifecycle (Autopilot Loop)
+## Hook Lifecycle (Autorama Loop)
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐

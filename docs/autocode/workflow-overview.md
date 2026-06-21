@@ -111,7 +111,7 @@ Execute the implementation loop autonomously for a spec using the Agent Harness 
 
 #### Agent Harness Architecture
 
-Autopilot uses background agents with clean handoffs between tasks:
+Autorama uses background agents with clean handoffs between tasks:
 
 ```
 Execute Skill
@@ -237,6 +237,6 @@ Finalize implementation by creating commits and managing pull requests.
 | Spec | `/autocode:new-spec <id>` | Requirements | `REQUIREMENT.md`, `SPEC.md` |
 | Plan | `/autocode:create-plan <id>` | Spec | `RESEARCH.md`, `PLAN.md` |
 | Tasks | `/autocode:create-tasks <id>` | Plan | `TODO.md` |
-| Autopilot | `/autocode:execute <id>` | Tasks | Code changes, per-spec artifacts, commits |
+| Autorama | `/autocode:execute <id>` | Tasks | Code changes, per-spec artifacts, commits |
 | Review | `/autocode:review <id>` | Changes, per-spec artifacts | Human decision |
 | Submit | `/autocode:commit`, `/autocode:sync-pr` | Changes | Commits, PR |

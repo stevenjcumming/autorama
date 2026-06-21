@@ -5,8 +5,8 @@
   "author": {
     "name": "Steven Cumming"
   },
-  "homepage": "https://github.com/stevenjcumming/autopilot",
-  "repository": "https://github.com/stevenjcumming/autopilot",
+  "homepage": "https://github.com/stevenjcumming/autorama",
+  "repository": "https://github.com/stevenjcumming/autorama",
   "license": "MIT",
   "keywords": ["tdd", "workflow", "automation", "specs", "code-review", "pull-requests"],
   "agents": [

@@ -1,8 +1,8 @@
-# Autopilot
+# Autorama
 
-Autopilot is a Claude Code plugin marketplace for safe, structured, semi-autonomous software development. 
+Autorama is a Claude Code plugin marketplace for safe, structured, semi-autonomous software development. 
 
-Claude Code is powerful but project-ignorant. It does not know your coding patterns, your team conventions, or your domain context. Generic tools produce generic results. Autopilot closes that gap with project-specific skills, structured development loops, and the context layer Claude needs to work reliably in your codebase. Autopilot makes sure Claude knows your project.
+Claude Code is powerful but project-ignorant. It does not know your coding patterns, your team conventions, or your domain context. Generic tools produce generic results. Autorama closes that gap with project-specific skills, structured development loops, and the context layer Claude needs to work reliably in your codebase. Autorama makes sure Claude knows your project.
 
 | Plugin | Purpose |
 |--------|---------|
@@ -14,7 +14,7 @@ Claude Code is powerful but project-ignorant. It does not know your coding patte
 
 ```bash
 # Add the marketplace
-/plugin marketplace add stevenjcumming/autopilot
+/plugin marketplace add stevenjcumming/autorama
 
 # Install the plugins
 /plugin install autocode@stevenjcumming

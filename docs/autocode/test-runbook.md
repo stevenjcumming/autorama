@@ -1,6 +1,6 @@
 # Integration Test Scenarios
 
-This document describes the integration test scenarios for the Autopilot.
+This document describes the integration test scenarios for the Autorama.
 
 ## Test Setup
 

@@ -72,7 +72,7 @@ Reviews and validates the draft plan against the spec, checking for gaps, risks,
 
 The `create-tasks` skill reads `PLAN.md` and writes `TODO.md` directly (inline) without spawning a separate agent.
 
-### Autopilot Stage
+### Autorama Stage
 
 #### `task-runner`
 

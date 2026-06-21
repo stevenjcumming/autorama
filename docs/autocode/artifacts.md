@@ -39,7 +39,7 @@ This location is for curated artifacts that users manually move there. Examples 
                                    │
                                    ▼
 ┌─────────────────────────────────────────────────────────────────────────┐
-│                         Autopilot Orchestrator                          │
+│                         Autorama Orchestrator                          │
 │                    (Test → Code → Refactor loop)                        │
 └─────────────────────────────────────────────────────────────────────────┘
                                    │

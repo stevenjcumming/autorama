@@ -1,4 +1,4 @@
-# Workflow: Autopilot
+# Workflow: Autorama
 
 ## Purpose
 
@@ -6,7 +6,7 @@ Execute the Write Tests -> Red -> Code -> Green -> Analysis -> Refactor loop aut
 
 ## Architecture
 
-Autopilot uses an **Agent Harness** inspired architecture where background agents complete individual tasks with clean handoffs between them:
+Autorama uses an **Agent Harness** inspired architecture where background agents complete individual tasks with clean handoffs between them:
 
 ```
 /autocode:execute (skill, lightweight loop owner)
@@ -74,7 +74,7 @@ Autopilot uses an **Agent Harness** inspired architecture where background agent
 
 ## Configuration
 
-Autopilot can be customized via `.claude/autocode.yml`:
+Autorama can be customized via `.claude/autocode.yml`:
 
 ```yaml
 # Static analysis configuration
@@ -132,7 +132,7 @@ If a configured command is not installed, autocode logs a warning and continues.
 
 ### Handoff Artifacts
 
-Autopilot generates handoff artifacts after each task. The `task-runner` writes `handoff.md` directly as its final step (Step 8). Each handoff includes:
+Autorama generates handoff artifacts after each task. The `task-runner` writes `handoff.md` directly as its final step (Step 8). Each handoff includes:
 
 1. **Session summary** - Compressed context of what was accomplished
 2. **Files modified** - List of changes with types and descriptions

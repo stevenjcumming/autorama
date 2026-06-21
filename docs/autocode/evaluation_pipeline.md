@@ -5,7 +5,7 @@ The autocode plugin implements a multi-layered evaluation pipeline that gives en
 ## Overview
 
 ```
-Autopilot Execution → Artifacts Generated → Review Checkpoint → Submit
+Autorama Execution → Artifacts Generated → Review Checkpoint → Submit
 ```
 
 ## 1. Artifact Generation During Execution

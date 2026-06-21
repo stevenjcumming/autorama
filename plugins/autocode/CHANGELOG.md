@@ -188,7 +188,7 @@ See [docs/autocode/migrating-to-v2.md](../../docs/autocode/migrating-to-v2.md) f
 
 ## [0.10.0] - 2026-02-19
 
-Initial public release of Autopilot
+Initial public release of autopilot
 
 > **Note:** This is version 0.10.0 (not 1.0.0) because the plugin has not been fully tested.
 
@@ -210,16 +210,16 @@ Initial public release of Autopilot
 <!-- No git tags exist yet, so version links point to the repository root.
      Once releases are tagged, switch these to compare/tag URLs. -->
 
-[Unreleased]: https://github.com/stevenjcumming/autopilot
-[1.0.0-rc.2]: https://github.com/stevenjcumming/autopilot
-[1.0.0-rc.1]: https://github.com/stevenjcumming/autopilot
-[0.15.0]: https://github.com/stevenjcumming/autopilot
-[0.14.3]: https://github.com/stevenjcumming/autopilot
-[0.14.2]: https://github.com/stevenjcumming/autopilot
-[0.14.1]: https://github.com/stevenjcumming/autopilot
-[0.14.0]: https://github.com/stevenjcumming/autopilot
-[0.13.0]: https://github.com/stevenjcumming/autopilot
-[0.12.1]: https://github.com/stevenjcumming/autopilot
-[0.12.0]: https://github.com/stevenjcumming/autopilot
-[0.11.0]: https://github.com/stevenjcumming/autopilot
-[0.10.0]: https://github.com/stevenjcumming/autopilot
+[Unreleased]: https://github.com/stevenjcumming/autorama
+[1.0.0-rc.2]: https://github.com/stevenjcumming/autorama
+[1.0.0-rc.1]: https://github.com/stevenjcumming/autorama
+[0.15.0]: https://github.com/stevenjcumming/autorama
+[0.14.3]: https://github.com/stevenjcumming/autorama
+[0.14.2]: https://github.com/stevenjcumming/autorama
+[0.14.1]: https://github.com/stevenjcumming/autorama
+[0.14.0]: https://github.com/stevenjcumming/autorama
+[0.13.0]: https://github.com/stevenjcumming/autorama
+[0.12.1]: https://github.com/stevenjcumming/autorama
+[0.12.0]: https://github.com/stevenjcumming/autorama
+[0.11.0]: https://github.com/stevenjcumming/autorama
+[0.10.0]: https://github.com/stevenjcumming/autorama

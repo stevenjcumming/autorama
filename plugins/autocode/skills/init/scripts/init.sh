@@ -40,7 +40,7 @@ else
     # title and questions only)
     cat > "$CONFIG_TARGET" << 'EOF'
 # Autocode Configuration
-# See docs for full options: https://github.com/stevenjcumming/autopilot
+# See docs for full options: https://github.com/stevenjcumming/autorama
 
 justification:
   # Default behavior for files that don't match any category
