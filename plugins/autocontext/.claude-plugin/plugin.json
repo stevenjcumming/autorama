@@ -1,0 +1,17 @@
+{
+  "name": "autocontext",
+  "version": "0.1.0",
+  "description": "Generate and maintain directory-scoped CONTEXT.md files for agent guidance",
+  "author": {
+    "name": "Steven Cumming"
+  },
+  "homepage": "https://github.com/stevenjcumming/autorama",
+  "repository": "https://github.com/stevenjcumming/autorama",
+  "license": "MIT",
+  "keywords": ["context", "documentation", "conventions", "agent-guidance"],
+  "agents": [
+    "./agents/context-analyzer.md",
+    "./agents/context-generator.md",
+    "./agents/context-validator.md"
+  ]
+}

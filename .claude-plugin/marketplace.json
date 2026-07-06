@@ -18,6 +18,13 @@
       "source": "./plugins/autoskill",
       "description": "Generate reusable project-specific skills from codebase patterns",
       "tags": ["skills", "automation", "code-generation", "patterns"]
+    },
+    {
+      "name": "autocontext",
+      "version": "0.1.0",
+      "source": "./plugins/autocontext",
+      "description": "Generate and maintain directory-scoped CONTEXT.md files for agent guidance",
+      "tags": ["context", "documentation", "conventions", "agent-guidance"]
     }
   ]
 }
