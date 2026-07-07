@@ -1,5 +1,5 @@
 ---
-name: autoskill-synthesizer
+name: synthesizer
 description: When the build or update skill needs to generate skill file content from discovery output and clarifying answers
 tools: Read
 model: opus
@@ -18,8 +18,9 @@ Generate the complete content for a skill folder based on discovered examples, c
 - `CLARIFYING_ANSWERS`: Developer responses to Phase 4 clarifying questions (scope, edge cases, when to use vs. alternatives, any resolved inconsistencies)
 - `USER_PROVIDED_DOCS` (optional): Documentation sources the developer supplied at build or update time, already fetched by the orchestrating skill. Each entry contains `source`, `type`, `content`, and `fetched_at`. May be empty.
 - `INVOKED_BY`: The skill invoking this agent, either `autoskill:build` or `autoskill:update`. Used to attribute `generated_by` in metadata.json. If absent, default to `autoskill:build`.
-- `TEMPLATE_DIR`: Path to `$AUTOSKILL_PLUGIN_ROOT/templates/` containing `SKILL.template.md` and `metadata.template.json`
-- `GUIDE_PATH`: Path to `$AUTOSKILL_PLUGIN_ROOT/references/skill-output-guide.md`
+- `CURRENT_TIMESTAMP`: A single ISO 8601 UTC timestamp string, captured once by the orchestrating build/update skill via `date -u +%Y-%m-%dT%H:%M:%SZ` and passed down. This agent has no Bash access and cannot produce its own timestamp.
+- `TEMPLATE_DIR`: Path to `${CLAUDE_PLUGIN_ROOT}/templates/` containing `SKILL.template.md` and `metadata.template.json`
+- `GUIDE_PATH`: Path to `${CLAUDE_PLUGIN_ROOT}/references/skill-output-guide.md`
 
 </input>
 
@@ -180,7 +181,7 @@ Create the metadata.json content:
   cannot work without; the field is used by `/autoskill:update` to warn the
   developer when a previously-recorded dependency has disappeared from the
   project. Omit the field entirely if no hard dependencies were identified.
-- `last_updated`: Current ISO 8601 timestamp
+- `last_updated`: Use the supplied `{CURRENT_TIMESTAMP}` value verbatim. Do not generate your own timestamp; you have no Bash access and cannot produce a real one.
 - `generated_by`: Use `{INVOKED_BY}` (`"autoskill:build"` or `"autoskill:update"`)
 
 ### Step 6: Determine Additional Files
@@ -275,21 +276,7 @@ For each additional file, generate its full content. Templates should use the pr
 
 ### Step 7: Assemble Output
 
-Collect all generated content into the structured output format. Verify against the quality checklist from the skill-output-guide before returning:
-
-- SKILL.md has valid frontmatter with name and description
-- Trigger description is specific and action-oriented
-- Steps describe intent, not tool calls or language-specific commands
-- No hardcoded file paths from source examples appear in SKILL.md steps
-- Conventions in metadata.json use the project's actual patterns
-- Edge cases section is present and non-empty
-- Testing section describes the shape of a good test
-- Only files that add value are included
-- If templates exist, they use the project's actual language and conventions
-- Source files in metadata.json are real paths
-- If discovery returned companion files, SKILL.md contains a "Register the new instance" step naming each companion file and describing its edit shape
-- metadata.json contains a `companion_files` field (empty array if discovery returned "none")
-- If USER_PROVIDED_DOCS was non-empty, SKILL.md reflects the docs' terminology and framing; metadata.json `user_provided_docs` lists each source
+Collect all generated content into the structured output format. Before returning, verify your own output against the Quality Checklist section of the skill-output-guide you loaded in Step 1. It is the single authoritative list of checks; do not restate or paraphrase it here.
 
 </process>
 

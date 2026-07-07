@@ -14,7 +14,7 @@
     },
     {
       "name": "autoskill",
-      "version": "1.0.0-rc.1",
+      "version": "1.0.0-rc.2",
       "source": "./plugins/autoskill",
       "description": "Generate reusable project-specific skills from codebase patterns",
       "tags": ["skills", "automation", "code-generation", "patterns"]

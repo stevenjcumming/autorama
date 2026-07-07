@@ -1,5 +1,5 @@
 ---
-name: autoskill-discovery
+name: discovery
 description: When the build or update skill needs to find example files in the codebase that match a pattern description
 tools: Read, Glob, Grep
 model: sonnet
@@ -63,7 +63,7 @@ From all candidates found, select 2-5 examples that:
 
 - Are representative of the pattern (not edge cases or legacy implementations)
 - Show different aspects of the pattern (simple case, complex case, edge case handling)
-- Are recent and actively maintained (prefer files with recent modifications if visible)
+- Are recent and actively maintained: Glob results are ordered by modification time, so when candidates are otherwise equal, prefer ones that sort earlier in a Glob result
 - Are complete implementations (not stubs, scaffolds, or TODO-heavy files)
 
 Read each selected example file fully to capture its structure and conventions.

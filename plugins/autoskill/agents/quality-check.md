@@ -1,5 +1,5 @@
 ---
-name: autoskill-quality-check
+name: quality-check
 description: When the build or update skill needs to validate generated skill content against the quality checklist before writing files
 tools: Read, Glob
 model: sonnet
@@ -14,7 +14,7 @@ Validate generated skill file content against the quality checklist before the i
 - `SKILL_FILES`: The structured `<skill-files>` output from the synthesizer agent, containing all generated file content (SKILL.md, metadata.json, and any additional files)
 - `SKILL_NAME`: Kebab-case name of the skill being generated
 - `DETECTED_STACK`: Project stack information (languages, frameworks, package managers) for validating conventions
-- `GUIDE_PATH`: Path to `$AUTOSKILL_PLUGIN_ROOT/references/skill-output-guide.md` for the quality checklist reference
+- `GUIDE_PATH`: Path to `${CLAUDE_PLUGIN_ROOT}/references/skill-output-guide.md` for the quality checklist reference
 
 </input>
 
@@ -22,25 +22,26 @@ Validate generated skill file content against the quality checklist before the i
 
 ### Step 1: Load Quality Checklist
 
-Read `{GUIDE_PATH}` to load the quality checklist (found in the "Quality Checklist" section). This is the authoritative list of checks to run, numbered in the guide's order:
+Read `{GUIDE_PATH}` to load the quality checklist (found in the "Quality Checklist" section). This is the authoritative list of checks to run, identified by stable slug and listed here in the guide's order:
 
-1. SKILL.md has valid YAML frontmatter with `name` and `description`, within the loader's hard limits (`name` lowercase and hyphenated, matching the skill directory; `description` under 1024 characters)
-2. Trigger description is specific and action-oriented
-3. Steps describe intent, not tool calls or language-specific commands
-4. No hardcoded file paths that only apply to the source examples
-5. Conventions in metadata.json use the project's actual patterns, not generic labels
-6. Edge cases section is present and non-empty
-7. Testing section describes the shape of a good test without assuming a framework
-8. Only files that add value are included (no empty templates or placeholder scripts)
-9. If templates exist, they use the project's actual language and conventions
-10. Source files in metadata.json are real paths that exist in the project
-11. SKILL.md contains a "Register the new instance" step when companion files are present in metadata
-12. metadata.json contains a `companion_files` field (array, possibly empty)
-13. If the developer supplied documentation sources, SKILL.md reflects their terminology and metadata.json `user_provided_docs` lists each source with `type` and `fetched_at`
-14. SKILL.md length is within budget (target under 300 lines, hard ceiling 500)
-15. Every file path referenced in SKILL.md resolves to a known destination (no dangling references)
-16. Every edge case listed is actionable (says *how* to handle it, not just *that* it exists)
-17. If a Quick Checklist section is present, its items mirror the Steps 1:1 or are a strict subset
+1. `frontmatter-valid` — SKILL.md has valid YAML frontmatter with `name` and `description`, within the hard limits (`name` lowercase-hyphenated and matching the skill directory; `description` under 1024 characters)
+2. `trigger-description-quality` — Trigger description is specific and action-oriented
+3. `steps-describe-intent` — Steps describe intent, not tool calls or language-specific commands
+4. `no-hardcoded-paths` — No hardcoded file paths that only apply to the source examples
+5. `conventions-field-quality` — Conventions in metadata.json use the project's actual patterns, not generic labels
+6. `edge-cases-present` — Edge cases section is present and non-empty
+7. `testing-section-present` — Testing section describes the shape of a good test without assuming a framework
+8. `files-add-value` — Only files that add value are included (no empty templates or placeholder scripts)
+9. `templates-use-conventions` — If templates exist, they use the project's actual language and conventions
+10. `source-files-real` — Source files in metadata.json are real paths that exist in the project
+11. `companion-files-in-steps` — When the project has central registration manifests or middleware configuration files relevant to the pattern, SKILL.md contains an explicit "Register the new instance" step
+12. `companion-files-field-present` — metadata.json contains a `companion_files` field (empty array acceptable)
+13. `user-docs-recorded` — If the developer supplied documentation sources, SKILL.md reflects their terminology and framing, and metadata.json `user_provided_docs` lists each source with `type` and `fetched_at`
+14. `length-budget` — SKILL.md is within the length budget: target under 300 lines, hard ceiling 500
+15. `no-dangling-references` — Every file path mentioned in SKILL.md resolves to a known destination (companion file, skill-internal path, or Related Files entry); no dangling references
+16. `edge-cases-actionable` — Every edge case says *how* to handle the situation, not just *that* it exists
+17. `quick-checklist-consistency` — If a Quick Checklist section is present, its items mirror Steps 1:1 or are a strict subset
+18. `no-leaked-placeholders` — No literal `{{` sequence from an un-filled `SKILL.template.md` or `metadata.template.json` instruction block survives into any generated file
 
 ### Step 2: Parse Generated Content
 
@@ -54,14 +55,16 @@ If the `<skill-files>` output is malformed or missing required files (SKILL.md, 
 
 ### Step 3: Validate SKILL.md
 
-**Check 1 - Frontmatter validity:**
+Step 3 runs `frontmatter-valid`, `trigger-description-quality`, `steps-describe-intent`, `no-hardcoded-paths`, `edge-cases-present`, `testing-section-present`, `length-budget`, `no-dangling-references`, `edge-cases-actionable`, `quick-checklist-consistency`, `companion-files-in-steps`, and `no-leaked-placeholders` against SKILL.md and the full file set.
+
+**Check `frontmatter-valid` - Frontmatter validity:**
 - Verify YAML frontmatter is present (delimited by `---` lines)
 - Verify `name` field exists and matches `{SKILL_NAME}`
 - Verify `name` is lowercase and hyphenated (no spaces, underscores, or uppercase); a mismatch with the directory name prevents the skill from loading
 - Verify `description` field exists and is non-empty
 - Verify `description` is under 1024 characters. This is a blocking issue: the loader truncates or rejects longer descriptions, so a description that maximizes phrase coverage past the cap breaks activation entirely
 
-**Check 2 - Trigger description quality:**
+**Check `trigger-description-quality` - Trigger description quality:**
 - Verify the description starts with "When" followed by a specific action verb
 - Verify it references the pattern shape or behavior, not just a framework name
 - Flag generic descriptions like "When working with services" or "When building features"
@@ -79,26 +82,26 @@ If the `<skill-files>` output is malformed or missing required files (SKILL.md, 
   triggers, so a forward reference makes it unreadable at the moment it
   has to make the activation decision.
 
-**Check 3 - Steps describe intent:**
+**Check `steps-describe-intent` - Steps describe intent:**
 - Scan each step for tool call patterns (e.g., `mkdir`, `touch`, `echo`, `cat`, `grep`, `npm run`, `rails generate`)
 - Scan for language-specific commands presented as instructions (acceptable if mentioned as context, not as the step itself)
 - Verify steps use intent language: "Create", "Add", "Define", "Implement", "Configure", "Register"
 
-**Check 4 - No hardcoded example paths:**
+**Check `no-hardcoded-paths` - No hardcoded example paths:**
 - Scan SKILL.md for absolute paths or project-specific paths that look like they come from the source examples
 - Paths in the References section are acceptable (they refer to skill-internal files)
 - Paths used as illustrative examples with clear placeholder markers are acceptable
 
-**Check 6 - Edge cases section:**
+**Check `edge-cases-present` - Edge cases section:**
 - Verify an "Edge Cases" section (or equivalent heading) exists
 - Verify it contains at least one concrete edge case (not just a placeholder heading)
 
-**Check 7 - Testing section:**
+**Check `testing-section-present` - Testing section:**
 - Verify a "Testing" section (or equivalent heading) exists
 - Verify it describes what to test, what to assert, and what constitutes coverage
 - Flag if it names a specific test framework unless the detected stack has exactly one unambiguous choice
 
-**Check 14 - Length budget:**
+**Check `length-budget` - Length budget:**
 - Count the lines in SKILL.md (including frontmatter).
 - Target: under 300 lines. Hard ceiling: 500 lines.
 - Over 300 but under 500: warning. Suggest moving detailed Edge Cases or
@@ -108,7 +111,7 @@ If the `<skill-files>` output is malformed or missing required files (SKILL.md, 
   synthesizer should move the overflow into references and leave pointers
   in SKILL.md.
 
-**Check 15 - Dangling file check (blocking):**
+**Check `no-dangling-references` - Dangling file check (blocking):**
 - For every file path mentioned in SKILL.md Steps, Inline Context, or Edge
   Cases, verify that the path appears in at least one of:
   - `metadata.json` `companion_files`
@@ -121,7 +124,7 @@ If the `<skill-files>` output is malformed or missing required files (SKILL.md, 
   whether it needs to be created. This is a blocking issue because
   dangling references turn into silent failures at use time.
 
-**Check 16 - Non-discriminating edge cases:**
+**Check `edge-cases-actionable` - Non-discriminating edge cases:**
 - For every bullet in the Edge Cases section, verify that the bullet says
   *how* to handle the situation, not just that it exists.
 - Flag bullets like "Handle errors gracefully" or "Watch out for race
@@ -131,7 +134,7 @@ If the `<skill-files>` output is malformed or missing required files (SKILL.md, 
 - This is a warning, not a blocker. A thin edge case is better than none,
   but the synthesizer should be told to expand it.
 
-**Check 17 - Quick Checklist consistency (non-blocking):**
+**Check `quick-checklist-consistency` - Quick Checklist consistency (non-blocking):**
 - If a `## Quick Checklist` section is present, verify that its items
   correspond one-to-one to the Steps, or are a strict subset. Each
   checklist item should map to exactly one step.
@@ -139,43 +142,52 @@ If the `<skill-files>` output is malformed or missing required files (SKILL.md, 
   Steps, or that duplicate the same step multiple times.
 - This is a warning: a mismatched checklist is confusing but not broken.
 
-**Check 11 - Companion files surfaced in SKILL.md:**
+**Check `companion-files-in-steps` - Companion files surfaced in SKILL.md:**
 - Read `companion_files` from metadata.json
 - If non-empty, verify SKILL.md contains a Steps entry directing the implementer to edit each listed companion file
 - Flag as blocking if companion files are listed in metadata but absent from SKILL.md Steps
 
+**Check `no-leaked-placeholders` - No leaked template placeholders (blocking):**
+- Scan every file in SKILL_FILES, not just SKILL.md, for a literal `{{` sequence.
+- A surviving `{{...}}` block indicates an un-filled template instruction block copied verbatim from `SKILL.template.md` or `metadata.template.json` rather than replaced with real, synthesized content.
+- Flag any match as blocking, regardless of which file it appears in (SKILL.md, metadata.json, or any additional generated file such as a template or reference file).
+
 ### Step 4: Validate metadata.json
+
+Step 4 runs `conventions-field-quality`, `source-files-real`, `companion-files-field-present`, and `user-docs-recorded` against metadata.json.
 
 **Structural validation (precondition, like Step 2):**
 - Verify the content is valid JSON; fail immediately with a structural error if not
 - Verify required fields are present: `skill_name`, `description`, `pattern_description`, `source_files`, `dependency_map`, `internal_docs_read`, `companion_files`, `user_provided_docs`, `conventions`, `last_updated`, `generated_by` (these match what the synthesizer's Step 5 is required to emit; `compatibility` is optional)
 
-**Check 5 - Conventions field quality:**
+**Check `conventions-field-quality` - Conventions field quality:**
 - Verify `conventions` uses the project's actual patterns based on the detected stack
 - Flag generic labels like "standard conventions" or "best practices" that do not describe what the project actually does
 
-**Check 10 - Source files are real:**
+**Check `source-files-real` - Source files are real:**
 - Verify `source_files` is a non-empty array
 - Use Glob to verify each listed path exists in the project. A path that does not resolve is a blocking issue (it is either a template placeholder, an example path from the guide, or a hallucinated file)
 
-**Check 12 - Companion files field present:**
+**Check `companion-files-field-present` - Companion files field present:**
 - Verify metadata.json contains a `companion_files` field
 - An empty array is acceptable; a missing field is a warning
 
-**Check 13 - User-provided docs recorded:**
+**Check `user-docs-recorded` - User-provided docs recorded:**
 - Verify metadata.json contains a `user_provided_docs` field (empty array acceptable)
 - If non-empty, verify each entry has `source`, `type`, and `fetched_at`; an entry missing any of these cannot be re-fetched by the update skill and is a warning
 - If non-empty, spot-check that SKILL.md uses the terminology of the supplied sources rather than purely code-derived naming (warning if it clearly does not)
 
 ### Step 5: Validate Additional Files
 
+Step 5 runs `files-add-value` and `templates-use-conventions` against every file beyond SKILL.md and metadata.json.
+
 For each file beyond SKILL.md and metadata.json:
 
-**Check 8 - Files add value:**
+**Check `files-add-value` - Files add value:**
 - Verify the file has substantive content (not just a heading or empty skeleton)
 - Flag any file that could be removed without losing information
 
-**Check 9 - Templates use project conventions:**
+**Check `templates-use-conventions` - Templates use project conventions:**
 - Verify templates use the project's actual language and conventions based on the detected stack
 
 ### Step 6: Compile Results
@@ -195,7 +207,7 @@ Return the validation result using the following structured tags. The build skil
 
 ```
 <quality-result status="pass">
-All 17 quality checks passed.
+All 18 quality checks passed.
 </quality-result>
 ```
 
@@ -205,12 +217,12 @@ All 17 quality checks passed.
 <quality-result status="fail">
 
 <blocking-issues>
-- Check N: <description of what failed and why>
-- Check N: <description of what failed and why>
+- Check no-dangling-references: <description of what failed and why>
+- Check frontmatter-valid: <description of what failed and why>
 </blocking-issues>
 
 <warnings>
-- Check N: <description of the concern and suggested improvement>
+- Check edge-cases-actionable: <description of the concern and suggested improvement>
 </warnings>
 
 <fix-suggestions>
@@ -227,7 +239,7 @@ If there are only warnings and no blocking issues, use `status="pass-with-warnin
 <quality-result status="pass-with-warnings">
 
 <warnings>
-- Check N: <description of the concern and suggested improvement>
+- Check quick-checklist-consistency: <description of the concern and suggested improvement>
 </warnings>
 
 </quality-result>
@@ -239,9 +251,9 @@ If there are only warnings and no blocking issues, use `status="pass-with-warnin
 
 - Do NOT write or modify any files. This agent is read-only and returns a validation result.
 - Do NOT attempt to fix issues yourself. Report them so the build skill can resolve them (by re-prompting the synthesizer or making targeted edits).
-- Be specific in failure descriptions. "Check 3 failed" is not helpful. "Step 4 in SKILL.md uses the command `rails generate model` instead of describing the intent" is helpful.
+- Be specific in failure descriptions. "Check steps-describe-intent failed" is not helpful. "Step 4 in SKILL.md uses the command `rails generate model` instead of describing the intent" is helpful.
 - Apply checks strictly for blocking issues and pragmatically for warnings. A slightly imperfect trigger description should be a warning, not a blocker.
 - Validate against the detected stack context. A testing section that names "pytest" is acceptable if the project uses Python with pytest as its only test framework.
-- Do NOT invent additional checks beyond the quality checklist. The 17 checks from the guide are the authoritative set, and the check numbers here match the guide's checklist order.
+- Do NOT invent additional checks beyond the quality checklist. The 18 checks from the guide are the authoritative set, identified by slug, and the check groupings here match the guide's checklist order and slugs.
 
 </rules>

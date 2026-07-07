@@ -7,17 +7,17 @@ The `/autoskill:build` skill orchestrates a 7-phase workflow. The build skill ac
 ```
   Pattern Description
         ↓
-  1. Understand Request ─── detect stack, resolve name, collect docs
+  1. Understand Request ─── capture timestamp, detect stack, resolve name, collect docs
         ↓
-  2. Discovery ─────────── autoskill-discovery agent (Sonnet)
+  2. Discovery ─────────── discovery agent (Sonnet)
         ↓
   3. No Examples? ──────── fallback options (skip if examples found)
         ↓
   4. Clarifying Questions ─ scope, edge cases, alternatives
         ↓
   5. Generate & Validate
-        ├── Synthesize ──── autoskill-synthesizer agent (Opus)
-        ├── Quality Check ── autoskill-quality-check agent (Sonnet)
+        ├── Synthesize ──── synthesizer agent (Opus)
+        ├── Quality Check ── quality-check agent (Sonnet)
         └── Write Files ─── .claude/skills/<name>/
         ↓
   6. Update Manifest ───── autoskill-manifest.json
@@ -27,14 +27,15 @@ The `/autoskill:build` skill orchestrates a 7-phase workflow. The build skill ac
 
 ### Phase 1: Understand the Request
 
+- Captures a single timestamp (via a narrowly-scoped `Bash(date:*)` grant) reused for every timestamped field this run writes, since none of the delegated agents have Bash access of their own
 - Derives a kebab-case skill name from the pattern description
 - Scans for lockfiles and manifests to detect the project stack (language, frameworks, tooling)
-- Checks for name conflicts in `.claude/skills/` and appends a numeric suffix if needed
-- Asks the developer for optional supporting documentation (URLs or file paths)
+- Parses `$ARGUMENTS` for inline documentation references, so a request like "build a skill for X using docs: https://..." doesn't need a follow-up question
+- If `.claude/skills/<name>/` already exists, or documentation wasn't supplied inline, asks a single combined question covering whichever of the two still needs an answer (update existing / replace / new name; and/or which docs to use) — asked once, before discovery runs, since discovery uses whatever documentation is available to seed its own search
 
 ### Phase 2: Discovery
 
-Delegates to the `autoskill-discovery` agent. The agent searches the codebase using four strategies in order of reliability:
+Delegates to the `discovery` agent. The agent searches the codebase using four strategies in order of reliability:
 
 1. **Directory and naming conventions** - Directories or files whose names match the pattern role
 2. **Structural patterns** - Inheritance, decorators, annotations, registration patterns
@@ -53,7 +54,7 @@ Every discovery response carries a required status (`found`, `empty`, or `search
 
 ### Phase 3: Handle No Examples
 
-If discovery returned status `empty` (the searches ran, the codebase genuinely lacks the pattern), the developer chooses from:
+If discovery returned status `empty` (the searches ran, the codebase genuinely lacks the pattern), autoskill first states what discovery searched and why nothing matched (`<no-examples-reason>`), then the developer chooses from:
 1. Point to a specific example file
 2. Describe the pattern verbally
 3. Share internal architecture docs
@@ -69,8 +70,8 @@ All questions are asked at once (not iteratively). Always asked: scope, edge cas
 
 Three sub-steps:
 
-1. **Synthesize** - The `autoskill-synthesizer` agent reads the templates, guide, examples, and clarifying answers, then generates all skill file content in memory
-2. **Quality check** - The `autoskill-quality-check` agent validates against a checklist. Issues are categorized as blocking (must fix) or warnings (noted for the developer). See the [agent architecture](agent-architecture.md#autoskill-quality-check) for the full checklist
+1. **Synthesize** - The `synthesizer` agent reads the templates, guide, examples, and clarifying answers, then generates all skill file content in memory, using the shared timestamp captured in Phase 1 for every timestamp field it writes
+2. **Quality check** - The `quality-check` agent validates against an 18-check checklist, each identified by a stable slug. Issues are categorized as blocking (must fix) or warnings (noted for the developer). See the [agent architecture](agent-architecture.md#quality-check) for the full checklist
 3. **Write files** - Skill files are written to `.claude/skills/<skill-name>/`
 
 If the quality check fails, the synthesizer is re-prompted with specific issues. If it fails a second time, files are written anyway with unresolved issues noted.
@@ -90,11 +91,11 @@ Summarizes all files written, describes what the skill enables, and notes any qu
 The `/autoskill:update` skill re-runs discovery against the current codebase, generates updated content, and presents a diff for confirmation before overwriting. Unlike build, update never writes without explicit approval.
 
 ```
-  Skill Name
+  Skill Name (or none — autoskill lists candidates and asks)
        ↓
-  1. Validate ──────────── locate skill, read existing files, detect stack
+  1. Validate & Setup ──── locate skill, read existing files, detect stack, capture timestamp
        ↓
-  2. Re-Discovery ──────── autoskill-discovery agent (Sonnet)
+  2. Re-Discovery ──────── discovery agent (Sonnet)
        ├── Compatibility ── verify recorded dependencies still exist
        ↓
   3. Ask About Changes ─── scope changes, new conventions
@@ -103,7 +104,7 @@ The `/autoskill:update` skill re-runs discovery against the current codebase, ge
        ↓
   5. Diff & Confirm ────── show changes, wait for approval
        ↓
-  6. Write Files ──────── overwrite skill folder, update manifest
+  6. Write Files ──────── overwrite skill folder, update manifest (created if missing)
        ↓
   7. Confirm & Close
 ```
@@ -122,7 +123,7 @@ The `/autoskill:update` skill re-runs discovery against the current codebase, ge
 
 ### Compatibility Check
 
-During re-discovery, the update skill reads the `compatibility` field from `metadata.json`. For each entry (gems, npm packages, CLIs, internal libraries), it verifies the dependency still exists in the project. Missing dependencies are flagged as drift, and the developer chooses to proceed, drop the dependency, or investigate.
+During re-discovery, the update skill reads the `compatibility` field from `metadata.json`. For each entry (gems, npm packages, CLIs, internal libraries), it verifies the dependency still exists in the project — CLI checks exclude common noise paths (`node_modules/`, `vendor/`, `.git/`, `log/`, `tmp/`, and stack equivalents) and require a word-boundary match, so a short command name doesn't false-match inside an unrelated longer word. Missing dependencies are flagged as drift, and the developer chooses to proceed, drop the dependency, or investigate.
 
 ---
 

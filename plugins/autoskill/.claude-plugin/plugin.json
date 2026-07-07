@@ -1,9 +1,11 @@
 {
   "name": "autoskill",
-  "version": "1.0.0-rc.1",
+  "version": "1.0.0-rc.2",
   "description": "Generate reusable project-specific skills from codebase patterns",
   "author": {
     "name": "Steven Cumming"
   },
-  "repository": "https://github.com/stevenjcumming/autorama"
+  "repository": "https://github.com/stevenjcumming/autorama",
+  "license": "MIT",
+  "keywords": ["skills", "automation", "code-generation", "patterns"]
 }

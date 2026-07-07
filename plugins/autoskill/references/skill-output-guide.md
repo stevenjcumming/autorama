@@ -271,11 +271,18 @@ fire when relevant and narrow enough to avoid false positives.
 
 ### Good Triggers
 
+The rows below are ordered from minimum bar to target. The short, single-sentence
+rows show the *shape* of a scoped trigger, but on their own they under-cover the
+phrase space: a real generated description should read like the last row, with
+synonyms, enumerated phrasings, and a pushy directive, not stop at the length of
+the first three.
+
 | Trigger | Why It Works |
 |---------|-------------|
-| "When creating a new API endpoint that follows the project's controller pattern" | Scoped to a specific action (new endpoint) and references the project pattern |
-| "When adding a background job that processes items from a queue" | Describes the shape of the work, not a framework |
-| "When implementing a new data migration that transforms existing records" | Clear action with enough specificity to avoid matching unrelated migrations |
+| "When creating a new API endpoint that follows the project's controller pattern" | Scoped to a specific action (new endpoint) and references the project pattern. Minimum bar: passes `trigger-description-quality` but has not yet applied Undertrigger Correction or Cover the Phrase Space below. |
+| "When adding a background job that processes items from a queue" | Describes the shape of the work, not a framework. Same minimum-bar caveat as above. |
+| "When implementing a new data migration that transforms existing records" | Clear action with enough specificity to avoid matching unrelated migrations. Same minimum-bar caveat as above. |
+| "Use when wrapping a third-party or upstream HTTP API behind an internal service client, integration, connector, gateway, or adapter. Triggers on requests like 'integrate with Stripe', 'wrap the billing API', 'add a new upstream', 'build a client for their API', or 'connect to X's service', even if the user never says 'service client'. Make sure to use this skill whenever the user describes adding a new outbound integration, not just when they name the pattern explicitly." | Target form: enumerates 3-5 synonyms for the artifact (service client, integration, connector, gateway, adapter), enumerates 3-5 natural phrasings a developer would actually say, and closes with the pushy directive from Undertrigger Correction. This is what `trigger-description-quality` plus its Sub-check 2a should converge on, not the shorter rows above. |
 
 ### Weak Triggers
 
@@ -409,22 +416,25 @@ Only split when the examples are all canonical and parallel.
 
 ## Quality Checklist
 
+This is the single authoritative list of checks. The synthesizer verifies its own output against this section before returning (rather than restating the checks), and the quality-check agent's per-check *procedures* are keyed to the identifiers below. Every check has a stable slug so identifiers survive future additions or reordering; refer to checks by slug, not by position, in any log, CI assertion, or report.
+
 Before presenting generated skill output, verify:
 
-- [ ] SKILL.md has valid YAML frontmatter with `name` and `description`, within the hard limits (`name` lowercase-hyphenated and matching the skill directory; `description` under 1024 characters)
-- [ ] Trigger description is specific and action-oriented (see guidelines above)
-- [ ] Steps describe intent, not tool calls or language-specific commands
-- [ ] No hardcoded file paths that only apply to the source examples
-- [ ] Conventions in metadata.json use the project's actual patterns, not generic labels
-- [ ] Edge cases section is present and non-empty
-- [ ] Testing section describes the shape of a good test without assuming a framework
-- [ ] Only files that add value are included (no empty templates or placeholder scripts)
-- [ ] If templates exist, they use the project's actual language and conventions
-- [ ] Source files in metadata.json are real paths that exist in the project
-- [ ] When the project has central registration manifests or middleware configuration files relevant to the pattern, SKILL.md contains an explicit "Register the new instance" step
-- [ ] metadata.json contains a `companion_files` field (empty array acceptable)
-- [ ] If the developer supplied documentation sources, SKILL.md reflects their terminology and framing, and metadata.json `user_provided_docs` lists each source with type and fetched_at
-- [ ] SKILL.md is within the length budget: target under 300 lines, hard ceiling 500
-- [ ] Every file path mentioned in SKILL.md resolves to a known destination (companion file, skill-internal path, or Related Files entry); no dangling references
-- [ ] Every edge case says *how* to handle the situation, not just *that* it exists
-- [ ] If a Quick Checklist section is present, its items mirror Steps 1:1 or are a strict subset
+- [ ] `frontmatter-valid` — SKILL.md has valid YAML frontmatter with `name` and `description`, within the hard limits (`name` lowercase-hyphenated and matching the skill directory; `description` under 1024 characters)
+- [ ] `trigger-description-quality` — Trigger description is specific and action-oriented (see guidelines above)
+- [ ] `steps-describe-intent` — Steps describe intent, not tool calls or language-specific commands
+- [ ] `no-hardcoded-paths` — No hardcoded file paths that only apply to the source examples
+- [ ] `conventions-field-quality` — Conventions in metadata.json use the project's actual patterns, not generic labels
+- [ ] `edge-cases-present` — Edge cases section is present and non-empty
+- [ ] `testing-section-present` — Testing section describes the shape of a good test without assuming a framework
+- [ ] `files-add-value` — Only files that add value are included (no empty templates or placeholder scripts)
+- [ ] `templates-use-conventions` — If templates exist, they use the project's actual language and conventions
+- [ ] `source-files-real` — Source files in metadata.json are real paths that exist in the project
+- [ ] `companion-files-in-steps` — When the project has central registration manifests or middleware configuration files relevant to the pattern, SKILL.md contains an explicit "Register the new instance" step
+- [ ] `companion-files-field-present` — metadata.json contains a `companion_files` field (empty array acceptable)
+- [ ] `user-docs-recorded` — If the developer supplied documentation sources, SKILL.md reflects their terminology and framing, and metadata.json `user_provided_docs` lists each source with type and fetched_at
+- [ ] `length-budget` — SKILL.md is within the length budget: target under 300 lines, hard ceiling 500
+- [ ] `no-dangling-references` — Every file path mentioned in SKILL.md resolves to a known destination (companion file, skill-internal path, or Related Files entry); no dangling references
+- [ ] `edge-cases-actionable` — Every edge case says *how* to handle the situation, not just *that* it exists
+- [ ] `quick-checklist-consistency` — If a Quick Checklist section is present, its items mirror Steps 1:1 or are a strict subset
+- [ ] `no-leaked-placeholders` — No `{{...}}` template instruction block from `SKILL.template.md` or `metadata.template.json` survives into generated output; every such block must be replaced with real content, never emitted verbatim

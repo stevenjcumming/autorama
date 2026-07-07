@@ -1,20 +1,25 @@
 ---
 name: build
 description: Use when the user wants to build a skill from codebase patterns. Triggers on "build a skill for", "capture how we", "make a skill from", "create a skill for", "codify how we do", or similar requests to turn a project pattern into a reusable skill.
-allowed-tools: Read, Edit, Write, Glob, Grep, Task, WebFetch
+allowed-tools: Read, Edit, Write, Glob, Grep, Task, WebFetch, Bash(date:*)
 argument-hint: <pattern description>
-model: opus
 ---
 
 # Autoskill Build
 
 Generate a reusable, project-specific skill from codebase patterns. This skill orchestrates a 7-phase workflow: understand the request, discover examples, handle missing examples, ask clarifying questions, generate and write skill files, update the manifest, and confirm.
 
+Before starting, read `${CLAUDE_PLUGIN_ROOT}/references/orchestration.md`. It holds the stack-detection procedure and the exact discovery, synthesizer, and quality-check Task invocations referenced by phase below, shared verbatim with the `autoskill:update` skill.
+
 ## Arguments
 
-- `$ARGUMENTS` contains the natural-language pattern description (e.g., "how we build API endpoints", "our background job pattern", "the way we write data access layers")
+- `$ARGUMENTS` contains the natural-language pattern description (e.g., "how we build API endpoints", "our background job pattern", "the way we write data access layers"), and may optionally contain inline documentation references (URLs or absolute file paths) the developer supplied up front (e.g. "build a skill for our service clients using docs: https://wiki.internal/service-clients").
 
 ## Phase 1: Understand the Request
+
+### 1.0 Capture the Current Timestamp
+
+Run the "Capture CURRENT_TIMESTAMP" procedure from `references/orchestration.md` once, before anything else in this workflow. Reuse the resulting `CURRENT_TIMESTAMP` value for every timestamp field this run writes (`fetched_at` in 1.4, the `CURRENT_TIMESTAMP` input to the synthesizer in Phase 5, and `last_updated` in the manifest in Phase 6). Do not call `date` again later in the same run.
 
 ### 1.1 Extract Pattern Name
 
@@ -28,40 +33,29 @@ If the description is too ambiguous to derive a clear name, ask the user for a s
 
 ### 1.2 Detect Project Stack
 
-Scan the project root for lockfiles and manifests to determine the project's language(s), frameworks, and tooling:
+Follow the "Stack Detection" procedure in `references/orchestration.md`. Record the result as `DETECTED_STACK`.
 
-- Check for `package.json`, `yarn.lock`, `pnpm-lock.yaml`, `bun.lockb` (JavaScript/TypeScript ecosystem)
-- Check for `Gemfile`, `Gemfile.lock` (Ruby ecosystem)
-- Check for `go.mod`, `go.sum` (Go ecosystem)
-- Check for `pyproject.toml`, `requirements.txt`, `Pipfile`, `poetry.lock` (Python ecosystem)
-- Check for `Cargo.toml`, `Cargo.lock` (Rust ecosystem)
-- Check for `pom.xml`, `build.gradle`, `build.gradle.kts` (Java/Kotlin ecosystem)
-- Check for `composer.json` (PHP ecosystem)
-- Check for `mix.exs` (Elixir ecosystem)
+### 1.3 Parse Inline Documentation References
 
-Also note the top-level directory structure (e.g., `src/`, `app/`, `lib/`, `pkg/`, `internal/`) as it indicates organizational conventions.
+Before asking anything, scan `$ARGUMENTS` for documentation references the developer already supplied inline: absolute file paths and URLs. If found, treat these as pre-supplied sources for Phase 1.5 (skip asking about them there). If `$ARGUMENTS` contains none, Phase 1.5 asks normally.
 
-Record the detected stack as `DETECTED_STACK` for use in later phases.
-
-### 1.3 Resolve Name Conflicts
+### 1.4 Resolve Name Conflicts
 
 Check whether `.claude/skills/<skill-name>/` already exists.
 
-- If it does not exist, use the name as-is.
-- If it exists, append an incrementing numeric suffix: `<skill-name>-2`, `<skill-name>-3`, etc. Find the first unused suffix.
-- Inform the user of the final name if a suffix was added: "A skill named `<skill-name>` already exists. Creating `<skill-name>-2` instead. Use the `autoskill:update` skill to modify an existing skill."
+- If it does not exist, use the name as-is. No conflict; proceed straight to 1.5 without asking anything there either, unless 1.5 still needs to ask about documentation.
+- If it exists, a conflict needs the developer's input. A silent auto-suffix (`<skill-name>-2`) is almost always wrong: two skills with overlapping trigger descriptions compete for activation forever, and the collision is usually a signal the developer wanted `autoskill:update`, not a sibling. Fold this into the single combined question in 1.5 instead of asking about it separately.
 
-### 1.4 Collect Supporting Documentation
+### 1.5 Ask the One Combined Question (Naming + Documentation)
 
-Before discovery runs, give the developer a chance to point to authoritative documentation that describes this pattern. Ask once:
+Ask at most one question here, before discovery runs, combining whatever of the following two topics still needs an answer after 1.3 and 1.4:
 
-> "Do you have any documentation I should reference while building this skill? You can paste:
-> - URLs (e.g., architecture docs, ADRs, RFCs, framework guides, Notion exports, internal wiki pages)
-> - Absolute file paths to docs on your machine (e.g., /Users/you/notes/pattern.md)
->
-> Paste one per line, or reply 'none'."
+- **Naming**, only if 1.4 found a conflict: "A skill named `<skill-name>` already exists. Would you like to update it instead (hand off to `autoskill:update`), replace it, or pick a new name for this one?" Wait for and honor their choice: "update" hands off to the update skill and this workflow stops here; "replace" continues build under the same name and Phase 5.3/6 overwrite the existing skill; a new name restarts from 1.1 with the developer's chosen name.
+- **Documentation**, only if 1.3 found no inline references: "Do you have any documentation I should reference while building this skill? You can paste: URLs (architecture docs, ADRs, RFCs, framework guides, Notion exports, internal wiki pages) or absolute file paths to docs on your machine. Paste one per line, or reply 'none'."
 
-Parse the response into a list of sources. For each:
+If neither topic needs asking (no conflict, and docs were already supplied inline), skip this step entirely and proceed straight to Phase 2. Discovery uses whatever documentation ends up available, so resolving this before Phase 2 (rather than deferring to Phase 4) keeps discovery's Step 1 and Step 6 seeded correctly.
+
+Parse whatever documentation sources result (inline from 1.3, or from this question) into a list. For each:
 
 - **Absolute file path**: verify the path exists and is readable, then use Read to load its full content
 - **URL**: use WebFetch to retrieve the content; treat HTTP errors as a soft failure, warn the developer, and continue without that source
@@ -72,54 +66,31 @@ Record the successfully-loaded sources as `USER_PROVIDED_DOCS`, a structured lis
 - `source`: the original URL or absolute path (exact string the user supplied)
 - `type`: "url" or "path"
 - `content`: the full text the tool retrieved
-- `fetched_at`: current ISO 8601 timestamp (so update re-runs can compare)
+- `fetched_at`: `CURRENT_TIMESTAMP` from 1.0 (so update re-runs can compare)
 
-If the developer replies "none" or provides nothing, set `USER_PROVIDED_DOCS` to an empty list. Do NOT halt the workflow on empty; this is an optional affordance.
+If no documentation is available (inline, or the developer replies "none"), set `USER_PROVIDED_DOCS` to an empty list. Do NOT halt the workflow on empty; this is an optional affordance.
 
 The list is passed to Phase 2 (discovery) and Phase 5 (synthesis). Discovery uses it to seed Step 1 (Understand the Pattern) and Step 6 (Internal Documentation). Synthesis uses it as authoritative context alongside observations.
 
 ## Phase 2: Discovery
 
-Delegate example discovery to the `autoskill-discovery` agent.
-
-```
-Task(
-  subagent_type="autoskill:autoskill-discovery",
-  prompt="Discover examples of the following pattern in this codebase.
-
-  PATTERN_DESCRIPTION: {pattern_description}
-  DETECTED_STACK: {detected_stack}
-  USER_PROVIDED_DOCS: {user_provided_docs}
-
-  Search the codebase using the strategies in your process steps. Return structured output with <status>, <examples>, <dependency-map>, <test-files>, <companion-files>, <observations>, and <internal-docs> tags."
-)
-```
-
-Parse the agent's response to extract:
-
-- `<status>` tag content (required: `result` of `found`, `empty`, or `search-failed`, plus the `patterns-attempted` list)
-- `<examples>` tag content (list of example files, or "none")
-- `<dependency-map>` tag content
-- `<test-files>` tag content (example-to-test-file pairings, used by the synthesizer to decide whether a test template is warranted)
-- `<companion-files>` tag content (list of companion files, or "none")
-- `<observations>` tag content
-- `<internal-docs>` tag content
+Run the "Discovery Invocation" procedure from `references/orchestration.md`, with `{pattern_description}` set to the pattern description from Phase 1, `{detected_stack}` set to `DETECTED_STACK`, and `{user_provided_docs}` set to `USER_PROVIDED_DOCS`.
 
 ### 2.1 Branch on Discovery Status
 
-Branch on the `result` field of `<status>`:
+Follow the "Discovery Status Branching" rules in `references/orchestration.md`:
 
-- **`found`**: Examples exist. Skip Phase 3 and go directly to Phase 4.
-- **`empty`**: The searches ran successfully but the codebase genuinely lacks the pattern. Proceed to Phase 3 (ask the user). Do NOT retry discovery; re-running queries that completed and matched nothing will always return nothing.
-- **`search-failed`**: The search itself could not complete (tool errors, unreadable paths, or every strategy aborted before producing results). Do NOT treat this as empty. Read the `patterns-attempted` list and re-run the discovery Task once with different patterns: broaden or rephrase the structural signals, try alternate naming conventions, or relax directory assumptions that the attempted patterns show were too narrow. If the retry also returns `search-failed`, surface the failure to the developer, listing the patterns attempted in both runs, and ask how to proceed (e.g., point to an example file or a directory to search). Do not silently fall through to Phase 3.
-
-If the `<status>` tag is missing from the response (a non-conforming agent reply), treat it as `search-failed` and follow that branch.
+- **`found`**: Skip Phase 3 and go directly to Phase 4.
+- **`empty`**: Proceed to Phase 3.
+- **`search-failed`**: Handled per the shared retry rule; if the retry also fails, surface to the developer and wait for guidance rather than falling through to Phase 3.
 
 ## Phase 3: Handle No Examples Found
 
-If discovery returned status `empty`, present a graceful message to the developer:
+If discovery returned status `empty`, present a graceful message to the developer that includes the `<no-examples-reason>` discovery returned (what was searched and why nothing matched), then the options:
 
-> I could not find existing examples of this pattern in your codebase. Here are some options:
+> I could not find existing examples of this pattern in your codebase. {no-examples-reason}
+>
+> Here are some options:
 >
 > 1. **Point me to an example file** - If you know a file that implements this pattern, share its path and I will use it as a starting point.
 > 2. **Describe the pattern** - Tell me how this pattern works in your project and I will draft a skill from your description.
@@ -149,52 +120,15 @@ Wait for the developer to answer. Record their responses as `CLARIFYING_ANSWERS`
 
 ### 5.1 Generate Skill Content
 
-Delegate skill generation to the `autoskill-synthesizer` agent.
-
-```
-Task(
-  subagent_type="autoskill:autoskill-synthesizer",
-  prompt="Generate the complete skill folder content for the following pattern.
-
-  SKILL_NAME: {skill_name}
-  PATTERN_DESCRIPTION: {pattern_description}
-  DETECTED_STACK: {detected_stack}
-  DISCOVERY_OUTPUT: {discovery_output}
-  CLARIFYING_ANSWERS: {clarifying_answers}
-  USER_PROVIDED_DOCS: {user_provided_docs}
-  INVOKED_BY: autoskill:build
-  TEMPLATE_DIR: $AUTOSKILL_PLUGIN_ROOT/templates/
-  GUIDE_PATH: $AUTOSKILL_PLUGIN_ROOT/references/skill-output-guide.md
-
-  Return all file content in <skill-files> tags. Do not write any files."
-)
-```
+Run the "Synthesizer Invocation" procedure from `references/orchestration.md`, with `{skill_name}`, `{pattern_description}`, `{detected_stack}`, `{discovery_output}`, `{clarifying_answers}` (= `CLARIFYING_ANSWERS`), and `{user_provided_docs}` (= `USER_PROVIDED_DOCS`) filled in from the phases above, `{current_timestamp}` set to the `CURRENT_TIMESTAMP` captured in 1.0, and `{invoked_by}` set to `autoskill:build`.
 
 Parse the `<skill-files>`, `<file-summary>`, and `<quality-notes>` tags from the response.
 
 ### 5.2 Quality Check
 
-Delegate quality validation to the `autoskill-quality-check` agent.
+Run the "Quality Check Invocation" procedure from `references/orchestration.md`, with `{skill_files_output}`, `{skill_name}`, and `{detected_stack}` filled in.
 
-```
-Task(
-  subagent_type="autoskill:autoskill-quality-check",
-  prompt="Validate the following generated skill content.
-
-  SKILL_FILES: {skill_files_output}
-  SKILL_NAME: {skill_name}
-  DETECTED_STACK: {detected_stack}
-  GUIDE_PATH: $AUTOSKILL_PLUGIN_ROOT/references/skill-output-guide.md
-
-  Return a <quality-result> tag with status and any issues found."
-)
-```
-
-Parse the `<quality-result>` tag:
-
-- **status="pass"**: Proceed to writing.
-- **status="pass-with-warnings"**: Proceed to writing. Note warnings for the developer in Phase 7.
-- **status="fail"**: Read the `<blocking-issues>` and `<fix-suggestions>`. Apply the suggested fixes to the generated content in memory (edit the parsed file content directly). If fixes require re-generation, re-prompt the synthesizer with the specific issues to address. Then re-run the quality check. If it fails a second time, proceed anyway and note the unresolved issues for the developer.
+Parse the `<quality-result>` tag and follow the pass / pass-with-warnings / fail handling described there.
 
 ### 5.3 Write Files
 
@@ -226,7 +160,7 @@ Each entry has the following fields:
       "path": ".claude/skills/<skill-name>/",
       "description": "<one-line description from SKILL.md frontmatter>",
       "pattern_type": "<free-form label describing the pattern category>",
-      "last_updated": "<ISO 8601 timestamp>"
+      "last_updated": "<CURRENT_TIMESTAMP from 1.0>"
     }
   ]
 }
@@ -250,5 +184,5 @@ If the pattern is complex (more than 3 files generated, or the SKILL.md is longe
 
 - This skill acts as an orchestrator. The heavy lifting (discovery, synthesis, quality checking) is delegated to specialized agents via Task().
 - All phases are intent-driven. No phase prescribes specific tool calls, grep patterns, or language-specific commands. Claude adapts its approach based on the detected stack.
-- The skill-output-guide at `$AUTOSKILL_PLUGIN_ROOT/references/skill-output-guide.md` serves as self-reference for quality standards throughout the workflow.
+- `references/orchestration.md` and `references/skill-output-guide.md`, both under `${CLAUDE_PLUGIN_ROOT}`, serve as self-reference for orchestration mechanics and quality standards throughout the workflow.
 - Generated skills use only the files they need. A simple pattern may produce just SKILL.md and metadata.json. A complex pattern may also include templates, references, or scripts.

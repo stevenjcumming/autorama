@@ -21,7 +21,7 @@ Claude Code is powerful but project-ignorant. It does not know your coding patte
 /plugin install autoskill@stevenjcumming
 ```
 
-After installing, restart Claude Code so the plugins' hooks and settings take effect. The same applies after running each plugin's init skill (`/autoskill:init`, `/autocode:init`): both write settings that are only loaded when a session starts.
+After installing, restart Claude Code so the plugins' hooks and settings take effect. `autoskill` needs no further setup after that: it resolves its own install path via Claude Code's native `${CLAUDE_PLUGIN_ROOT}` variable, so `/autoskill:build` works immediately. `autocode` still has its own init skill (`/autocode:init`), which writes settings that are only loaded when a session starts; run it once per project and restart again afterward.
 
 ---
 
@@ -52,7 +52,7 @@ A structured TDD workflow with specialized agents for autonomous execution and h
 A skill generation engine that discovers codebase patterns and generates Claude Code skills so future sessions follow your team's conventions automatically.
 
 - [Overview](docs/autoskill/overview.md) - What autoskill does and skill summary
-- [Usage Guide](docs/autoskill/usage-guide.md) - Step-by-step init, build, and update instructions
+- [Usage Guide](docs/autoskill/usage-guide.md) - Step-by-step build and update instructions
 - [How It Works](docs/autoskill/how-it-works.md) - Build and update workflows under the hood
 - [Agent Architecture](docs/autoskill/agent-architecture.md) - Discovery, synthesizer, and quality-check agents
 - [Generated Output](docs/autoskill/generated-output.md) - Skill folder structure and metadata

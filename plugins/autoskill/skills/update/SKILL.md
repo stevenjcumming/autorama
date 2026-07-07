@@ -1,26 +1,31 @@
 ---
 name: update
 description: Use when the user wants to update an existing autoskill with current codebase patterns. Triggers on "update skill", "refresh skill", "re-sync skill", or similar requests to bring an existing skill up to date with how the codebase has evolved.
-allowed-tools: Read, Edit, Write, Glob, Grep, Task, WebFetch
+allowed-tools: Read, Edit, Write, Glob, Grep, Task, WebFetch, Bash(date:*)
 argument-hint: <skill-name>
-model: opus
 ---
 
 # Autoskill Update
 
 Update an existing autoskill by re-running discovery against the current codebase, generating updated skill content, and presenting a diff for confirmation before overwriting.
 
+Before starting, read `${CLAUDE_PLUGIN_ROOT}/references/orchestration.md`. It holds the stack-detection procedure and the exact discovery, synthesizer, and quality-check Task invocations referenced by phase below, shared verbatim with the `autoskill:build` skill.
+
 ## Arguments
 
-- `$ARGUMENTS` contains the name of the existing skill to update (e.g., `api-endpoint`, `background-job`)
+- `$ARGUMENTS` contains the name of the existing skill to update (e.g., `api-endpoint`, `background-job`). May be empty.
 
-## Phase 1: Validate Target Skill
+## Phase 1: Validate Target Skill and Setup
+
+### 1.0 Handle a Missing Argument
+
+If `$ARGUMENTS` is empty, list the skills available to update: read `.claude/skills/autoskill-manifest.json` if it exists (its `name` entries), or, if the manifest is missing, scan `.claude/skills/*/metadata.json` for entries whose `generated_by` field starts with `autoskill:`. Present the list and ask the developer which one they want to update. Once they answer, treat their choice as `$ARGUMENTS` and continue at 1.1.
 
 ### 1.1 Locate Existing Skill
 
 Check whether `.claude/skills/<skill-name>/` exists.
 
-- If it does not exist, list available skills from `.claude/skills/autoskill-manifest.json` (if it exists) or by scanning `.claude/skills/` subdirectories. Present the list and ask: "No skill named `<skill-name>` found. Did you mean one of these?"
+- If it does not exist, list available skills the same way as 1.0 and ask: "No skill named `<skill-name>` found. Did you mean one of these?"
 - If it exists, proceed.
 
 ### 1.2 Read Existing Skill
@@ -35,22 +40,13 @@ Read `pattern_description` from `metadata.json` and record it as `EXISTING_PATTE
 
 ### 1.3 Detect Project Stack
 
-Scan the project root for lockfiles and manifests to determine the project's language(s), frameworks, and tooling:
+Follow the "Stack Detection" procedure in `references/orchestration.md`. Record the result as `DETECTED_STACK`.
 
-- Check for `package.json`, `yarn.lock`, `pnpm-lock.yaml`, `bun.lockb` (JavaScript/TypeScript ecosystem)
-- Check for `Gemfile`, `Gemfile.lock` (Ruby ecosystem)
-- Check for `go.mod`, `go.sum` (Go ecosystem)
-- Check for `pyproject.toml`, `requirements.txt`, `Pipfile`, `poetry.lock` (Python ecosystem)
-- Check for `Cargo.toml`, `Cargo.lock` (Rust ecosystem)
-- Check for `pom.xml`, `build.gradle`, `build.gradle.kts` (Java/Kotlin ecosystem)
-- Check for `composer.json` (PHP ecosystem)
-- Check for `mix.exs` (Elixir ecosystem)
+### 1.4 Capture the Current Timestamp
 
-Also note the top-level directory structure (e.g., `src/`, `app/`, `lib/`, `pkg/`, `internal/`) as it indicates organizational conventions.
+Run the "Capture CURRENT_TIMESTAMP" procedure from `references/orchestration.md` once, here. Reuse the resulting `CURRENT_TIMESTAMP` value for every timestamp field this run writes (`fetched_at` on any refreshed or added documentation in 1.5, the `CURRENT_TIMESTAMP` input to the synthesizer in Phase 4, and `last_updated` in the manifest in Phase 6). Do not call `date` again later in the same run.
 
-Record the detected stack as `DETECTED_STACK` for use in later phases.
-
-### 1.4 Refresh Supporting Documentation
+### 1.5 Refresh Supporting Documentation
 
 Read `user_provided_docs` from the existing skill's `metadata.json` (if present). These are the documentation sources supplied when the skill was originally built (or last updated).
 
@@ -70,74 +66,38 @@ Show the developer the list:
 
 Handle each option:
 
-- **refresh**: iterate over the existing list and re-load each via Read (paths) or WebFetch (URLs). Report any that are now unreachable and drop them from the refreshed list
-- **add**: keep the existing list (refreshed or as-is per developer preference), then prompt for additional sources the same way Phase 1.4 of the build skill does
+- **refresh**: iterate over the existing list and re-load each via Read (paths) or WebFetch (URLs), setting `fetched_at` to `CURRENT_TIMESTAMP` for each. Report any that are now unreachable and drop them from the refreshed list
+- **add**: keep the existing list (refreshed or as-is per developer preference), then prompt for additional sources the same way Phase 1.5 of the build skill does, setting `fetched_at` to `CURRENT_TIMESTAMP` for the new entries
 - **replace**: prompt from scratch with the same question the build skill asks
-- **skip**: carry forward the stored content without re-fetching (stale but cheap)
+- **skip**: there is no stored document *content* to carry forward (the synthesizer's metadata.json output intentionally omits `content`, keeping only `source`, `type`, and `fetched_at` so the source string is enough to re-fetch later). "Skip" therefore means proceeding to synthesis without any documentation content this run, not reusing prior content. Say so plainly: "Proceeding without documentation content this run; the sources stay recorded in metadata, but synthesis won't have their content to draw from, which may reduce accuracy for anything the docs previously anchored." Carry the source list forward unchanged (so re-fetching later remains possible), but with an empty `content` for each until a future `refresh` or `add`.
 
 Record the final list as `USER_PROVIDED_DOCS` for Phase 2 and Phase 4. If the existing skill has no `user_provided_docs` field (e.g., it was built before this feature shipped), treat the starting list as empty and offer the build-style "paste or reply 'none'" prompt.
 
 ## Phase 2: Re-Discovery
 
-Delegate example discovery to the `autoskill-discovery` agent, seeded with context from the existing skill.
+Run the "Discovery Invocation" procedure from `references/orchestration.md`, with `{pattern_description}` set to `EXISTING_PATTERN_DESCRIPTION`, `{detected_stack}` set to `DETECTED_STACK`, and `{user_provided_docs}` set to `USER_PROVIDED_DOCS`.
 
-```
-Task(
-  subagent_type="autoskill:autoskill-discovery",
-  prompt="Discover examples of the following pattern in this codebase.
+Follow the "Discovery Status Branching" rules in `references/orchestration.md`, with one update-specific addition to the `empty` branch:
 
-  PATTERN_DESCRIPTION: {existing_pattern_description}
-  DETECTED_STACK: {detected_stack}
-  USER_PROVIDED_DOCS: {user_provided_docs}
-
-  Search the codebase using the strategies in your process steps. Return structured output with <status>, <examples>, <dependency-map>, <test-files>, <companion-files>, <observations>, and <internal-docs> tags."
-)
-```
-
-Parse the agent's response to extract:
-
-- `<status>` tag content (required: `result` of `found`, `empty`, or `search-failed`, plus the `patterns-attempted` list)
-- `<examples>` tag content
-- `<dependency-map>` tag content
-- `<test-files>` tag content (example-to-test-file pairings, used by the synthesizer to decide whether a test template is warranted)
-- `<companion-files>` tag content (list of companion files, or "none")
-- `<observations>` tag content
-- `<internal-docs>` tag content
-
-Branch on the `result` field of `<status>`:
-
-- **`found`**: Examples exist. Proceed to the compatibility check (2.1).
-- **`empty`**: The searches ran successfully but matched nothing. Inform the user: "I could not find examples of this pattern in the current codebase. The pattern may have been removed or significantly changed. Would you like to point me to an example, or keep the skill as-is?" Wait for the user's response before proceeding. If they choose to keep as-is, skip directly to Phase 7 and close out without writing anything; there are no changes to diff or apply. Do NOT retry discovery on `empty`; re-running queries that completed and matched nothing will always return nothing.
-- **`search-failed`**: The search itself could not complete. Do NOT treat this as empty (it does not mean the pattern was removed). Read the `patterns-attempted` list and re-run the discovery Task once with different patterns: broaden or rephrase the structural signals, try alternate naming conventions, or relax directory assumptions that the attempted patterns show were too narrow. If the retry also returns `search-failed`, surface the failure to the developer, listing the patterns attempted in both runs, and ask how to proceed.
-
-If the `<status>` tag is missing from the response (a non-conforming agent reply), treat it as `search-failed` and follow that branch.
+- **`found`**: Proceed to the compatibility check (2.1).
+- **`empty`**: In addition to the shared rule, this specifically means the pattern may have been removed or significantly changed since the skill was built. Inform the user, including the `<no-examples-reason>` discovery returned: "I could not find examples of this pattern in the current codebase. {no-examples-reason} The pattern may have been removed or significantly changed. Would you like to point me to an example, or keep the skill as-is?" Wait for the user's response before proceeding. If they choose to keep as-is, skip directly to Phase 7 and close out without writing anything; there are no changes to diff or apply.
+- **`search-failed`**: Handled per the shared retry rule.
 
 ### 2.1 Compatibility Check
 
-Read the `compatibility` field from the existing skill's `metadata.json` (if
-present). For each entry, verify that the dependency still exists in the
-current project environment:
+Read the `compatibility` field from the existing skill's `metadata.json` (if present). For each entry, verify that the dependency still exists in the current project environment:
 
-- For language-ecosystem packages (gems, npm packages, Python packages, Go
-  modules, etc.): check the project's lockfile or manifest for the package
-  name. If missing, record it as a drift.
-- For CLIs (e.g., `yq`, `jq`, `gh`): grep the repository and the user's
-  scripts for the command. If no callers remain, record it as a drift.
-- For internal libraries or modules (e.g., `internal-lib/service-base`):
-  Glob for the path. If the path has disappeared, record it as a drift.
+- For language-ecosystem packages (gems, npm packages, Python packages, Go modules, etc.): check the project's lockfile or manifest for the package name. If missing, record it as a drift.
+- For CLIs (e.g., `yq`, `jq`, `gh`): grep the repository and the user's scripts for the command, excluding common noise paths (`node_modules/`, `vendor/`, `.git/`, `log/`, `tmp/`, and equivalents for the detected stack), and require a word-boundary match so a short CLI name (like `gh`) does not match arbitrary substrings inside longer words. If no callers remain, record it as a drift.
+- For internal libraries or modules (e.g., `internal-lib/service-base`): Glob for the path. If the path has disappeared, record it as a drift.
 
 Warn the user about every drift before proceeding:
 
-> "This skill's metadata records a dependency on `<name>`, which I could
-> not find in the current project. The pattern may no longer work the same
-> way. Do you want to proceed with the update, drop this dependency from
-> `compatibility`, or halt and investigate?"
+> "This skill's metadata records a dependency on `<name>`, which I could not find in the current project. The pattern may no longer work the same way. Do you want to proceed with the update, drop this dependency from `compatibility`, or halt and investigate?"
 
-Respect the user's choice. Drops should be reflected when writing the new
-metadata.json in Phase 6.
+Respect the user's choice. Drops should be reflected when writing the new metadata.json in Phase 6.
 
-If the existing skill has no `compatibility` field (e.g., it predates this
-feature), skip this sub-step.
+If the existing skill has no `compatibility` field (e.g., it predates this feature), skip this sub-step.
 
 ## Phase 3: Ask About Changes
 
@@ -152,52 +112,15 @@ Wait for the developer to answer. Record their responses as `UPDATE_GUIDANCE` fo
 
 ### 4.1 Generate Skill Content
 
-Delegate skill generation to the `autoskill-synthesizer` agent.
-
-```
-Task(
-  subagent_type="autoskill:autoskill-synthesizer",
-  prompt="Generate the complete skill folder content for the following pattern.
-
-  SKILL_NAME: {skill_name}
-  PATTERN_DESCRIPTION: {existing_pattern_description}
-  DETECTED_STACK: {detected_stack}
-  DISCOVERY_OUTPUT: {discovery_output}
-  CLARIFYING_ANSWERS: {update_guidance}
-  USER_PROVIDED_DOCS: {user_provided_docs}
-  INVOKED_BY: autoskill:update
-  TEMPLATE_DIR: $AUTOSKILL_PLUGIN_ROOT/templates/
-  GUIDE_PATH: $AUTOSKILL_PLUGIN_ROOT/references/skill-output-guide.md
-
-  Return all file content in <skill-files> tags. Do not write any files."
-)
-```
+Run the "Synthesizer Invocation" procedure from `references/orchestration.md`, with `{skill_name}`, `{pattern_description}` (= `EXISTING_PATTERN_DESCRIPTION`), `{detected_stack}`, `{discovery_output}`, `{clarifying_answers}` (= `UPDATE_GUIDANCE`), and `{user_provided_docs}` (= `USER_PROVIDED_DOCS`) filled in from the phases above, `{current_timestamp}` set to the `CURRENT_TIMESTAMP` captured in 1.4, and `{invoked_by}` set to `autoskill:update`.
 
 Parse the `<skill-files>`, `<file-summary>`, and `<quality-notes>` tags from the response.
 
 ### 4.2 Quality Check
 
-Delegate quality validation to the `autoskill-quality-check` agent.
+Run the "Quality Check Invocation" procedure from `references/orchestration.md`, with `{skill_files_output}`, `{skill_name}`, and `{detected_stack}` filled in.
 
-```
-Task(
-  subagent_type="autoskill:autoskill-quality-check",
-  prompt="Validate the following generated skill content.
-
-  SKILL_FILES: {skill_files_output}
-  SKILL_NAME: {skill_name}
-  DETECTED_STACK: {detected_stack}
-  GUIDE_PATH: $AUTOSKILL_PLUGIN_ROOT/references/skill-output-guide.md
-
-  Return a <quality-result> tag with status and any issues found."
-)
-```
-
-Parse the `<quality-result>` tag:
-
-- **status="pass"**: Proceed.
-- **status="pass-with-warnings"**: Proceed. Note warnings for the developer in Phase 5.
-- **status="fail"**: Read the `<blocking-issues>` and `<fix-suggestions>`. Apply the suggested fixes to the generated content in memory. If fixes require re-generation, re-prompt the synthesizer with the specific issues to address. Then re-run the quality check. If it fails a second time, proceed anyway and note the unresolved issues for the developer.
+Parse the `<quality-result>` tag and follow the pass / pass-with-warnings / fail handling described there.
 
 ## Phase 5: Diff and Confirm
 
@@ -221,12 +144,15 @@ Overwrite the existing files in `.claude/skills/<skill-name>/`:
 - Write any additional files (templates, references, scripts) returned by the synthesizer
 - Remove any files that existed in the old skill but are not present in the new output (after confirming with the user)
 
-Update the skill's entry in `.claude/skills/autoskill-manifest.json`:
+Update `.claude/skills/autoskill-manifest.json`:
 
-- Update the `description` field if it changed
-- Update the `pattern_type` field if it changed
-- Set `last_updated` to the current ISO 8601 timestamp
-- Do not modify other skill entries
+- If the manifest file does not exist, create it with this skill as its first entry (mirroring the build skill's Phase 6).
+- If the manifest exists but has no entry for this skill (e.g. the skill was built before the manifest feature shipped, or the manifest was hand-edited), add a new entry for it.
+- Otherwise, update the existing entry:
+  - Update the `description` field if it changed
+  - Update the `pattern_type` field if it changed
+  - Set `last_updated` to `CURRENT_TIMESTAMP` from 1.4
+  - Do not modify other skill entries
 
 ## Phase 7: Confirm and Close
 

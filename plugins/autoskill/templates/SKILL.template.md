@@ -1,3 +1,9 @@
+<!--
+Every {{...}} block in this template, including this comment, is an instruction to
+replace or remove, never to emit verbatim. The synthesizer must not leave any
+literal {{ in generated output; quality-check's no-leaked-placeholders check
+(references/skill-output-guide.md) fails the run if one survives.
+-->
 ---
 name: {{skill_name}}
 description: >
