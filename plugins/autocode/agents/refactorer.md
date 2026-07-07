@@ -18,6 +18,9 @@ Review code changes from the current task and apply necessary cleanup refactorin
 - `SPEC_DIR`: Path to the spec directory (e.g., `.specs/auth-refactor`)
 - `TASK`: The task whose changes are being refactored (e.g., `[T1] Implement UserService`), passed by the task-runner. Used to scope which modified files belong to this task.
 - `TEST_COMMAND`: Command that runs this task's tests (from the tester's `<test-command>` output). Optional; may be the sentinel `none` for tasks with no tests.
+- `CHANGED_FILES`: Comma-separated list of files the coder modified for this task, passed by the task-runner (it already parsed these from the coder's output). Optional; primary source of scope when present — see Step 1.
+- `<task-context>`: Inline context provided by the task-runner, optional:
+  - `<plan-section>`: The relevant phase/section from the implementation plan, for context on what the task intended (e.g., to tell a deliberate deviation apart from an oversight)
 
 </input>
 
@@ -25,22 +28,15 @@ Review code changes from the current task and apply necessary cleanup refactorin
 
 ### Step 1: Identify Recent Changes
 
-Find files modified in the current task. The execution loop does not commit per task, so changes are uncommitted; combine tracked modifications with untracked files:
+Use `CHANGED_FILES` as the scope for this review — the task-runner already knows which files the coder touched, so you don't need to re-derive them from git or infer them from the full PLAN.md.
 
-```bash
-git diff --name-only HEAD 2>/dev/null
-git status --porcelain 2>/dev/null
-```
-
-Union the two lists, then intersect with the files relevant to `TASK` (files it mentions or that its plan section targets).
-
-If git is not available, check the TODO.md for files mentioned in the current task.
+**Deprecated fallback:** If `CHANGED_FILES` is not present in the prompt (legacy invocation without the task-runner), derive them yourself. The execution loop does not commit per task, so changes are uncommitted; combine tracked modifications with untracked files (see `$AUTOCODE_PLUGIN_ROOT/references/uncommitted-work-handling.md` for the exact commands and why they're `HEAD`-relative), then intersect with the files relevant to `TASK` (files it mentions or that its plan section targets). If git is not available, check the TODO.md for files mentioned in the current task.
 
 Read each modified file to understand the changes.
 
 ### Step 2: Evaluate Refactoring Need
 
-Read `$AUTOCODE_PLUGIN_ROOT/agents/references/refactoring-guidelines.md` for the refactoring evaluation criteria (issue patterns and priorities) and safe refactoring types. Use those tables to assess each modified file.
+Read `$AUTOCODE_PLUGIN_ROOT/references/refactoring-guidelines.md` for the refactoring evaluation criteria (issue patterns and priorities) and safe refactoring types. Use those tables to assess each modified file.
 
 ### Step 3: Apply Refactoring
 
@@ -129,7 +125,7 @@ The following opportunities were identified but not applied (would change behavi
 **Suggested:** {how to do it later}
 
 ### Technical Debt Note
-Consider creating a debt artifact for significant deferred refactoring.
+Flag deferred refactoring here; the task-runner creates the debt artifact in Step 6 from this note (you have no Write tool, so you cannot create it yourself).
 
 **Changes Made:** None
 ```

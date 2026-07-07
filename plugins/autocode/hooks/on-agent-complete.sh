@@ -23,7 +23,7 @@
 #
 # Behaviors for autocode agents:
 # 1. Detect task completion or failure from the agent's final output
-#    using the structured contract in agents/references/failure-categories.md
+#    using the structured contract in references/failure-categories.md
 # 2. Log task failures to failures.jsonl as a deterministic backstop
 #    (the task-runner normally logs them itself)
 # 3. Verify the artifact audit trail exists for completed tasks and
@@ -40,6 +40,18 @@
 set -euo pipefail
 
 HOOK_NAME="on-agent-complete"
+
+# Shared helpers (item 8/23 fixes: extract_spec_dir, read_config_value).
+# Sourced early, before the local log_hook_error definition below, so
+# that local definition - which uses this hook's existing single-arg
+# call convention (relying on the global $INPUT for the payload rather
+# than lib.sh's log_hook_error(hook, message, payload) signature) -
+# intentionally shadows the one lib.sh provides. This keeps every
+# existing log_hook_error call site in this file working unchanged.
+# Never fails: a missing lib.sh degrades to the functions being absent,
+# and every call site below tolerates that via `|| true`.
+source "$(dirname "$0")/../scripts/lib.sh" 2>/dev/null || true
+source "$(dirname "$0")/../scripts/read-config.sh" 2>/dev/null || true
 
 # Log unparseable/unexpected payloads so hook failures are observable
 # instead of silent. Never fails the hook.
@@ -152,13 +164,32 @@ fi
 PLUGIN_DIR="${CLAUDE_PLUGIN_ROOT:-${AUTOCODE_PLUGIN_ROOT:-$(dirname "$(dirname "$0")")}}"
 FIND_SPEC_SCRIPT="$PLUGIN_DIR/scripts/find-active-spec.sh"
 
+# Primary: recover SPEC_DIR from the transcript's most recent Task
+# invocation whose subagent_type matches this agent (AGENT_NAME, e.g.
+# "autocode:task-runner"), via lib.sh's extract_spec_dir. This replaces
+# the old "most recently modified TODO.md" mtime heuristic as the
+# primary source of attribution: with two active specs or parallel
+# task-runners, mtime alone can pick the wrong spec's TODO.md for a
+# completion/failure/artifact-audit that belongs to a different spec
+# (item 8 / roadmap 3.3). The mtime heuristic (find-active-spec.sh)
+# below is now only a last-resort fallback for when the transcript
+# yields nothing (e.g. extract_spec_dir/jq unavailable, or the Task
+# invocation used a prompt shape none of its 3 extraction methods
+# recognize).
 SPEC_DIR=""
-if [ -x "$FIND_SPEC_SCRIPT" ]; then
+if command -v extract_spec_dir >/dev/null 2>&1; then
+  EXTRACTED_SPEC_DIR=$(extract_spec_dir "$TRANSCRIPT_PATH" "$AGENT_NAME" 2>/dev/null || true)
+  if [ -n "$EXTRACTED_SPEC_DIR" ] && [ -d "$EXTRACTED_SPEC_DIR" ]; then
+    SPEC_DIR="$EXTRACTED_SPEC_DIR"
+  fi
+fi
+
+if [ -z "$SPEC_DIR" ] && [ -x "$FIND_SPEC_SCRIPT" ]; then
   FIND_RESULT=$("$FIND_SPEC_SCRIPT" 2>/dev/null || echo "NOT_FOUND")
   if [[ "$FIND_RESULT" == FOUND:* ]]; then
     SPEC_DIR=$(echo "$FIND_RESULT" | cut -d: -f2)
   fi
-else
+elif [ -z "$SPEC_DIR" ]; then
   # Fallback: find any spec directory with a TODO.md
   for todo_file in .specs/*/TODO.md; do
     if [ -f "$todo_file" ]; then
@@ -178,7 +209,7 @@ SPEC_ID=$(basename "$SPEC_DIR")
 
 # ============================================================================
 # Detect task completion or failure from agent output
-# (contract: agents/references/failure-categories.md)
+# (contract: references/failure-categories.md)
 # ============================================================================
 
 TASK_COMPLETED="false"
@@ -200,6 +231,12 @@ TASK_ID=$(echo "$AGENT_OUTPUT" | grep -oE '<task-completed[^>]*task="[^"]*"' | g
 if [ -z "$TASK_ID" ]; then
   TASK_ID=$(echo "$AGENT_OUTPUT" | grep -oE '\[T[0-9]+\]' | head -1 || true)
 fi
+
+# Strip brackets: the fallback pattern matches "[T1]" verbatim, but
+# "[...]" is a glob character class, so an unstripped TASK_ID silently
+# breaks the `find -name "${TASK_ID}_*"` glob below (item 3 / roadmap
+# 1.2) and would otherwise leak into the audit tag / failure log.
+TASK_ID=${TASK_ID//[\[\]]/}
 
 # ============================================================================
 # Log failures for cross-spec learning (backstop for the task-runner)
@@ -265,14 +302,28 @@ if [ "$AGENT_NAME" = "autocode:task-runner" ]; then
   # Gated behind artifact_judge.enabled in .claude/autocode.yml (default
   # off: costs tokens and requires node with @anthropic-ai/claude-agent-sdk).
   CONFIG_FILE=".claude/autocode.yml"
-  JUDGE_ENABLED="false"
-  if [ -f "$CONFIG_FILE" ] && grep -A3 '^artifact_judge:' "$CONFIG_FILE" 2>/dev/null | grep -qE '^[[:space:]]+enabled:[[:space:]]*true'; then
-    JUDGE_ENABLED="true"
+  # item 23/2.4 fix: read_config_value's indentation-anchored parser
+  # replaces the old `grep -A3 '^artifact_judge:'` window, which broke
+  # the moment a comment line separated the key from `enabled:` or any
+  # other `enabled:` key fell inside the grepped window. Default "false"
+  # matches the previous fallback (judge is opt-in).
+  if command -v read_config_value >/dev/null 2>&1; then
+    JUDGE_ENABLED=$(read_config_value "$CONFIG_FILE" "artifact_judge.enabled" "false")
+  else
+    JUDGE_ENABLED="false"
   fi
 
   JUDGE_SCRIPT="$PLUGIN_DIR/hooks/judge-artifacts.mjs"
   if [ "$JUDGE_ENABLED" = "true" ] && [ -z "$AUDIT_STATUS" ] && command -v node &>/dev/null && [ -f "$JUDGE_SCRIPT" ]; then
-    JUDGE_RESULT=$(node "$JUDGE_SCRIPT" "$SPEC_DIR" "$TASK_ID" 2>/dev/null || true)
+    # Pin a cheap model for the judge (item 7 / roadmap 3.4) so an
+    # unconfigured project never has it silently run on an expensive
+    # default model; configurable via artifact_judge.model.
+    if command -v read_config_value >/dev/null 2>&1; then
+      JUDGE_MODEL=$(read_config_value "$CONFIG_FILE" "artifact_judge.model" "claude-haiku-4-5-20251001")
+    else
+      JUDGE_MODEL="claude-haiku-4-5-20251001"
+    fi
+    JUDGE_RESULT=$(AUTOCODE_JUDGE_MODEL="$JUDGE_MODEL" node "$JUDGE_SCRIPT" "$SPEC_DIR" "$TASK_ID" 2>/dev/null || true)
     JUDGE_PASS=$(echo "$JUDGE_RESULT" | jq -r '.pass // empty' 2>/dev/null || true)
     JUDGE_REASON=$(echo "$JUDGE_RESULT" | jq -r '.reason // empty' 2>/dev/null || true)
     if [ "$JUDGE_PASS" = "false" ]; then

@@ -1,9 +1,12 @@
 ---
 name: plan-researcher
 description: When the plan-builder needs codebase research for a spec, finding relevant files, similar patterns, and dependencies, written to RESEARCH.md.
-tools: Read, Write, Glob, Grep, Bash(wc:*)
+tools: Read, Write, Glob, Grep
+permissionMode: acceptEdits
 model: sonnet
 ---
+
+<!-- Tool scoping: no Bash. File discovery and pattern search use Glob/Grep only; Write is required for RESEARCH.md. (A prior Bash(wc:*) grant was removed — no documented step used it.) permissionMode: acceptEdits because this agent runs non-interactively inside a Task spawned by plan-builder; a permission prompt here would stall the pipeline. -->
 
 # Plan Researcher
 

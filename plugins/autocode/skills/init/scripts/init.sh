@@ -2,16 +2,53 @@
 
 set -euo pipefail
 
-PLUGIN_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+# Resolve the plugin root. This script lives at skills/init/scripts/init.sh,
+# so three levels up (scripts -> init -> skills) reaches the plugin root.
+# Self-resolution can be overridden with --plugin-root below, which
+# init/SKILL.md passes as defense in depth using the path it already
+# detected in its own Step 1 (both self-resolution AND an explicit override
+# are supported; the abort guard further down applies to either source).
+PLUGIN_DIR="$(cd "$(dirname "$0")/../../.." && pwd)"
 TARGET_DIR=".claude"
 
-# Parse arguments: accept both `init.sh <template>` and
-# `init.sh --justifications <template>`
+# Parse arguments. Supported forms, in any order/combination:
+#   init.sh <template>
+#   init.sh --justifications <template>
+#   init.sh --plugin-root <path> [--justifications <template> | <template>]
 TEMPLATE_NAME=""
-if [ "${1:-}" = "--justifications" ]; then
-  TEMPLATE_NAME="${2:-}"
-else
-  TEMPLATE_NAME="${1:-}"
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --plugin-root)
+      if [ $# -ge 2 ]; then
+        PLUGIN_DIR="$2"
+        shift 2
+      else
+        shift
+      fi
+      ;;
+    --justifications)
+      if [ $# -ge 2 ]; then
+        TEMPLATE_NAME="$2"
+        shift 2
+      else
+        shift
+      fi
+      ;;
+    *)
+      if [ -z "$TEMPLATE_NAME" ]; then
+        TEMPLATE_NAME="$1"
+      fi
+      shift
+      ;;
+  esac
+done
+
+# Abort loudly if PLUGIN_DIR doesn't look like the real plugin root (self-
+# resolution broke, or --plugin-root pointed somewhere wrong) instead of
+# silently falling back to the minimal config below.
+if [ ! -d "$PLUGIN_DIR/templates" ]; then
+  echo "ERROR: could not resolve plugin root (expected templates/ under $PLUGIN_DIR)" >&2
+  exit 1
 fi
 
 echo "=== Autocode Initialization ==="
@@ -63,7 +100,7 @@ if command -v yq &> /dev/null; then
   YQ_VERSION=$(yq --version 2>&1 | head -1)
   echo "yq is installed: $YQ_VERSION"
 else
-  echo "yq is not installed (optional - enables config customization)"
+  echo "yq is optional; used when present for more robust config parsing, awk fallback otherwise."
   echo ""
 
   # Detect OS and suggest installation. Prompts only run on a terminal;
@@ -106,22 +143,48 @@ else
   fi
 fi
 
+# Detect a pre-2.0 project layout (.claude/specs/) and point the user at a
+# manual migration. We deliberately only print instructions here rather than
+# moving files ourselves: auto-mv plus a gitignore edit of user-owned files
+# during init is riskier than a one-time manual step, and this can be
+# revisited once the Phase-2 test suite exists to catch regressions.
+echo ""
+echo "=== Checking for Pre-2.0 Spec Directory ==="
+
+if [ -d ".claude/specs" ]; then
+  echo "Found .claude/specs/ - this looks like a pre-2.0 Autocode spec directory."
+  echo "  Autocode 2.0+ stores specs at .specs/ (project root) instead."
+  echo "  This script does not move anything automatically. To migrate manually:"
+  echo "    1. mkdir -p .specs && mv .claude/specs/* .specs/"
+  echo "    2. Remove the old .claude/specs gitignore entry, if present"
+  echo "  Until migrated, /autocode:execute and other skills will not find"
+  echo "  specs left at the old .claude/specs/ path."
+else
+  echo "No pre-2.0 .claude/specs/ directory found."
+fi
+
 # Add specs to gitignore
 echo ""
 echo "=== Checking .gitignore ==="
 
 if [ -f ".gitignore" ]; then
-  if grep -qxF ".specs/" .gitignore 2>/dev/null; then
+  # Recognize the common variants (.specs, .specs/, /.specs/) so repeat runs
+  # don't append duplicate entries.
+  if grep -qxE '\.specs/?|/\.specs/?' .gitignore 2>/dev/null; then
     echo ".specs/ already in .gitignore"
   else
-    echo "" >> .gitignore
-    echo "# Autocode specs (generated)" >> .gitignore
-    echo ".specs/" >> .gitignore
+    {
+      echo ""
+      echo "# Autocode specs (generated)"
+      echo ".specs/"
+    } >> .gitignore
     echo "Added .specs/ to .gitignore"
   fi
 else
-  echo "# Autocode specs (generated)" > .gitignore
-  echo ".specs/" >> .gitignore
+  {
+    echo "# Autocode specs (generated)"
+    echo ".specs/"
+  } > .gitignore
   echo "Created .gitignore with .specs/"
 fi
 

@@ -5,6 +5,60 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.0] - 2026-07-07
+
+Implements Phases 1-4 and 6 of [`.specs/AUTOCODE_POST_MVP_ROADMAP.md`](../../.specs/AUTOCODE_POST_MVP_ROADMAP.md) (items 1-8, 10-43 of the improvement review). Item 9 (cross-spec learning loop) and the full per-task-commit redesign (item 2's complete fix) are deferred to their own specs; see the Deferred note at the end of this entry.
+
+### Breaking changes
+
+- **`agents/references/` moved to `plugins/autocode/references/`**: the six reference docs (`analysis-parsing.md`, `artifact-triggers.md`, `conventional-commits.md`, `failure-categories.md`, `refactoring-guidelines.md`, `test-frameworks.md`) were being auto-registered as spawnable agents with all tools and no description, since Claude Code scans `agents/` recursively. Anyone with a hardcoded `agents/references/...` path (in a fork, a custom rule, or their own notes) needs to update it to `references/...`. Every citing path in agents, skills, and docs was updated in this release.
+- **Task-runner rollback is no longer a destructive `git checkout -- .`**: a failed fix/refactor cycle now snapshots with `git diff HEAD > $SNAPSHOT` before the cycle and restores via `git checkout HEAD -- . && git apply "$SNAPSHOT"` on failure. Prior task work in the same session is no longer wiped out by a failed retry cycle. Known residual: untracked files created by a failed cycle are not cleaned up by the restore (only tracked-file content is reverted).
+- **`review.sh` and `generate-report.sh` merged**: `generate-report.sh` is deleted; `review.sh` now writes `SUMMARY.md` directly (changes summary, artifact counts, high-risk scan, deferred issues, review hints) and prints only a short pointer line, with no ANSI color codes.
+- **`update-task-status.sh` validates `TASK_ID`**: rejects anything not matching `^T[0-9]+$` before it reaches the grep/sed patterns, instead of silently mismatching or corrupting TODO.md on IDs containing `/`, `.`, `*`, `&`, or `\`.
+
+### Added
+
+- **`scripts/lib.sh`**: shared `validate_identifier`, `require_identifier`, `spec_dir_for`, `json_escape`, `log_hook_error`, and `extract_spec_dir` helpers, sourced by four hooks and six-plus skill scripts to eliminate the copy-pasted identifier-validation and spec-dir-construction logic
+- **`scripts/read-config.sh`**: centralized, indentation-anchored YAML config reads (`read_config_value`) with a `yq`-when-present, `awk`-fallback strategy, replacing the fragile `grep -A2` config-window parsing in `check-edit.sh` and `on-agent-complete.sh`
+- **GitHub Actions CI** (`.github/workflows/autocode-ci.yml`): shellcheck on every `.sh` file, `jq empty` on `hooks.json` and `plugin.json`, `node --check` on `judge-artifacts.mjs`, and the bats suite, wired through a new `plugins/autocode/Makefile` `make test` target so local runs and CI stay in sync
+- **Bats test suite** (`tests/`)
+- **`artifact_judge.model` and `code_review.model`** optional keys in `templates/autocode.yml`: the judge now defaults to a pinned, cheap model instead of running unpinned; `code_review.model` lets security-sensitive projects opt the reviewer into a stronger model without changing the plugin-wide default
+- **`--plugin-root` override flag for `init.sh`**, alongside self-resolution and a `[ -d "$PLUGIN_DIR/templates" ]` abort guard so a wrong resolution fails loudly instead of silently installing a broken config
+- **Pre-2.0 `.claude/specs/` migration detection in init**: prints a migration hint when the old spec location is found, and fixes the `.gitignore` existence check to recognize `.specs`/`/.specs/` variants instead of appending duplicate entries
+
+### Changed
+
+- **Task-runner categorizes red-phase failures early**: a `setup`-category red failure (broken env, missing deps) now fails fast instead of burning up to 3 opus coder retries before being classified
+- **Refactorer receives `CHANGED_FILES` directly** from the task-runner (parsed from the coder's `### Changes Made` output) instead of re-deriving them from git or inferring them from the full PLAN.md
+- **Session-summarizer archives the previous summary before writing the new one** (Step 6 was reordered; archiving after writing was archiving the summary that had just replaced it)
+- **`check-context.sh` factors in transcript size** passed from the hook, instead of estimating purely from spec files, artifacts, and CLAUDE.md (a combination that made the WARNING/CRITICAL thresholds effectively unreachable)
+- **Plan-builder runs one bounded analyzer-feedback revision cycle**: it now applies unambiguous, file:line-anchored analyzer findings itself and surfaces only the rest as open questions, instead of only relaying every finding to the user
+- **`reviewer`, `plan-researcher`, `plan-builder`, and `session-summarizer` gained `permissionMode: acceptEdits`**, matching the other file-writing agents that already had it, so a permission prompt inside an unattended background subagent can no longer stall the pipeline
+- **`spec-archive` copies `REVIEW.md` into the archive while keeping the working-tree copy** (previously the human sign-off record survived in neither git, since `.specs/` is gitignored, nor the archive, since it was the one file explicitly excluded from the move)
+- **`sync-pr` fetches and diffs against `origin/<default-branch>`** instead of the local branch, so a PR description no longer includes commits that are already merged when local `main` lags origin
+- **`commit` skill screens for risky untracked files** (`.env`/`.env.*`, `*.pem`/`*.key`, anything containing `credentials`, unexpectedly large files) before an unconditional `git add -A`
+- **Standardized `$AUTOCODE_PLUGIN_ROOT` for all skill/agent references-file citations**; `hooks.json` alone continues to use the harness-native `${CLAUDE_PLUGIN_ROOT}`, documented as deliberate since hooks fire before any plugin-bootstrapped env var is guaranteed loaded
+- **`plugin.json`'s `agents` array is documentation, not the source of truth**: agent registration is directory-scan-based (the `agents/references/` incident above is the proof), so the explicit array is now understood as a curated allow-list/doc rather than a registration mechanism (closes roadmap item 3.2)
+- **Model choices documented, not changed**: `task-runner.md` and `reviewer.md` each gained a scoping comment explaining their `opus`/`sonnet` pins (task-runner is the biggest cost lever as the most frequently spawned agent; reviewer's default stays sonnet with `code_review.model` as the opt-in override for security-sensitive repos) instead of leaving the choice unexplained
+
+### Fixed
+
+- **init.sh's `PLUGIN_DIR` resolution** ("bricks the whole plugin" bug): fixed the post skills-migration path so `templates/autocode.yml`, the justifications-template lookup, and the `AUTOCODE_PLUGIN_ROOT` written to settings all resolve correctly instead of silently pointing at `skills/init`
+- **Bracketed task IDs breaking the artifact-audit glob**: `on-agent-complete.sh` strips `[`/`]` from the fallback `TASK_ID` before it hits the `find -name "${TASK_ID}_*"` glob, fixing false "missing artifact" warnings and a leaking `task="[T1]"` in the audit tag
+- **review.sh missing untracked/uncommitted changes on feature branches**: it now always emits committed, uncommitted, and untracked sections instead of only showing uncommitted diffs when the branch diff was empty
+- **coder.md's Bash-contradicting LARGE-task instruction**: reworded so LARGE tasks no longer instruct the coder to test between sub-steps despite having no Bash access
+- **judge-artifacts.mjs's silent-degrade, greedy-JSON-extraction, and unpinned-model issues**: every degrade-to-pass path (missing SDK, missing credentials, timeout, unparseable verdict) is now logged to `hook-errors.jsonl`, JSON extraction takes the last balanced object instead of a greedy brace match, and the model is pinned and configurable via `artifact_judge.model`
+- **Spec-attribution mtime-race in `on-agent-complete.sh`**: attribution now prefers `extract_spec_dir` against the transcript's matching Task invocation (correlated by `subagent_type`), falling back to the "most recently modified TODO.md" mtime heuristic only when extraction fails, fixing misattributed completions/failures/audits with two active specs or parallel task-runners
+- **check-edit.sh's unquoted command execution and fragile config-window parsing**: the configured check command now runs via `bash -c "$CHECK_CMD \"\$1\"" _ "$FILE_PATH"` instead of word-splitting/glob-expanding it directly, and the `static_analysis`/`on_edit` gates read through `read-config.sh` instead of a `grep -A2` window that broke on an intervening comment line or an unrelated `enabled:` key
+- **JSONL escaping gaps**: all fields in log-failure.sh/log-usage.sh (and hook printf fallbacks) now route through the shared `json_escape`, instead of escaping only one field and risking invalid JSONL from a stray `"` in a project path or spec ID
+- **build-task-queue.sh's unanchored `[T<n>]` extraction and phase-header mismatch**: task-ID extraction is anchored to the start of the checkbox line instead of matching a mid-line bracket, and the phase-header pattern is now shared with `validate-autocode.sh` so a `## Phase 1: Name`-style TODO.md no longer fails validation while the queue builder accepts it
+- **update-task-status.sh's injection-unsafe `TASK_ID` handling and lack of locking**: added the `^T[0-9]+$` validation described above, plus an optimistic-concurrency read-check-modify-verify retry loop (no `flock` dependency, since it isn't reliably available on macOS) so two task-runners racing to update the same TODO.md no longer silently clobber each other's checkbox
+- The remaining smaller items: shared phase-header pattern (item 19), reordered validation-before-scaffolding in create-plan/create-tasks (item 21), frontmatter-only high-risk matching in review.sh (item 31), narrowed `Bash` grants and an added `git merge-base` allowance for code-review (item 25), identifier validation on code-review's `SPEC_DIR` construction (item 26), analyzer's deleted phantom "Return Values" section (item 36), and the remaining polish items (39-43): placeholder consistency across SKILL.md command blocks (`{identifier}`-style, fixing the `<SPEC_DIR>`/`<identifier>` mismatch), doc/behavior reconciliation (spec-archive "move" wording, help table's init row, `yq`-optional wording in `templates/autocode.yml`, handoff template `Z`-suffixed timestamps), and the smaller hook/script cleanups (read-handoff.sh errors to stderr, hoisted stat detection in find-active-spec.sh, and similar)
+
+### Deferred
+
+Per the roadmap's own recommendation that Phase 5's two large design efforts go through the plugin's normal spec workflow rather than being implemented ad hoc: item 9 (making the cross-spec learning loop real) got its own spec at `.specs/learning-loop-and-usage-stats/`, and the full per-task-commit redesign (item 2's complete fix, beyond this release's patch-file-based rollback mitigation) got its own spec at `.specs/per-task-commit-model/`.
+
 ## [2.0.0] - 2026-06-12
 
 ### Breaking changes

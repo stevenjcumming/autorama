@@ -24,15 +24,12 @@ Run the create-plan script:
 bash $AUTOCODE_PLUGIN_ROOT/skills/create-plan/scripts/create-plan.sh {IDENTIFIER}
 ```
 
-If the script fails, do not proceed to Step 2:
+The script validates upstream content (does SPEC.md exist and have real content, not just unfilled template boilerplate?) *before* scaffolding PLAN.md, so a failed check never leaves a stale, empty PLAN.md behind. If the script fails, do not proceed to Step 2:
 - **Missing spec or SPEC.md**: surface the script's error message to the user and stop.
+- **SPEC.md is empty or has only unfilled template content**: surface the script's error message and tell the user to complete SPEC.md first, then stop.
 - **PLAN.md already exists**: tell the user and ask whether to keep the existing plan or regenerate it. Only if they choose to regenerate, delete the existing PLAN.md and re-run the script; otherwise stop.
 
-## Step 2: Check the Spec
-
-Read `{SPEC_DIR}/SPEC.md`. If it is empty or has only template content (unfilled placeholders and comments), tell the user to complete the spec first and stop.
-
-## Step 3: Build the Plan
+## Step 2: Build the Plan
 
 Spawn the plan-builder agent:
 
@@ -50,7 +47,7 @@ The plan-builder agent will:
 4. Spawn plan-analyzer to validate the plan
 5. Return a summary with analysis
 
-## Step 4: Present Results
+## Step 3: Present Results
 
 After the agent completes, present:
 - Location of PLAN.md

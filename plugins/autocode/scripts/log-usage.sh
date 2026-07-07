@@ -7,6 +7,9 @@
 
 set -euo pipefail
 
+# shellcheck source=lib.sh
+source "$(dirname "$0")/lib.sh"
+
 EVENT_TYPE="${1:-}"
 EVENT_NAME="${2:-}"
 STATUS="${3:-ok}"
@@ -27,13 +30,23 @@ mkdir -p "$CLAUDE_PLUGIN_DATA"
 
 LOG_FILE="$CLAUDE_PLUGIN_DATA/usage.jsonl"
 TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-PROJECT_DIR=$(basename "$(pwd)")
+# Log both the basename (human-friendly) and the full path (item 38):
+# basename alone conflates two repos checked out under the same
+# directory name (e.g. two "autorama" clones on the same machine).
+PROJECT_NAME=$(basename "$(pwd)")
+PROJECT_PATH="$(pwd)"
 
 # Get spec ID from SPEC_DIR if available
 SPEC_ID=""
 if [ -n "${SPEC_DIR:-}" ]; then
   SPEC_ID=$(basename "$SPEC_DIR")
 fi
+
+# Truncate consistently (item 38) so a single JSONL line can't exceed
+# PIPE_BUF and interleave with other writers under parallel task
+# runners; 500 chars matches log_hook_error's payload truncation in
+# lib.sh.
+DETAILS_TRUNCATED=$(printf '%s' "$DETAILS" | head -c 500)
 
 # Build JSON line: jq when available, printf fallback otherwise
 if command -v jq &>/dev/null; then
@@ -42,16 +55,24 @@ if command -v jq &>/dev/null; then
     --arg type "$EVENT_TYPE" \
     --arg name "$EVENT_NAME" \
     --arg status "$STATUS" \
-    --arg details "$DETAILS" \
-    --arg project "$PROJECT_DIR" \
+    --arg details "$DETAILS_TRUNCATED" \
+    --arg project "$PROJECT_NAME" \
+    --arg project_path "$PROJECT_PATH" \
     --arg spec "$SPEC_ID" \
-    '{timestamp: $ts, type: $type, name: $name, status: $status, details: $details, project: $project, spec: $spec}' \
+    '{timestamp: $ts, type: $type, name: $name, status: $status, details: $details, project: $project, project_path: $project_path, spec: $spec}' \
     >> "$LOG_FILE"
 else
-  # Fallback writer: truncate, strip newlines, then escape backslashes
-  # and double quotes so the output stays valid JSONL
-  SAFE_DETAILS=$(printf '%s' "$DETAILS" | head -c 500 | tr -d '\n\r' | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g')
-  printf '{"timestamp":"%s","type":"%s","name":"%s","status":"%s","details":"%s","project":"%s","spec":"%s"}\n' \
-    "$TIMESTAMP" "$EVENT_TYPE" "$EVENT_NAME" "$STATUS" "$SAFE_DETAILS" "$PROJECT_DIR" "$SPEC_ID" \
+  # Fallback writer (item 38): every interpolated field is routed
+  # through json_escape (lib.sh), not just details as before - a `"` or
+  # `\` in a project path or spec ID used to produce invalid JSONL.
+  SAFE_DETAILS=$(json_escape "$(printf '%s' "$DETAILS_TRUNCATED" | tr -d '\n\r')")
+  SAFE_TYPE=$(json_escape "$EVENT_TYPE")
+  SAFE_NAME=$(json_escape "$EVENT_NAME")
+  SAFE_STATUS=$(json_escape "$STATUS")
+  SAFE_PROJECT=$(json_escape "$PROJECT_NAME")
+  SAFE_PROJECT_PATH=$(json_escape "$PROJECT_PATH")
+  SAFE_SPEC=$(json_escape "$SPEC_ID")
+  printf '{"timestamp":"%s","type":"%s","name":"%s","status":"%s","details":"%s","project":"%s","project_path":"%s","spec":"%s"}\n' \
+    "$TIMESTAMP" "$SAFE_TYPE" "$SAFE_NAME" "$SAFE_STATUS" "$SAFE_DETAILS" "$SAFE_PROJECT" "$SAFE_PROJECT_PATH" "$SAFE_SPEC" \
     >> "$LOG_FILE"
 fi

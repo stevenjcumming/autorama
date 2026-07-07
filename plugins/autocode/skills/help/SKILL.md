@@ -1,6 +1,7 @@
 ---
 name: help
 description: Use when the user asks about available autocode skills, workflow order, or how to use the plugin. Displays the skill table and typical workflow.
+model: haiku # purely display-only - prints a static/templated table and workflow summary with no judgment calls, tool use, or file reads
 ---
 
 # Autocode Help

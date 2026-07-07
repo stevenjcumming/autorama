@@ -134,7 +134,7 @@ This location is for curated artifacts that users manually move there. Examples 
 
 ## File Categories Requiring Justification
 
-These categories are the built-in defaults from `agents/references/artifact-triggers.md`. They can be customized in `.claude/autocode.yml` under `justification.categories`.
+These categories are the built-in defaults from `plugins/autocode/references/artifact-triggers.md`. They can be customized in `.claude/autocode.yml` under `justification.categories`.
 
 | Category | File Patterns | Key Questions |
 |----------|---------------|---------------|

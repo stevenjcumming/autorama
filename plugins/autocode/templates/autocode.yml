@@ -1,6 +1,6 @@
 # Autocode Configuration
 # Copy this file to .claude/autocode.yml and customize for your project
-# Agents read this file directly; no external parser (such as yq) is required
+# yq is optional; used when present for more robust config parsing, awk fallback otherwise
 
 # Static analysis configuration (optional)
 # Customize what static analysis is run during TDD loop
@@ -36,16 +36,29 @@ static_analysis:
 # (allowedTools: Read, Glob) judges whether the task's artifact files
 # are substantive or template stubs, and emits a structured warning for
 # stubs. Costs tokens and requires node with @anthropic-ai/claude-agent-sdk.
+# Every failure mode (missing SDK, missing credentials, timeout,
+# unparseable verdict) degrades to a pass and is logged to
+# hook-errors.jsonl rather than failing silently.
 artifact_judge:
   enabled: false
+  # model: claude-haiku-4-5-20251001   # Model used for the judge call
+                                        # (default: claude-haiku-4-5-20251001,
+                                        # kept cheap since this runs on every
+                                        # task-runner completion)
 
 # Code review configuration (optional)
 # /autocode:code-review resolves its checklist in priority order:
 #   1. code_review.checklist below
 #   2. .claude/code-review-checklist.md in the project
 #   3. The plugin default at skills/code-review/code-review-checklist.md
+#
+# code_review.model overrides the reviewer agent's model (default: unset, which
+# uses reviewer.md's own frontmatter pin of `sonnet`). The reviewer agent makes
+# CRITICAL-severity security judgments, so security-sensitive repos may want to
+# opt into a stronger model here rather than changing the plugin-wide default.
 # code_review:
 #   checklist: .claude/my-review-checklist.md   # Path to a custom checklist file
+#   model: opus                                  # Override reviewer model (default: sonnet)
 
 # Justification configuration (optional)
 # Customize when and how justifications are required for file modifications

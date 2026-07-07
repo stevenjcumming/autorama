@@ -67,7 +67,7 @@ The hook delegates to `read-handoff.sh` when available, falling back to manual f
 
 Fires when a subagent finishes. It recovers the agent output from the transcript, parses the structured `<task-completed>` tag, audits the artifact trail, and checks context limits. All signals are emitted as JSON `additionalContext`/`systemMessage`, never plain stdout.
 
-1. **Recover output and parse the tag** -- reads the completed agent's output from the transcript and parses its `<task-completed>` tag (defined in `agents/references/failure-categories.md`)
+1. **Recover output and parse the tag** -- reads the completed agent's output from the transcript and parses its `<task-completed>` tag (defined in `plugins/autocode/references/failure-categories.md`)
 2. **Audit artifacts** -- checks `{SPEC_DIR}/artifacts/` for the completed task and emits an `<artifact-audit>` warning when the expected trail is missing
 3. **Check context limits** -- calls `check-context.sh` and emits `<context-warning>` or `<context-critical>` tags
 

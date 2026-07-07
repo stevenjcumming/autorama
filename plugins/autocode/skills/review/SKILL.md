@@ -1,7 +1,7 @@
 ---
 name: review
 description: Use after autocode execution completes to review code changes, artifacts, risks, and review hints before committing. Provides a human checkpoint with approval/reject workflow.
-allowed-tools: Bash(bash $AUTOCODE_PLUGIN_ROOT/skills/review/scripts/review.sh:*), Bash(bash $AUTOCODE_PLUGIN_ROOT/skills/review/scripts/generate-report.sh:*), Read, Write, Glob, Grep
+allowed-tools: Bash(bash $AUTOCODE_PLUGIN_ROOT/skills/review/scripts/review.sh:*), Read, Write, Glob, Grep
 argument-hint: <identifier>
 ---
 
@@ -25,23 +25,19 @@ This command provides a human checkpoint by summarizing:
 3. High-risk items requiring attention
 4. Review hints flagged for human judgment
 
-## Step 1: Run Review Scripts
+## Step 1: Run the Review Script
 
-Execute the review script with the spec identifier to gather summary data, then generate the summary report:
+Execute the review script with the spec identifier to gather summary data:
 
 ```bash
 bash $AUTOCODE_PLUGIN_ROOT/skills/review/scripts/review.sh $ARGUMENTS
 ```
 
-```bash
-bash $AUTOCODE_PLUGIN_ROOT/skills/review/scripts/generate-report.sh .specs/$IDENTIFIER
-```
-
-The `generate-report.sh` script creates a `SUMMARY.md` file in the spec directory with artifact counts, deferred issues, and review hints.
+This writes a `SUMMARY.md` file in the spec directory with the changes summary, artifact counts, a high-risk scan, deferred issues, and review hints, then prints a short pointer line (files changed, artifact count, high-risk count).
 
 ## Step 2: Present the Summary
 
-Read the generated `SUMMARY.md` and present its contents to the reviewer as-is. Do not re-summarize it; the script output and SUMMARY.md already cover changes and artifact counts. Then add depth only where human judgment is needed:
+Read the generated `SUMMARY.md` and present its contents to the reviewer as-is. Do not re-summarize it; SUMMARY.md already covers changes and artifact counts. Then add depth only where human judgment is needed:
 
 ### High-Risk Items
 For each high-risk item found:
@@ -118,6 +114,6 @@ If the decision is **Request changes** or **Reject**, still write REVIEW.md (cap
 ## Notes
 
 - This is a human checkpoint - all information is for review, not automatic action
-- The review script shows a quick summary; use Read to dive deeper into specific artifacts
+- The review script writes SUMMARY.md; use Read to dive deeper into specific artifacts
 - High-risk items should always be reviewed before proceeding
 - Review hints contain questions that require human judgment

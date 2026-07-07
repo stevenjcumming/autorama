@@ -28,7 +28,7 @@ Write tests for a task based on requirements and acceptance criteria. This agent
 
 Use the inline `<task-context>` provided in the prompt — this contains the acceptance criteria and relevant plan section. **Do NOT re-read SPEC.md, PLAN.md, or TODO.md** — the task-runner has already extracted the relevant portions.
 
-**Deprecated fallback:** If `<task-context>` is not present in the prompt (legacy invocation without the task-runner), fall back to reading `SPEC.md`, `PLAN.md`, and `TODO.md`. This path wastes tokens by loading full files — prefer inline context from the task-runner.
+**Deprecated fallback:** see `$AUTOCODE_PLUGIN_ROOT/references/task-context-fallback.md` for the legacy no-task-context path.
 
 **Empty acceptance criteria:** If `<task-context>` is present but `<acceptance-criteria>` is empty, derive testable criteria from the `TASK` description and the `<plan-section>`, and flag the gap in the Coverage Notes section of the output so the spec can be fixed.
 
@@ -40,7 +40,7 @@ Extract from the context:
 
 ### Step 2: Detect Test Framework
 
-Read `$AUTOCODE_PLUGIN_ROOT/agents/references/test-frameworks.md` for the full framework detection matrix, file conventions, and syntax check commands. Use that reference throughout this process.
+Read `$AUTOCODE_PLUGIN_ROOT/references/test-frameworks.md` for the full framework detection matrix, file conventions, and syntax check commands. Use that reference throughout this process.
 
 ### Step 3: Analyze Existing Tests
 
@@ -55,7 +55,7 @@ Based on the task's target files and project conventions, determine where test f
 
 ### Step 5: Write Tests
 
-Create or modify test files with test cases derived from task acceptance criteria.
+Create or modify test files with test cases derived from task acceptance criteria. This agent has Write only, no Edit: to modify an existing test file, Read it first, then Write the complete updated content back.
 
 **Guidelines:**
 - **Test behavior, not implementation** - Assert on outputs and side effects, not internal details

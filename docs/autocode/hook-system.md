@@ -119,7 +119,7 @@ Fires on every subagent stop; self-filters to `autocode:*` agents.
 
 **Process:**
 1. Recovers the agent name (`agent_type` field, transcript fallback) and final output (transcript JSONL)
-2. Parses the structured `<task-completed>` tag (contract: `agents/references/failure-categories.md`)
+2. Parses the structured `<task-completed>` tag (contract: `plugins/autocode/references/failure-categories.md`)
 3. On failure: logs to `failures.jsonl` with the tag's `category` as a deterministic backstop
 4. On completion by a task-runner: audits `{SPEC_DIR}/artifacts/` for a non-empty `handoff.md` and non-empty `{task_id}_*` files; emits an `<artifact-audit>` warning (and a user-visible `systemMessage`) when the trail is missing or incomplete
 5. Optionally runs `judge-artifacts.mjs` (see below)

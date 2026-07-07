@@ -13,7 +13,6 @@ Run configured static analysis commands and report actionable issues for the cod
 
 <input>
 
-- `SPEC_DIR`: Path to the spec directory (e.g., `.specs/auth-refactor`)
 - `STATIC_ANALYSIS_CONFIG`: Configuration from autocode.yml static_analysis section
 
 </input>
@@ -22,7 +21,7 @@ Run configured static analysis commands and report actionable issues for the cod
 
 ### Step 1: Parse Configuration
 
-Read `$AUTOCODE_PLUGIN_ROOT/agents/references/analysis-parsing.md` for configuration format, output parsing rules, severity mapping, and fix suggestions. Use that reference throughout this process.
+Read `$AUTOCODE_PLUGIN_ROOT/references/analysis-parsing.md` for configuration format, output parsing rules, severity mapping, and fix suggestions. Use that reference throughout this process.
 
 Extract commands and `fail_on_warnings` from `STATIC_ANALYSIS_CONFIG`. Ignore `max_fix_attempts` if present; attempt tracking belongs to the task-runner. If config is empty or has no commands, return immediately with no issues.
 
@@ -153,16 +152,6 @@ Each issue must include:
 
 <analysis-result blocking="{true|false}" errors="{error_count}" warnings="{warning_count}" />
 ```
-
-### Return Values
-
-Return to orchestrator:
-- `has_blocking_issues`: boolean
-- `blocking_issues`: list of `{issue_id, tool, rule, file, line, severity, description}`
-- `issue_count`: number
-- `error_count`: number
-- `warning_count`: number
-- `fix_instructions`: string (markdown) or null
 
 **Machine-parseable result tag (required):** always end the output with
 

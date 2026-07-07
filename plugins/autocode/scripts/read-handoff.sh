@@ -13,13 +13,16 @@ set -euo pipefail
 SPEC_DIR="${1:-}"
 
 if [ -z "$SPEC_DIR" ]; then
-  echo "Error: spec directory is required"
-  echo "Usage: read-handoff.sh <spec_dir>"
+  # Item 43: load-context.sh injects this script's stdout directly into
+  # the agent prompt as if it were content, so error/usage output must
+  # go to stderr, not stdout.
+  echo "Error: spec directory is required" >&2
+  echo "Usage: read-handoff.sh <spec_dir>" >&2
   exit 1
 fi
 
 if [ ! -d "$SPEC_DIR" ]; then
-  echo "Error: spec directory does not exist at $SPEC_DIR"
+  echo "Error: spec directory does not exist at $SPEC_DIR" >&2
   exit 1
 fi
 

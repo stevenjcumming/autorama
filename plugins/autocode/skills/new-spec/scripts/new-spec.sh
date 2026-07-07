@@ -2,20 +2,19 @@
 
 set -euo pipefail
 
+source "$(dirname "$0")/../../../scripts/lib.sh"
+
 IDENTIFIER="${1:-}"
 
 if [ -z "$IDENTIFIER" ]; then
-  echo "Error: identifier is required"
-  echo "Usage: new-spec.sh <identifier>"
+  echo "Error: identifier is required" >&2
+  echo "Usage: new-spec.sh <identifier>" >&2
   exit 1
 fi
 
-if [[ ! "$IDENTIFIER" =~ ^[A-Za-z0-9._-]+$ ]] || [[ "$IDENTIFIER" =~ ^\.+$ ]]; then
-  echo "Error: invalid identifier '$IDENTIFIER' (allowed: letters, digits, '.', '_', '-'; must not be only dots)"
-  exit 1
-fi
+require_identifier "$IDENTIFIER"
 
-SPEC_DIR=".specs/$IDENTIFIER"
+SPEC_DIR="$(spec_dir_for "$IDENTIFIER")"
 
 if [ -d "$SPEC_DIR" ]; then
   echo "Error: spec '$IDENTIFIER' already exists at $SPEC_DIR"
@@ -27,7 +26,7 @@ mkdir -p "$SPEC_DIR"
 cat > "$SPEC_DIR/REQUIREMENT.md" << 'EOF'
 # Requirements
 
-<!-- 
+<!--
 
 Copy & paste requirements below. Sources may include:
 - PRD / Feature request

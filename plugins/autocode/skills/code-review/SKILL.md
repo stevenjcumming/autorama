@@ -1,8 +1,9 @@
 ---
 name: code-review
 description: Use when the user wants a structured code review of recent changes against a quality checklist (security, testing, error handling, performance). Works standalone or scoped to a spec. Outputs severity-bucketed findings.
-allowed-tools: Bash(git diff:*), Bash(git status:*), Bash(mkdir -p:*), Bash(rm:*), Read, Glob, Task
-argument-hint: [identifier] [--ref <ref>]
+allowed-tools: Bash(git diff:*), Bash(git status:*), Bash(git merge-base:*), Bash(mkdir -p:*), Bash(rm .specs/*/artifacts/CODE_REVIEW.md.group-*.md), Bash(rm .claude/CODE_REVIEW.md.group-*.md), Read, Glob, Task
+argument-hint: "[identifier] [--ref <ref>]"
+model: sonnet # pure orchestration - this skill delegates all judgment calls to the reviewer agent(s) and only parses/presents their output, so it does not need a larger model
 ---
 
 # Code Review
@@ -15,7 +16,8 @@ Perform a structured code review against a configurable checklist, producing sev
 - Parse the arguments to extract:
   - `IDENTIFIER`: Optional spec identifier (e.g., `auth-refactor`)
   - `REF`: Optional git ref to diff against (default: use spec branch or HEAD~1)
-- If `IDENTIFIER` is provided, construct `SPEC_DIR` as `.specs/$IDENTIFIER`
+- If `IDENTIFIER` is provided, before constructing `SPEC_DIR`, verify it matches `^[A-Za-z0-9._-]+$`. If it does not match, stop immediately and report an error to the user (e.g., "Invalid identifier: must contain only letters, numbers, dots, hyphens, and underscores.") — do not proceed to construct or use `SPEC_DIR`.
+- If `IDENTIFIER` is provided and passes validation, construct `SPEC_DIR` as `.specs/$IDENTIFIER`
 - If `IDENTIFIER` is provided, verify `SPEC_DIR` exists before proceeding. If it does not, tell the user the spec was not found and stop.
 
 ## Step 1: Gather Diff
@@ -49,7 +51,7 @@ Also gather the diff stat for a summary:
 git diff --stat HEAD
 ```
 
-## Step 2: Load Checklist
+## Step 2: Load Checklist and Model Override
 
 Load the code review checklist in this priority order:
 
@@ -58,6 +60,8 @@ Load the code review checklist in this priority order:
 3. Fall back to shipped default: `$AUTOCODE_PLUGIN_ROOT/skills/code-review/code-review-checklist.md`
 
 Read the checklist file.
+
+Also check `.claude/autocode.yml` for `code_review.model` (e.g. `code_review: { model: opus }`). If set, capture it as `REVIEWER_MODEL` and pass it as the `model` argument to every `Task(autocode:reviewer, ...)` call in Step 5 below, overriding reviewer.md's own frontmatter pin for this run. If unset, omit the `model` argument entirely and let the Task default to reviewer.md's pinned `sonnet`.
 
 ## Step 3: Determine Output Path
 
@@ -81,7 +85,7 @@ Count the diff size from the diff stat. Choose the review architecture by thresh
 ### Small diff (at or under threshold): single pass
 
 ```
-Task(autocode:reviewer,
+Task(autocode:reviewer, model={REVIEWER_MODEL if set, else omit},
   "Review code changes against checklist.
   SPEC_DIR={SPEC_DIR} OUTPUT_PATH={OUTPUT_PATH}
   <diff>{DIFF}</diff>
@@ -97,7 +101,7 @@ Task(autocode:reviewer,
 2. **Spawn one reviewer per group, all in parallel (single message with multiple Task calls).** Each gets only its group's diff hunks, the full `DIFF_STAT` for context, the checklist, and any `PREVIOUS_FINDINGS`. Each writes to its own path `{OUTPUT_PATH}.group-{n}.md`:
 
 ```
-Task(autocode:reviewer,
+Task(autocode:reviewer, model={REVIEWER_MODEL if set, else omit},
   "Review one file group against checklist (part of a split review).
   SPEC_DIR={SPEC_DIR} OUTPUT_PATH={OUTPUT_PATH}.group-{n}.md
   <diff>{group diff hunks only}</diff>
@@ -110,7 +114,7 @@ Task(autocode:reviewer,
 3. **Integration pass.** After all group reviewers complete, read the group reports and spawn one final reviewer over the combined findings to catch what per-file passes cannot see:
 
 ```
-Task(autocode:reviewer,
+Task(autocode:reviewer, model={REVIEWER_MODEL if set, else omit},
   "Integration pass over a split review. Look ONLY for cross-file issues:
   inconsistent patterns between files, broken contracts (caller/callee or
   producer/consumer mismatches across groups), duplicated logic introduced
@@ -123,7 +127,13 @@ Task(autocode:reviewer,
   at OUTPUT_PATH, deduplicated, with a '## Cross-File Issues' section.")
 ```
 
-4. Delete the intermediate `{OUTPUT_PATH}.group-*.md` files after the merged report is written.
+4. Delete the intermediate `{OUTPUT_PATH}.group-*.md` files after the merged report is written:
+
+```bash
+rm {OUTPUT_PATH}.group-*.md
+```
+
+(this expands to `rm .specs/<id>/artifacts/CODE_REVIEW.md.group-*.md` in spec mode or `rm .claude/CODE_REVIEW.md.group-*.md` in standalone mode — do not `rm` any other path).
 
 ## Step 6: Present Results
 

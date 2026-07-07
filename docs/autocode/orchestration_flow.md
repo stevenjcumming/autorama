@@ -19,7 +19,7 @@ loop:
     if category retry limit exceeded → exit with failure
 ```
 
-On completion, it marks the task `[x]` in TODO.md and emits exactly one `<task-completed>` tag (defined in `agents/references/failure-categories.md`) that the execute skill parses to determine success/failure. A missing or unparseable tag is treated as `status=failed category=unknown`, surfacing the raw tail of the runner output.
+On completion, it marks the task `[x]` in TODO.md and emits exactly one `<task-completed>` tag (defined in `plugins/autocode/references/failure-categories.md`) that the execute skill parses to determine success/failure. A missing or unparseable tag is treated as `status=failed category=unknown`, surfacing the raw tail of the runner output.
 
 ## Context Continuity Between Tasks
 

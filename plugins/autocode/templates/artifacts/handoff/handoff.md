@@ -1,7 +1,7 @@
 ---
 task_id: {task_id}
 status: {completed|failed}
-timestamp: {YYYY-MM-DDTHH:MM:SS}
+timestamp: {YYYY-MM-DDTHH:MM:SSZ}
 spec_id: {spec_id}
 agent: {agent_name}
 ---

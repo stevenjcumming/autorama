@@ -2,20 +2,19 @@
 
 set -euo pipefail
 
+source "$(dirname "$0")/../../../scripts/lib.sh"
+
 IDENTIFIER="${1:-}"
 
 if [ -z "$IDENTIFIER" ]; then
-  echo "Error: identifier is required"
-  echo "Usage: spec-archive.sh <identifier>"
+  echo "Error: identifier is required" >&2
+  echo "Usage: spec-archive.sh <identifier>" >&2
   exit 1
 fi
 
-if [[ ! "$IDENTIFIER" =~ ^[A-Za-z0-9._-]+$ ]] || [[ "$IDENTIFIER" =~ ^\.+$ ]]; then
-  echo "Error: invalid identifier '$IDENTIFIER' (allowed: letters, digits, '.', '_', '-'; must not be only dots)"
-  exit 1
-fi
+require_identifier "$IDENTIFIER"
 
-SPEC_DIR=".specs/$IDENTIFIER"
+SPEC_DIR="$(spec_dir_for "$IDENTIFIER")"
 
 if [ ! -d "$SPEC_DIR" ]; then
   echo "ERROR: Spec directory not found: $SPEC_DIR"
@@ -84,8 +83,21 @@ for entry in "$SPEC_DIR"/*; do
   fi
 done
 
+# item 16 / roadmap 4.10: REVIEW.md is the single most audit-relevant file
+# (the durable human sign-off record). Under the default gitignored
+# .specs/ layout, it previously survived in neither git nor the archive -
+# it stayed only in the working tree, the least durable of the three
+# places it could live. Copy (not move) it into the archive too, so a
+# full historical record exists in one place even if the working-tree
+# copy is later deleted; the working-tree copy stays in place so
+# git-diff/PR visibility still works in projects where .specs/ isn't
+# fully gitignored.
+cp "$SPEC_DIR/REVIEW.md" "$ARCHIVE_DIR/REVIEW.md"
+MOVED=$((MOVED + 1))
+echo "Archived: REVIEW.md (copied; original preserved in $SPEC_DIR)"
+
 echo ""
 echo "=== Archive Complete ==="
 echo "Files archived: $MOVED"
 echo "Location: $ARCHIVE_DIR"
-echo "Preserved: $SPEC_DIR/REVIEW.md"
+echo "Preserved: $SPEC_DIR/REVIEW.md (also copied into archive)"

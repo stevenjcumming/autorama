@@ -32,6 +32,15 @@ set -euo pipefail
 
 HOOK_NAME="check-edit"
 
+# Shared helpers. Sourced before the local log_hook_error definition
+# below, so that local definition - which uses this hook's existing
+# single-arg call convention (relying on the global $INPUT for the
+# payload rather than lib.sh's log_hook_error(hook, message, payload)
+# signature) - intentionally shadows the one lib.sh provides, keeping
+# the one existing call site in this file unchanged.
+source "$(dirname "$0")/../scripts/lib.sh" 2>/dev/null || true
+source "$(dirname "$0")/../scripts/read-config.sh" 2>/dev/null || true
+
 log_hook_error() {
   [ -z "${CLAUDE_PLUGIN_DATA:-}" ] && return 0
   mkdir -p "$CLAUDE_PLUGIN_DATA" 2>/dev/null || return 0
@@ -48,24 +57,10 @@ log_hook_error() {
   return 0
 }
 
-CONFIG_FILE=".claude/autocode.yml"
-
-# No config, nothing to run
-if [ ! -f "$CONFIG_FILE" ]; then
-  exit 0
-fi
-
-# Master switch and per-edit toggle. The toggle defaults to ON: it only
-# disables when explicitly set to false.
-if grep -qE '^[[:space:]]*enabled:[[:space:]]*false' <(grep -A2 '^static_analysis:' "$CONFIG_FILE" 2>/dev/null) 2>/dev/null; then
-  exit 0
-fi
-ON_EDIT_BLOCK=$(awk '/^[[:space:]]{2}on_edit:/{f=1; next} f && /^[[:space:]]{0,2}[a-z_]+:/{f=0} f{print}' "$CONFIG_FILE" 2>/dev/null || true)
-if echo "$ON_EDIT_BLOCK" | grep -qE '^[[:space:]]*enabled:[[:space:]]*false'; then
-  exit 0
-fi
-
 # Parse the edited file path from the documented PostToolUse payload
+# FIRST (item 43 partial): the config gate below needs the payload's
+# .cwd to locate the project's config file, so INPUT must be read and
+# parsed before any config-file check runs.
 if ! command -v jq &> /dev/null; then
   exit 0
 fi
@@ -74,6 +69,37 @@ INPUT=$(cat)
 
 if ! echo "$INPUT" | jq -e . >/dev/null 2>&1; then
   log_hook_error "stdin payload is not valid JSON"
+  exit 0
+fi
+
+# Locate the project's config relative to the hook payload's cwd, not
+# this process's own cwd (which need not match the project root the
+# edit happened in).
+CWD=$(echo "$INPUT" | jq -r '.cwd // empty' 2>/dev/null || true)
+if [ -z "$CWD" ]; then
+  CWD="$(pwd)"
+fi
+CONFIG_FILE="$CWD/.claude/autocode.yml"
+
+# No config, nothing to run
+if [ ! -f "$CONFIG_FILE" ]; then
+  exit 0
+fi
+
+# Master switch and per-edit toggle, both read via read_config_value
+# (item 23/2.4 fix - replaces the old `grep -A2` window parsing, which
+# broke the moment a comment line separated a parent key from its
+# child, or any other `enabled:` key fell inside the grepped window).
+# Both default to ON, matching the previous fallback: they only disable
+# when explicitly set to false.
+if command -v read_config_value >/dev/null 2>&1; then
+  STATIC_ANALYSIS_ENABLED=$(read_config_value "$CONFIG_FILE" "static_analysis.enabled" "true")
+  ON_EDIT_ENABLED=$(read_config_value "$CONFIG_FILE" "static_analysis.on_edit.enabled" "true")
+else
+  STATIC_ANALYSIS_ENABLED="true"
+  ON_EDIT_ENABLED="true"
+fi
+if [ "$STATIC_ANALYSIS_ENABLED" = "false" ] || [ "$ON_EDIT_ENABLED" = "false" ]; then
   exit 0
 fi
 
@@ -89,7 +115,10 @@ esac
 
 # Resolve the per-file command: on_edit.command first, then the first
 # simple string entry under static_analysis.commands.
-CHECK_CMD=$(echo "$ON_EDIT_BLOCK" | sed -n 's/^[[:space:]]*command:[[:space:]]*//p' | head -1 | sed 's/^["'\'']//; s/["'\'']$//' || true)
+CHECK_CMD=""
+if command -v read_config_value >/dev/null 2>&1; then
+  CHECK_CMD=$(read_config_value "$CONFIG_FILE" "static_analysis.on_edit.command" "")
+fi
 if [ -z "$CHECK_CMD" ]; then
   CHECK_CMD=$(awk '/^static_analysis:/{f=1; next} f && /^[a-z_]/{f=0} f && /^[[:space:]]+commands:/{c=1; next} f && c && /^[[:space:]]+-[[:space:]]+[^[:space:]]/{sub(/^[[:space:]]+-[[:space:]]+/, ""); print; exit} f && c && /^[[:space:]]+[a-z_]+:/{c=0}' "$CONFIG_FILE" 2>/dev/null || true)
   # Skip the structured "- command:" form; only simple strings are safe
@@ -103,10 +132,14 @@ if [ -z "$CHECK_CMD" ]; then
   exit 0
 fi
 
-# Run the check against the edited file. Exit 2 feeds the output back
-# to Claude for an immediate fix.
+# Run the check against the edited file. Run via `bash -c` with the
+# file path passed as a positional arg ($1), not word-split/glob-
+# expanded from the config string directly (item 24/2.6 fix): the old
+# `$CHECK_CMD "$FILE_PATH"` broke on any quoted arg or glob character in
+# the configured command string. Exit 2 feeds the output back to Claude
+# for an immediate fix.
 set +e
-OUTPUT=$($CHECK_CMD "$FILE_PATH" 2>&1)
+OUTPUT=$(bash -c "$CHECK_CMD \"\$1\"" _ "$FILE_PATH" 2>&1)
 STATUS=$?
 set -e
 

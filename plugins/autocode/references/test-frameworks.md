@@ -59,6 +59,8 @@ Follow whatever convention the existing tests use. If no tests exist, use the fr
 | Cargo | `cargo test {test_name}` |
 | Make | `make test` (runs the whole suite; Make cannot target individual files unless the target accepts arguments) |
 
+**Minitest `&&`-chaining pitfall:** `&&` short-circuits on the first non-zero exit, so if an earlier file fails, later files never run and the task-runner's exit-code-based failure categorization only ever sees that first failure — failures in subsequent files are silently hidden. Prefer running each file separately and checking each exit code (e.g., `for f in {file1} {file2}; do bundle exec ruby -Itest "$f" || echo "FAILED: $f"; done`), or chain with `;` and aggregate exit statuses explicitly.
+
 ## Fallback
 
 If none of the detection rows match, or the detected command does not work, inspect the project's CI config (`.github/workflows/*`, `.gitlab-ci.yml`, etc.) or Makefile for how tests are actually run. Use that command and document the choice in the output's Coverage Notes.

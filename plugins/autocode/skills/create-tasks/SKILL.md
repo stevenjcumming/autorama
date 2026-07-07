@@ -19,7 +19,7 @@ Run the create-tasks script:
 bash $AUTOCODE_PLUGIN_ROOT/skills/create-tasks/scripts/create-tasks.sh $ARGUMENTS
 ```
 
-If the script exits with an error because TODO.md already exists, stop and ask the user whether to keep the existing TODO.md or regenerate it. Only if they choose to regenerate, delete the existing TODO.md, re-run the script, and continue; otherwise stop. For any other script error (missing spec or PLAN.md), surface the error message and stop.
+The script validates upstream content (does PLAN.md exist and have real content, not just unfilled template boilerplate?) *before* scaffolding TODO.md, so a failed check never leaves a stale, empty TODO.md behind. If the script exits with an error because TODO.md already exists, stop and ask the user whether to keep the existing TODO.md or regenerate it. Only if they choose to regenerate, delete the existing TODO.md, re-run the script, and continue. If the script exits with an error because PLAN.md is missing or is empty/unfilled template content, surface the error message and tell the user to complete the plan first, then stop. For any other script error, surface the error message and stop.
 
 ## Step 2: Read the Plan
 
@@ -32,8 +32,6 @@ Read `PLAN.md` from the spec directory and extract:
 ```
 Read(".specs/$ARGUMENTS/PLAN.md")
 ```
-
-If PLAN.md is empty or has only template content, tell the user to complete the plan first and stop.
 
 ## Step 3: Convert to Tasks
 
@@ -84,14 +82,14 @@ Then replace the template content in `TODO.md` with **numbered tasks**:
 - **Phases**: Use `## P1:`, `## P2:`, etc.
 - **Tasks**: Prefix each task with `[T1]`, `[T2]`, etc. (global numbering across all phases)
 
-This enables targeted execution: `/autocode:execute <SPEC_DIR> T3` runs only task T3.
+This enables targeted execution: `/autocode:execute <identifier> T3` runs only task T3.
 
 ```markdown
 # TODO
 
 <!-- Task checklist generated from PLAN.md -->
-<!-- Run specific task: /autocode:execute <SPEC_DIR> T3 -->
-<!-- Run specific phase: /autocode:execute <SPEC_DIR> P1 -->
+<!-- Run specific task: /autocode:execute <identifier> T3 -->
+<!-- Run specific phase: /autocode:execute <identifier> P1 -->
 
 ## P1: [Actual Phase Name from PLAN.md]
 

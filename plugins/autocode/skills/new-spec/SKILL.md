@@ -17,4 +17,4 @@ bash $AUTOCODE_PLUGIN_ROOT/skills/new-spec/scripts/new-spec.sh $ARGUMENTS
 
 If the script exits with an error because the spec already exists, relay the error message to the user and suggest choosing a different identifier; then stop.
 
-After creating the spec, read the SPEC.md file and inform the user it's ready for their requirements (REQUIREMENT.md is where raw source material gets pasted; SPEC.md references it).
+The script's own stdout already confirms what was created (`Created spec at ...` / `Created requirements at ...`) - no need to read the files back just to show the user what was written. Inform the user the spec is ready for their requirements (REQUIREMENT.md is where raw source material gets pasted; SPEC.md references it).

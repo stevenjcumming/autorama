@@ -26,10 +26,10 @@ Extract from `$ARGUMENTS`:
 
 ## Step 2: Validate Prerequisites
 
-Run the validation script with both arguments:
+Run the validation script with the parsed arguments from Step 1 (validate-autocode.sh takes `<identifier> [filter]`, not a `SPEC_DIR` path):
 
 ```bash
-bash $AUTOCODE_PLUGIN_ROOT/skills/execute/scripts/validate-autocode.sh $ARGUMENTS
+bash $AUTOCODE_PLUGIN_ROOT/skills/execute/scripts/validate-autocode.sh {IDENTIFIER} {FILTER}
 ```
 
 This validates:
@@ -65,7 +65,7 @@ bash $AUTOCODE_PLUGIN_ROOT/skills/execute/scripts/build-task-queue.sh {SPEC_DIR}
 ```
 
 Parse the output:
-- Each `TASK:<task_id>:<phase>:<description>` line is one queued task
+- Each `TASK:<task_id>:<phase>:<description>` line is one queued task. The line has exactly 3 leading colons; `<description>` is everything after the third colon, taken verbatim (it may itself contain colons - split on the first 3 only, not on every colon in the line).
 - The `TOTAL:<count>` line gives the total number of tasks
 - If `TOTAL:0`, output "No uncompleted tasks found for the given filter." and exit
 
@@ -95,7 +95,7 @@ Task(
 
 ### 4.2: Parse Result
 
-Inspect the task-runner result for the structured status tag defined in `$AUTOCODE_PLUGIN_ROOT/agents/references/failure-categories.md`:
+Inspect the task-runner result for the structured status tag defined in `$AUTOCODE_PLUGIN_ROOT/references/failure-categories.md`:
 - `<task-completed task="{task_id}" status="completed" type="{commit_type}" />` — task succeeded (type is the conventional commit type chosen by the task-runner)
 - `<task-completed task="{task_id}" status="failed" category="{category}" retryable="{true|false}" reason="{reason}" />` — task failed; the body above the tag carries partial results and suggested alternatives
 

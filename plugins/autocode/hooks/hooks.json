@@ -1,5 +1,6 @@
 {
   "description": "Autocode agent harness hooks: context loading, usage logging, per-edit analysis, and completion handling",
+  "_comment": "PostToolUse matcher intentionally omits NotebookEdit: its payload carries tool_input.notebook_path, not tool_input.file_path, which check-edit.sh does not read, and appending a generic static-analysis command to a .ipynb JSON file would rarely be meaningful anyway. Add NotebookEdit to the matcher only alongside dedicated notebook-path handling in check-edit.sh.",
   "hooks": {
     "PreToolUse": [
       {

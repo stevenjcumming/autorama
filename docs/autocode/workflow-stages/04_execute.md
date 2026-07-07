@@ -333,7 +333,7 @@ If a refactor cycle only produces whitespace, formatting, or comment-only change
 
 ## Error-Driven Retries (v0.11.0)
 
-Test failures are classified by category using pattern matching from `agents/references/failure-categories.md`. The task-runner uses these categories to determine retryability:
+Test failures are classified by category using pattern matching from `plugins/autocode/references/failure-categories.md`. The task-runner uses these categories to determine retryability:
 
 | Priority | Category | Pattern Indicators | Retryable |
 |----------|----------|-------------------|-----------|
@@ -422,12 +422,12 @@ plugins/autocode/
 │   ├── coder.md      # Implementation + artifacts
 │   ├── analyzer.md   # Static analysis + fix instructions
 │   ├── refactorer.md # Code cleanup
-│   ├── session-summarizer.md   # Context compression
-│   └── references/             # Progressive disclosure docs
-│       ├── test-frameworks.md
-│       ├── artifact-triggers.md
-│       ├── analysis-parsing.md
-│       └── failure-categories.md
+│   └── session-summarizer.md   # Context compression
+├── references/                 # Progressive disclosure docs (not under agents/, so they aren't auto-registered as agents)
+│   ├── test-frameworks.md
+│   ├── artifact-triggers.md
+│   ├── analysis-parsing.md
+│   └── failure-categories.md
 ├── skills/execute/scripts/
 │   ├── validate-autocode.sh   # Prerequisite validation (execute skill)
 │   └── build-task-queue.sh    # Parse TODO.md into task queue (execute skill)

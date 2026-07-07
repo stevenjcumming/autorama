@@ -1,8 +1,9 @@
 ---
 name: session-summarizer
-description: When a task-runner or the execute loop is approaching context limits, or a session ends mid-spec, and progress must be compressed into SESSION_SUMMARY.md for the next agent.
+description: Called by the task-runner's Step 8.5 context-pressure check after a task completes, when check-context.sh reports WARNING or CRITICAL; also usable directly when a session ends mid-spec and progress must be compressed into SESSION_SUMMARY.md for the next task-runner.
 tools: Read, Write, Glob, Bash(git diff:*), Bash(git status:*), Bash(date:*), Bash(mkdir:*), Bash(mv:*)
 model: haiku
+permissionMode: acceptEdits
 ---
 
 <!-- Tool scoping: Bash is limited to the exact commands this agent runs — git diff/status for session changes, date for the archive timestamp, mkdir/mv for archiving the previous summary. -->
@@ -33,7 +34,7 @@ Read("{SPEC_DIR}/TODO.md")
 
 ### Step 2: Get Git Changes
 
-Analyze changes made during the session. The execution loop does not commit per task, so session work is uncommitted; diff against `HEAD` and include untracked files:
+Analyze changes made during the session. See `$AUTOCODE_PLUGIN_ROOT/references/uncommitted-work-handling.md` for why this is a `HEAD`-relative diff plus untracked files, not a commit-range diff:
 
 ```bash
 # Get all files changed this session (tracked changes plus untracked files)
@@ -129,16 +130,17 @@ Create a summary targeting 500-1000 tokens. The summary MUST lead with the **Fac
 {what the next agent should focus on}
 ```
 
-### Step 6: Write Summary
+### Step 6: Archive the Previous Summary, Then Write the New One
 
-Write the summary to the handoff directory:
+Do this in order — archiving after writing would archive the summary you just wrote, not the one it replaced:
 
-```
-Write("{SPEC_DIR}/artifacts/handoff/SESSION_SUMMARY.md", summary)
-```
-
-If a previous session summary exists, archive it:
-- Move to `{SPEC_DIR}/artifacts/handoff/archive/SESSION_SUMMARY_{timestamp}.md`, where `{timestamp}` comes from `date +%Y%m%d%H%M%S`
+1. **Archive first.** If `{SPEC_DIR}/artifacts/handoff/SESSION_SUMMARY.md` already exists, move it before writing anything new:
+   - `mkdir -p "{SPEC_DIR}/artifacts/handoff/archive"`
+   - Move it to `{SPEC_DIR}/artifacts/handoff/archive/SESSION_SUMMARY_{timestamp}.md`, where `{timestamp}` comes from `date +%Y%m%d%H%M%S`
+2. **Then write the new summary** to the now-vacated path:
+   ```
+   Write("{SPEC_DIR}/artifacts/handoff/SESSION_SUMMARY.md", summary)
+   ```
 
 </process>
 

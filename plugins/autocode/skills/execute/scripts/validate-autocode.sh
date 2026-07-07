@@ -2,6 +2,32 @@
 
 set -euo pipefail
 
+# ==============================================================================
+# is_phase_header_line - detect a TODO.md phase header line and normalize
+# its phase ID to the "P<n>" form. Recognizes both "## P1: Foundation" and
+# "## Phase 1: Foundation", matching what build-task-queue.sh accepts.
+#
+# This function is intentionally byte-for-byte identical to the copy in
+# skills/execute/scripts/build-task-queue.sh - the two scripts must never
+# disagree on what counts as a phase header again (a TODO.md using the
+# "Phase 1" form previously failed validation here even though the queue
+# builder already handled it). Kept as a local copy rather than moved into
+# scripts/lib.sh for this change.
+#
+# Usage: if is_phase_header_line "$line"; then phase="$PHASE_HEADER_MATCH"; fi
+# Sets PHASE_HEADER_MATCH to the normalized "P<n>" ID on success. Returns 0
+# if the line is a phase header, 1 otherwise.
+# ==============================================================================
+is_phase_header_line() {
+  local line="$1"
+  if echo "$line" | grep -qE '^## (P[0-9]+|Phase [0-9]+)'; then
+    PHASE_HEADER_MATCH=$(echo "$line" | grep -oE '(P[0-9]+|Phase [0-9]+)' | head -1)
+    PHASE_HEADER_MATCH="${PHASE_HEADER_MATCH/Phase /P}"
+    return 0
+  fi
+  return 1
+}
+
 IDENTIFIER="${1:-}"
 FILTER="${2:-}"
 
@@ -65,8 +91,17 @@ if [ -n "$FILTER" ]; then
     fi
     echo "Filter: Task $FILTER"
   elif [[ "$FILTER" =~ ^P[0-9]+$ ]]; then
-    # Phase filter (e.g., P1, P2)
-    if ! grep -q "^## $FILTER:" "$SPEC_DIR/TODO.md"; then
+    # Phase filter (e.g., P1, P2). Accepts both "## P1: Name" and
+    # "## Phase 1: Name" headers via the shared is_phase_header_line
+    # matcher, so this stays in sync with build-task-queue.sh.
+    FOUND_PHASE="false"
+    while IFS= read -r line; do
+      if is_phase_header_line "$line" && [ "$PHASE_HEADER_MATCH" = "$FILTER" ]; then
+        FOUND_PHASE="true"
+        break
+      fi
+    done < "$SPEC_DIR/TODO.md"
+    if [ "$FOUND_PHASE" != "true" ]; then
       echo "Error: Phase $FILTER not found in TODO.md"
       exit 1
     fi

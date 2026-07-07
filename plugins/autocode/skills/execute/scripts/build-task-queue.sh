@@ -15,12 +15,22 @@
 # Output (one per line):
 #   TASK:<task_id>:<phase>:<description>
 #
+#   The line is colon-delimited with exactly 3 leading colons; everything
+#   after the third colon is the description verbatim (it may itself
+#   contain colons - do not split on every colon, split on the first 3
+#   only and take the remainder as-is). <task_id> is the bare ID without
+#   brackets (e.g. "T1"), or the literal string "none" if the checkbox had
+#   no [T<n>] tag; <phase> is "P<n>" or "none" likewise.
+#
 # Exit codes:
 #   0 - Success (outputs task lines)
-#   1 - Error (missing arguments, file not found, invalid filter)
+#   1 - Error (missing/invalid arguments, file not found, invalid filter)
 #
 
 set -euo pipefail
+
+# shellcheck source=../../../scripts/lib.sh
+source "$(dirname "$0")/../../../scripts/lib.sh"
 
 SPEC_DIR="${1:-}"
 FILTER="${2:-}"
@@ -31,12 +41,41 @@ if [ -z "$SPEC_DIR" ]; then
   exit 1
 fi
 
+# Validate the identifier component of the path (this script is documented
+# as a standalone tool and, unlike its siblings, previously did no
+# identifier/path validation at all).
+require_identifier "$(basename "$SPEC_DIR")" "Error: invalid spec directory '$SPEC_DIR'"
+
 TODO_FILE="$SPEC_DIR/TODO.md"
 
 if [ ! -f "$TODO_FILE" ]; then
   echo "Error: TODO.md not found at $TODO_FILE"
   exit 1
 fi
+
+# ==============================================================================
+# is_phase_header_line - detect a TODO.md phase header line and normalize
+# its phase ID to the "P<n>" form. Recognizes both "## P1: Foundation" and
+# "## Phase 1: Foundation".
+#
+# This function is intentionally byte-for-byte identical to the copy in
+# skills/execute/scripts/validate-autocode.sh - the two scripts must never
+# disagree on what counts as a phase header again. Kept as a local copy
+# rather than moved into scripts/lib.sh for this change.
+#
+# Usage: if is_phase_header_line "$line"; then phase="$PHASE_HEADER_MATCH"; fi
+# Sets PHASE_HEADER_MATCH to the normalized "P<n>" ID on success. Returns 0
+# if the line is a phase header, 1 otherwise.
+# ==============================================================================
+is_phase_header_line() {
+  local line="$1"
+  if echo "$line" | grep -qE '^## (P[0-9]+|Phase [0-9]+)'; then
+    PHASE_HEADER_MATCH=$(echo "$line" | grep -oE '(P[0-9]+|Phase [0-9]+)' | head -1)
+    PHASE_HEADER_MATCH="${PHASE_HEADER_MATCH/Phase /P}"
+    return 0
+  fi
+  return 1
+}
 
 # ============================================================================
 # Parse TODO.md
@@ -47,20 +86,29 @@ TASK_COUNT=0
 
 while IFS= read -r line; do
   # Detect phase headers (e.g., "## P1: Foundation" or "## Phase 1: Foundation")
-  if echo "$line" | grep -qE '^## (P[0-9]+|Phase [0-9]+)'; then
-    # Extract phase ID (normalize "Phase 1" to "P1")
-    CURRENT_PHASE=$(echo "$line" | grep -oE '(P[0-9]+|Phase [0-9]+)' | head -1)
-    CURRENT_PHASE=$(echo "$CURRENT_PHASE" | sed 's/Phase /P/')
+  if is_phase_header_line "$line"; then
+    CURRENT_PHASE="$PHASE_HEADER_MATCH"
     continue
   fi
 
   # Match uncompleted tasks: "- [ ] [T1] Description" or "- [ ] Description"
   if echo "$line" | grep -qE '^[[:space:]]*- \[ \]'; then
-    # Extract task ID if present (e.g., [T1], [T2])
-    TASK_ID=$(echo "$line" | grep -oE '\[T[0-9]+\]' | tr -d '[]' || echo "")
+    # Strip the checkbox prefix once, anchored to the start of the line,
+    # so what remains starts at the task ID (if present) or straight at
+    # the description.
+    REST=$(printf '%s' "$line" | sed -E 's/^[[:space:]]*- \[ \][[:space:]]*//')
 
-    # Extract description (strip checkbox and task ID)
-    DESCRIPTION=$(echo "$line" | sed 's/^[[:space:]]*- \[ \][[:space:]]*//' | sed 's/\[T[0-9]*\][[:space:]]*//')
+    # Extract the task ID only when it appears immediately at the start
+    # of REST (anchored) - an unanchored match could otherwise pick up a
+    # `[T2]` mentioned mid-description as if it were the task's own ID
+    # (item 37b).
+    if [[ "$REST" =~ ^\[T[0-9]+\] ]]; then
+      TASK_ID=$(printf '%s' "$REST" | grep -oE '^\[T[0-9]+\]' | tr -d '[]')
+      DESCRIPTION=$(printf '%s' "$REST" | sed -E 's/^\[T[0-9]+\][[:space:]]*//')
+    else
+      TASK_ID=""
+      DESCRIPTION="$REST"
+    fi
 
     # Apply filter
     if [ -n "$FILTER" ]; then

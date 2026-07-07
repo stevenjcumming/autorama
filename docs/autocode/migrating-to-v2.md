@@ -42,7 +42,7 @@ The v2 tag adds two required attributes and a required body:
 - `retryable` is `true|false`
 - The text above the tag now always contains partial results (steps completed, test files written, files changed) and suggested alternatives
 
-To migrate a parser: match the tag by attribute name, not position (`category="..."` and `retryable="..."` appear between `status` and `reason`). Treat a missing or unparseable tag as `status=failed category=unknown`; that is what the execute skill itself now does. The success tag is unchanged. The full contract lives in `plugins/autocode/agents/references/failure-categories.md`.
+To migrate a parser: match the tag by attribute name, not position (`category="..."` and `retryable="..."` appear between `status` and `reason`). Treat a missing or unparseable tag as `status=failed category=unknown`; that is what the execute skill itself now does. The success tag is unchanged. The full contract lives in `plugins/autocode/references/failure-categories.md` (moved out of `agents/references/` in 2.1.0 so the doc no longer auto-registers as a spawnable agent).
 
 ## If Your Automation Relied on "Stop on First Failure"
 

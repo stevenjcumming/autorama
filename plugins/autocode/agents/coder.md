@@ -31,7 +31,7 @@ Implement a single task from the TODO.md checklist, generating appropriate artif
 
 Use the inline `<task-context>` provided in the prompt — this contains the acceptance criteria and relevant plan section. **Do NOT re-read SPEC.md, PLAN.md, or TODO.md** — the task-runner has already extracted the relevant portions.
 
-**Deprecated fallback:** If `<task-context>` is not present in the prompt (legacy invocation without the task-runner), fall back to reading `SPEC.md`, `PLAN.md`, and `TODO.md`. This path wastes tokens by loading full files — prefer inline context from the task-runner.
+**Deprecated fallback:** see `$AUTOCODE_PLUGIN_ROOT/references/task-context-fallback.md` for the legacy no-task-context path.
 
 If `TEST_FILES` is provided, read each test file — these contain the tests written for this task. Your goal is to write the minimum implementation that makes these tests pass.
 
@@ -49,7 +49,7 @@ Before selecting skills or implementing, evaluate:
 If complexity is LARGE:
 - Write a brief approach to `{SPEC_DIR}/artifacts/decisions/{task_id}_approach_{timestamp}.md` (following the `{task_id}_{name}_{timestamp}.md` pattern from the artifact-triggers reference)
 - Consider breaking implementation into logical sub-steps
-- Implement sub-steps sequentially, testing between each
+- Implement sub-steps sequentially; the task-runner verifies via the test command after you return
 
 ### Step 2: Check for Analysis Fixes
 
@@ -110,14 +110,7 @@ If `TEST_FILES` is provided:
 
 For each file modification:
 
-1. **Determine file category** based on its path. Examples:
-   - `db/migrate/*`, `**/migrations/*` → migration
-   - `*_test.go`, `*.test.ts`, `*_spec.rb` → test modification
-   - `config/**/*.yml`, `*.env*` → configuration
-   - `src/services/*`, `app/models/*` → business logic
-   Use your judgment for files that don't fit common patterns. See `$AUTOCODE_PLUGIN_ROOT/agents/references/artifact-triggers.md` for edge cases.
-
-   Category globs come from `justification.categories` in `.claude/autocode.yml`. If `.claude/justifications.yml` exists, its top-level `categories:` replaces autocode.yml's `justification.categories`. Within the active file, the first matching category wins.
+1. **Determine file category** based on its path, using the File Categories table and the justification-category precedence rules in `$AUTOCODE_PLUGIN_ROOT/references/artifact-triggers.md` (the authoritative source — do not restate its table here). Use your judgment for files that don't fit the listed patterns.
 2. **Make the change** using Edit or Write
 3. **Generate justification** for non-trivial changes — the review agent uses these for audit trail
 
