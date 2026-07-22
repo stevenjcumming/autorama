@@ -14,8 +14,9 @@ description: Use when the user wants to create a new GitHub PR or update an exis
 
 Resolve the PR description template in this order:
 
-1. `.claude/templates/pr_description.md` in the project, if it exists
-2. The shipped default: `$AUTOCODE_PLUGIN_ROOT/templates/pr_description.md`
+1. Check `.claude/autocode.yml` for `pr_template_path` (optional config; most projects will not have this key set). If present, use that path (relative to the project root) as the template
+2. `.claude/templates/pr_description.md` in the project, if it exists
+3. The shipped default: `$AUTOCODE_PLUGIN_ROOT/templates/pr_description.md`
 
 Read the first one that exists and use it as the description format.
 

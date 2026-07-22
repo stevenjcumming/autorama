@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.1] - 2026-07-22
+
+### Added
+
+- **`/autocode:ticket <issue-url> [model-override]`**: takes a GitHub issue straight through spec creation, planning, task breakdown, and implementation unattended, then stops at the `autocode:review` checkpoint. Fetches the issue and its comments via `gh issue view`, synthesizes `REQUIREMENT.md`/`SPEC.md` directly from them, picks a model tier (`sonnet`/`opus`) from a labels/size/discussion-depth heuristic (overridable), and runs the task queue through a dedicated Workflow script (`skills/ticket/scripts/ticket-execute.workflow.js`) so the full task-runner transcript history stays out of the calling session's context. Never commits or opens a PR itself — `/autocode:commit` and `/autocode:sync-pr` remain separate, manual steps after the review.
+- **`pr_template_path` config key** in `templates/autocode.yml`: lets a project point `/autocode:sync-pr` at a custom PR description template (e.g. `.github/PULL_REQUEST_TEMPLATE.md`) instead of the shipped default, checked before the existing `.claude/templates/pr_description.md` convention.
+
 ## [2.1.0] - 2026-07-07
 
 Implements Phases 1-4 and 6 of [`.specs/AUTOCODE_POST_MVP_ROADMAP.md`](../../.specs/AUTOCODE_POST_MVP_ROADMAP.md) (items 1-8, 10-43 of the improvement review). Item 9 (cross-spec learning loop) and the full per-task-commit redesign (item 2's complete fix) are deferred to their own specs; see the Deferred note at the end of this entry.

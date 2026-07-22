@@ -46,6 +46,12 @@ artifact_judge:
                                         # kept cheap since this runs on every
                                         # task-runner completion)
 
+# PR template (optional)
+# Path (relative to the project root) to a custom PR description template
+# used by /autocode:sync-pr instead of the shipped default. Takes priority
+# over the conventional .claude/templates/pr_description.md location.
+pr_template_path: .github/PULL_REQUEST_TEMPLATE.md
+
 # Code review configuration (optional)
 # /autocode:code-review resolves its checklist in priority order:
 #   1. code_review.checklist below

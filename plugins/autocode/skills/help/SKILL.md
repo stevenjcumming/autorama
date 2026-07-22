@@ -27,6 +27,7 @@ Display the available Autocode skills in the order they should be used. Each ski
 | Skill | Purpose |
 |-------|---------|
 | `/autocode:spec-archive <id>` | Archive spec files to `~/.autocode/specs/` |
+| `/autocode:ticket <issue-url> [model]` | Run spec/plan/tasks/execute unattended from a GitHub issue, ending at the review checkpoint (commit/PR are separate, manual) |
 
 ## Context Hygiene
 
