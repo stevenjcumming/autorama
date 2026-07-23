@@ -8,6 +8,7 @@ model: opus
 
 <!-- Tool scoping: Bash is unscoped by necessity — this orchestrator runs the project's arbitrary test command from the tester's <test-command> output, plus plugin scripts and git rollback. Grep was dropped: TODO parsing happens via the scripts, and content searches belong to the sub-agents. -->
 <!-- Model: opus, not sonnet. This is the most frequently spawned agent (one fresh instance per task) and makes the plugin's hardest judgment calls across retries — failure categorization (setup/syntax/timeout/runtime/missing/assertion/unknown), fixability assessment (is this a coder-fixable bug vs. a spec/plan defect?), and oscillation/diminishing-returns detection during refactor cycles. That makes it the biggest cost lever in the plugin (roadmap item 42/6.5), so the choice is deliberate, not an oversight — but it hasn't been benchmarked. Revisit by running the same spec on sonnet vs. opus and comparing completion rate and retry counts before downgrading. -->
+<!-- This default is a floor, not a ceiling: callers (execute skill, ticket skill) can pass a MODEL input to bump a task known to be unusually hard up to fable, or down to sonnet/haiku for routine work. See the MODEL entry under <input> below. -->
 
 # Autocode Task Runner Agent
 
@@ -19,6 +20,7 @@ Execute a single task through: **write tests → red → code → green → anal
 - `TASK`: Task to execute (e.g., `[T1] Implement UserService`)
 - `TASK_ID`: Optional explicit task ID
 - `CONFIG`: Optional configuration overrides
+- `MODEL`: Optional model override (`opus`, `sonnet`, `haiku`, or `fable`). When given, pass `model="{MODEL}"` on every sub-agent spawn below (tester, coder, analyzer, refactorer) so the whole task runs on the same tier — e.g. `fable` for a task already known to be unusually hard. When absent, omit the `model` parameter entirely and let each sub-agent use its own frontmatter default.
 
 </input>
 
@@ -41,7 +43,7 @@ Run `$AUTOCODE_PLUGIN_ROOT/scripts/setup-artifacts.sh {SPEC_DIR}` to create dire
 
 ### Step 2: Write Tests (Red Phase)
 
-Spawn tester:
+Spawn tester (add `model="{MODEL}"` if `MODEL` was given in this task-runner's input; omit otherwise):
 ```
 Task(autocode:tester,
   "Write tests for task
@@ -67,7 +69,7 @@ Parse `<test-command>` and `<test-files>` from result. Run `Bash(test_command)` 
 ### Step 3: Implement (Code → Green, max 3 retries)
 
 Loop up to 3 times:
-1. Spawn coder:
+1. Spawn coder (add `model="{MODEL}"` if `MODEL` was given in this task-runner's input; omit otherwise):
 ```
 Task(autocode:coder,
   "Implement task
@@ -92,12 +94,12 @@ On retry, include previous error output so the coder can fix it.
 Skip if no `static_analysis.commands` configured. Track attempts per rule (`{tool}:{rule}` → count).
 
 Loop:
-1. Spawn analyzer with `SPEC_DIR` and `STATIC_ANALYSIS_CONFIG={static_analysis config from autocode.yml}` (the analyzer expects that exact input name). Parse its `<analysis-result>` tag.
+1. Spawn analyzer with `SPEC_DIR` and `STATIC_ANALYSIS_CONFIG={static_analysis config from autocode.yml}` (the analyzer expects that exact input name), adding `model="{MODEL}"` if `MODEL` was given in this task-runner's input. Parse its `<analysis-result>` tag.
 2. If no blocking issues → break.
 3. For each issue: if attempts for its rule ≤ `max_fix_attempts` → actionable; else → deferred (generate debt artifact).
 4. If no actionable issues remain → break.
 5. **Snapshot before the cycle** (see `$AUTOCODE_PLUGIN_ROOT/references/uncommitted-work-handling.md` for the full rationale): `SNAPSHOT=$(mktemp /tmp/autocode-precycle-XXXXXX.patch); git diff HEAD > "$SNAPSHOT"`. An empty patch is fine — it just means the tree was clean before this cycle.
-6. Spawn coder with `ANALYSIS_FIXES={actionable_issues}` (the analyzer's fix instructions), `TEST_FILES`, and `ATTEMPT_HISTORY`. `ATTEMPT_HISTORY` must contain, not just counts: "attempt N of M", the specific analysis error text for each issue being retried (tool, rule, file, line, message), what fix was attempted last time, and why it failed (issue persisted in re-analysis, or tests broke and the fix was rolled back). Instruct: fix issues without breaking tests.
+6. Spawn coder with `ANALYSIS_FIXES={actionable_issues}` (the analyzer's fix instructions), `TEST_FILES`, and `ATTEMPT_HISTORY`, again adding `model="{MODEL}"` if given. `ATTEMPT_HISTORY` must contain, not just counts: "attempt N of M", the specific analysis error text for each issue being retried (tool, rule, file, line, message), what fix was attempted last time, and why it failed (issue persisted in re-analysis, or tests broke and the fix was rolled back). Instruct: fix issues without breaking tests.
 7. Run `Bash(test_command)`. If tests fail → restore the pre-cycle state (do NOT use `git checkout -- .`; see the reference above for why that destroys prior tasks' work):
    ```bash
    git checkout HEAD -- .
@@ -110,7 +112,7 @@ Loop:
 
 Loop up to 3 cycles:
 1. **Snapshot before the cycle**: `SNAPSHOT=$(mktemp /tmp/autocode-precycle-XXXXXX.patch); git diff HEAD > "$SNAPSHOT"`.
-2. Spawn refactorer with `SPEC_DIR`, `TASK`, `TEST_COMMAND={test_command}`, `CHANGED_FILES={CHANGED_FILES from Step 3}`.
+2. Spawn refactorer with `SPEC_DIR`, `TASK`, `TEST_COMMAND={test_command}`, `CHANGED_FILES={CHANGED_FILES from Step 3}`, adding `model="{MODEL}"` if `MODEL` was given in this task-runner's input.
 3. If no changes made → `rm -f "$SNAPSHOT"`; break.
 4. Run `Bash(test_command)`. If tests fail → restore the pre-cycle state the same way as Step 4 (`git checkout HEAD -- .` then `git apply "$SNAPSHOT"`; never `git checkout -- .` — see `$AUTOCODE_PLUGIN_ROOT/references/uncommitted-work-handling.md`), log warning, break. If tests pass, discard the snapshot: `rm -f "$SNAPSHOT"`.
 5. Track changes per cycle. Detect oscillation (same files modified with similar diffs across cycles) or diminishing returns (whitespace/comment-only changes) → break.

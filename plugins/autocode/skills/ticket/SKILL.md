@@ -16,7 +16,7 @@ Take a GitHub issue through the full Autocode pipeline — spec, plan, tasks, im
 
 - `$ARGUMENTS` contains: `<github-issue-url> [model-override]`
 - `ISSUE_URL`: first argument (required)
-- `MODEL_OVERRIDE`: second argument (optional) — `opus`, `sonnet`, or `haiku`. When given, skip the model-selection heuristic in Step 2 and use this for every agent spawned below.
+- `MODEL_OVERRIDE`: second argument (optional) — `opus`, `sonnet`, `haiku`, or `fable`. When given, skip the model-selection heuristic in Step 2 and use this for every agent spawned below. Reserve `fable` for an issue you already know is unusually hard — the heuristic never picks it automatically; it's manual-only.
 
 If `ISSUE_URL` is missing, ask the user for it and stop.
 
@@ -58,7 +58,7 @@ If the skill reports the spec already exists, tell the user and stop — do not 
 
 Unlike the manual flow, there is no human to paste requirements in, so write real content directly:
 
-1. Read `.specs/{IDENTIFIER}/REQUIREMENT.md` and replace the `## Source` section with the issue URL, title, full body, and a transcript of the comments (author + body per comment, in order).
+1. Read `.specs/{IDENTIFIER}/REQUIREMENT.md`. Paste the raw issue content — title, full body, and a transcript of the comments (author + body per comment, in order) — verbatim as the main requirements content (below the header comment, where a human would normally paste requirements). Leave this copy-paste; do not summarize it. Then fill the `## Source` section with just the issue URL, the one piece of content that section is meant to hold — not a copy of the body/comments.
 2. Read `.specs/{IDENTIFIER}/SPEC.md` and fill in Overview, Summary, Success Metrics, Acceptance Criteria, Assumptions & Constraints, Dependencies, Out of Scope, and Open Questions, synthesized from the issue and comments. This must be real content, not template boilerplate — `create-plan.sh` in the next step validates for exactly that and will refuse to proceed otherwise.
 
 ## Step 5: Plan
@@ -67,7 +67,7 @@ Unlike the manual flow, there is no human to paste requirements in, so write rea
 bash $AUTOCODE_PLUGIN_ROOT/skills/create-plan/scripts/create-plan.sh {IDENTIFIER}
 ```
 
-Then spawn the plan builder with the model chosen in Step 2, overriding its `opus` frontmatter default when `MODEL` is `sonnet`:
+Then spawn the plan builder with the model chosen in Step 2, overriding its `opus` frontmatter default whenever `MODEL` differs from it (`sonnet`, `haiku`, or `fable`):
 
 ```
 Task(

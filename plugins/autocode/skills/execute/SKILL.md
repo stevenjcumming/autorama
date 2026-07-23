@@ -2,7 +2,7 @@
 name: execute
 description: Use when the user wants to run the autonomous TDD loop (Write Tests / Red / Code / Green / Analysis / Refactor) for a spec that already has SPEC.md, PLAN.md, and TODO.md. Optionally filter by task ID (T<n>) or phase (P<n>).
 allowed-tools: Bash(bash $AUTOCODE_PLUGIN_ROOT/skills/execute/scripts/validate-autocode.sh:*), Bash(bash $AUTOCODE_PLUGIN_ROOT/scripts/log-usage.sh:*), Bash(bash $AUTOCODE_PLUGIN_ROOT/scripts/read-history.sh:*), Bash(bash $AUTOCODE_PLUGIN_ROOT/scripts/setup-artifacts.sh:*), Bash(bash $AUTOCODE_PLUGIN_ROOT/skills/execute/scripts/build-task-queue.sh:*), Read, Task
-argument-hint: <identifier> [T<n>|P<n>]
+argument-hint: <identifier> [T<n>|P<n>] [model]
 model: sonnet # the orchestration loop only parses script output and status tags; it does not need a larger model, and sonnet keeps the long loop cheap
 ---
 
@@ -12,16 +12,20 @@ Execute the Test -> Code -> Refactor loop autonomously until all tasks are compl
 
 ## Arguments
 
-- `$ARGUMENTS` contains: `<identifier> [filter]`
+- `$ARGUMENTS` contains: `<identifier> [T<n>|P<n>] [model]`
 - Parse the arguments to extract:
   - `IDENTIFIER`: First argument (required) - spec identifier (e.g., `auth-refactor`)
-  - `FILTER`: Second argument (optional) - task ID (e.g., `T3`) or phase ID (e.g., `P1`)
+  - `FILTER`: Optional task ID (e.g., `T3`) or phase ID (e.g., `P1`)
+  - `MODEL`: Optional model override - `opus`, `sonnet`, `haiku`, or `fable`. Reserve `fable` for a task you already expect to be unusually hard; it's the most expensive tier.
 
 ## Step 1: Parse Arguments
 
 Extract from `$ARGUMENTS`:
 - `IDENTIFIER`: The spec identifier (first argument, e.g., `auth-refactor`)
-- `FILTER`: Optional task/phase filter (second argument, e.g., `T3` or `P1`)
+- Among the remaining arguments (order-independent, `FILTER` and `MODEL` are each optional and may appear in either order):
+  - An argument matching `^[TP]\d+$` (e.g. `T3`, `P1`) is `FILTER`
+  - An argument matching `opus`, `sonnet`, `haiku`, or `fable` is `MODEL`
+  - If `MODEL` is not given, leave it unset — task-runner keeps its own frontmatter default (opus)
 - Construct `SPEC_DIR` as `.specs/{IDENTIFIER}`
 
 ## Step 2: Validate Prerequisites
@@ -77,16 +81,18 @@ For each task in the queue:
 
 ### 4.1: Spawn Task Runner
 
-Spawn a fresh `task-runner` agent for each task. Each runner gets its own clean context — it loads SPEC.md, PLAN.md, TODO.md, and handoff context independently.
+Spawn a fresh `task-runner` agent for each task. Each runner gets its own clean context — it loads SPEC.md, PLAN.md, TODO.md, and handoff context independently. If `MODEL` was parsed in Step 1, pass it both as the Task call's own `model` override and in the prompt as `MODEL=`, so the task-runner uses it for its own judgment calls and passes it down to every sub-agent it spawns (tester, coder, analyzer, refactorer).
 
 ```
 Task(
   subagent_type="autocode:task-runner",
+  model="{MODEL}",  # omit this line entirely when MODEL was not given
   prompt="Execute task
 
   SPEC_DIR={SPEC_DIR}
   TASK=[{task_id}] {description}
   TASK_ID={task_id}
+  MODEL={MODEL}  # omit this line entirely when MODEL was not given
 
   Run full write-tests -> red -> code -> green -> analyze -> refactor loop for this task.
   Output structured completion status when done."
