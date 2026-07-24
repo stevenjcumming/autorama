@@ -3,12 +3,12 @@ name: reviewer
 description: When the code-review skill needs a diff evaluated against a checklist, producing severity-bucketed findings.
 tools: Read, Write, Glob, Grep
 permissionMode: acceptEdits
-model: sonnet
+model: opus
 ---
 
 <!-- Tool scoping: no Bash. The diff arrives inline from the code-review skill (the rules forbid re-running git), and codebase exploration is covered by Read/Glob/Grep. Write is required for the report at OUTPUT_PATH. permissionMode: acceptEdits because this agent runs non-interactively inside a Task spawned by the code-review skill; a permission prompt on the Write here would stall the pipeline. -->
 
-<!-- Model: pinned to sonnet by default, even though this agent makes CRITICAL-severity security judgments. Security-sensitive repos can override via an optional `code_review.model` key in `.claude/autocode.yml` (e.g. `code_review: { model: opus }`), matching the existing `code_review.checklist` key's nesting. The code-review skill is responsible for reading this key and passing the override when it spawns this agent via Task; when the key is unset, this frontmatter's `model: sonnet` remains the default. -->
+<!-- Model: opus is the SAFE DEFAULT for this dynamic role. The code-review skill computes the actual tier from the R table in docs/MODEL_SELECTION.md (escalations/failures, sensitive paths, or a large diff→opus; small clean diff→sonnet) and passes it as the Task call's model parameter; `code_review.model` in `.claude/autocode.yml` remains supported as an explicit override of the table result. A call site that omits the parameter fails up to opus, never down. -->
 
 # Autocode Reviewer Agent
 

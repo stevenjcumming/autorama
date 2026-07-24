@@ -2,6 +2,7 @@
 name: commit
 allowed-tools: Bash(git status:*), Bash(git diff:*), Bash(git log:*), Bash(git add:*), Bash(git commit:*), Read
 description: Use when the user wants to commit staged or unstaged changes with a conventional commit message (feat/fix/docs/refactor/etc). Stages all changes if nothing is staged.
+model: sonnet # light generation (a commit message) with a human reading the output; see docs/MODEL_SELECTION.md
 ---
 
 ## Context

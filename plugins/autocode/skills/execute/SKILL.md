@@ -3,7 +3,7 @@ name: execute
 description: Use when the user wants to run the autonomous TDD loop (Write Tests / Red / Code / Green / Analysis / Refactor) for a spec that already has SPEC.md, PLAN.md, and TODO.md. Optionally filter by task ID (T<n>) or phase (P<n>).
 allowed-tools: Bash(bash $AUTOCODE_PLUGIN_ROOT/skills/execute/scripts/validate-autocode.sh:*), Bash(bash $AUTOCODE_PLUGIN_ROOT/scripts/log-usage.sh:*), Bash(bash $AUTOCODE_PLUGIN_ROOT/scripts/read-history.sh:*), Bash(bash $AUTOCODE_PLUGIN_ROOT/scripts/setup-artifacts.sh:*), Bash(bash $AUTOCODE_PLUGIN_ROOT/skills/execute/scripts/build-task-queue.sh:*), Read, Task
 argument-hint: <identifier> [T<n>|P<n>] [model]
-model: sonnet # the orchestration loop only parses script output and status tags; it does not need a larger model, and sonnet keeps the long loop cheap
+model: sonnet # orchestration: the loop only parses script output and status tags, reads config, and spawns task-runners; sonnet keeps the long loop cheap; see docs/MODEL_SELECTION.md
 ---
 
 # Autocode
@@ -16,7 +16,7 @@ Execute the Test -> Code -> Refactor loop autonomously until all tasks are compl
 - Parse the arguments to extract:
   - `IDENTIFIER`: First argument (required) - spec identifier (e.g., `auth-refactor`)
   - `FILTER`: Optional task ID (e.g., `T3`) or phase ID (e.g., `P1`)
-  - `MODEL`: Optional model override - `opus`, `sonnet`, `haiku`, or `fable`. Reserve `fable` for a task you already expect to be unusually hard; it's the most expensive tier.
+  - `MODEL`: Optional explicit model override - `opus`, `sonnet`, `haiku`, or `fable`. This is the M4 override from the plugin's `docs/MODEL_SELECTION.md`: it replaces the C-table result for **generation** work only (repairs still run the cheap repair rules), not a uniform cascade over every agent. Without it, each task's `(easy|standard|hard)` rating in TODO.md picks the coder tier. Reserve `fable` for a task you already expect to be unusually hard; it's the most expensive tier and is still capped by `models.ceiling`.
 
 ## Step 1: Parse Arguments
 
@@ -25,8 +25,10 @@ Extract from `$ARGUMENTS`:
 - Among the remaining arguments (order-independent, `FILTER` and `MODEL` are each optional and may appear in either order):
   - An argument matching `^[TP]\d+$` (e.g. `T3`, `P1`) is `FILTER`
   - An argument matching `opus`, `sonnet`, `haiku`, or `fable` is `MODEL`
-  - If `MODEL` is not given, leave it unset — task-runner keeps its own frontmatter default (opus)
+  - If `MODEL` is not given, leave it unset — the task-runner's C table resolves tiers from each task's rating
 - Construct `SPEC_DIR` as `.specs/{IDENTIFIER}`
+
+Also read `.claude/autocode.yml` (if present) and capture `models.ceiling` as `CEILING`: `opus` when the file or key is absent; `opus` plus a one-line warning when the value is anything other than `opus` or `fable`.
 
 ## Step 2: Validate Prerequisites
 
@@ -69,11 +71,11 @@ bash $AUTOCODE_PLUGIN_ROOT/skills/execute/scripts/build-task-queue.sh {SPEC_DIR}
 ```
 
 Parse the output:
-- Each `TASK:<task_id>:<phase>:<description>` line is one queued task. The line has exactly 3 leading colons; `<description>` is everything after the third colon, taken verbatim (it may itself contain colons - split on the first 3 only, not on every colon in the line).
+- Each `TASK:<task_id>:<phase>:<rating>:<description>` line is one queued task. The line has exactly 4 leading colons; `<description>` is everything after the fourth colon, taken verbatim (it may itself contain colons - split on the first 4 only, not on every colon in the line). `<rating>` is the task's difficulty rating (`easy`, `standard`, or `hard`; the script already normalized missing/unrecognized annotations to `standard`).
 - The `TOTAL:<count>` line gives the total number of tasks
 - If `TOTAL:0`, output "No uncompleted tasks found for the given filter." and exit
 
-Build an ordered queue from the `TASK:` lines.
+Build an ordered queue from the `TASK:` lines, keeping each task's rating.
 
 ## Step 4: Task Loop
 
@@ -81,17 +83,18 @@ For each task in the queue:
 
 ### 4.1: Spawn Task Runner
 
-Spawn a fresh `task-runner` agent for each task. Each runner gets its own clean context — it loads SPEC.md, PLAN.md, TODO.md, and handoff context independently. If `MODEL` was parsed in Step 1, pass it both as the Task call's own `model` override and in the prompt as `MODEL=`, so the task-runner uses it for its own judgment calls and passes it down to every sub-agent it spawns (tester, coder, analyzer, refactorer).
+Spawn a fresh `task-runner` agent for each task. Each runner gets its own clean context — it loads SPEC.md, PLAN.md, TODO.md, and handoff context independently. **Never pass a `model` parameter on this Task call** — the task-runner's sonnet frontmatter governs the orchestration itself. Instead pass the task's `RATING` (from the queue) and `CEILING` (from Step 1) in the prompt; the task-runner resolves each sub-agent spawn from its C table (see the plugin's `docs/MODEL_SELECTION.md`). If `MODEL` was parsed in Step 1, forward it in the prompt as `MODEL=` — the M4 override for generation spawns.
 
 ```
 Task(
   subagent_type="autocode:task-runner",
-  model="{MODEL}",  # omit this line entirely when MODEL was not given
   prompt="Execute task
 
   SPEC_DIR={SPEC_DIR}
   TASK=[{task_id}] {description}
   TASK_ID={task_id}
+  RATING={rating}
+  CEILING={CEILING}
   MODEL={MODEL}  # omit this line entirely when MODEL was not given
 
   Run full write-tests -> red -> code -> green -> analyze -> refactor loop for this task.
@@ -115,7 +118,7 @@ If the task succeeded (`status="completed"`) but the `<artifacts-generated>` tag
 ⚠ Warning: Task {task_id} completed but no artifacts were generated. Check task-runner output.
 ```
 
-This is an observability signal, not a hard gate — do not fail the task or spawn a fallback agent. The task-runner is opus and should reliably execute artifact generation as a numbered step.
+This is an observability signal, not a hard gate — do not fail the task or spawn a fallback agent. Artifact generation is a numbered step in the task-runner's process and should execute reliably.
 
 ### 4.3: Handle Failure
 
@@ -198,7 +201,7 @@ Omit the Failed/Skipped sections when every task completed.
 
 ## Key Principles
 
-- **Minimal context per iteration** — The execute command never reads SPEC.md, PLAN.md, or config files. It only reads script output and task-runner status tags. This keeps per-iteration context growth minimal.
+- **Minimal context per iteration** — The execute command never reads SPEC.md or PLAN.md. It reads `.claude/autocode.yml` once (for `models.ceiling`) and otherwise only script output and task-runner status tags. This keeps per-iteration context growth minimal.
 - **Fresh context per task** — Each task-runner is a fresh agent with its own clean context window, preventing context accumulation across tasks.
 - **Hooks still fire** — Hooks trigger on Task tool usage, so handoff generation and context checks all work as before.
 

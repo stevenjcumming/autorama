@@ -2,6 +2,16 @@
 # Copy this file to .claude/autocode.yml and customize for your project
 # yq is optional; used when present for more robust config parsing, awk fallback otherwise
 
+# Model selection (optional)
+# ceiling caps dynamic model selection (planning, coding, code review).
+# It does NOT affect roles with fixed frontmatter models, so lowering it
+# for cost control cannot starve the tester or other fixed roles.
+# Allowed values: opus (default) or fable. Anything else is treated as
+# opus with a warning. See the plugin's docs/MODEL_SELECTION.md for the
+# full decision tables.
+models:
+  ceiling: opus        # opus (default) or fable
+
 # Static analysis configuration (optional)
 # Customize what static analysis is run during TDD loop
 static_analysis:
@@ -58,13 +68,15 @@ pr_template_path: .github/PULL_REQUEST_TEMPLATE.md
 #   2. .claude/code-review-checklist.md in the project
 #   3. The plugin default at skills/code-review/code-review-checklist.md
 #
-# code_review.model overrides the reviewer agent's model (default: unset, which
-# uses reviewer.md's own frontmatter pin of `sonnet`). The reviewer agent makes
-# CRITICAL-severity security judgments, so security-sensitive repos may want to
-# opt into a stronger model here rather than changing the plugin-wide default.
+# code_review.model is an explicit override (M4 in docs/MODEL_SELECTION.md) of
+# the review model. When unset (the default), the code-review skill picks the
+# reviewer tier per diff from the R table: opus for escalations/failures,
+# security-sensitive paths, or large diffs; sonnet for small clean diffs.
+# Setting it replaces the table result for every review (still capped by
+# models.ceiling above).
 # code_review:
 #   checklist: .claude/my-review-checklist.md   # Path to a custom checklist file
-#   model: opus                                  # Override reviewer model (default: sonnet)
+#   model: opus                                  # Override the R-table reviewer tier (default: unset)
 
 # Justification configuration (optional)
 # Customize when and how justifications are required for file modifications

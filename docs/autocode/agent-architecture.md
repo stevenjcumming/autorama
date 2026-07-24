@@ -7,32 +7,35 @@ The autocode plugin delegates work through a tree of specialized agents. Each ag
 ```
 /autocode:new-spec ─────────────────────────────────────────── (script only, no agent)
 
-/autocode:create-plan ──── plan-builder (opus)
+/autocode:create-plan ──── plan-builder (dynamic: P table, opus safe default)
                     ├── plan-researcher (sonnet)
                     └── plan-analyzer (sonnet)
 
 /autocode:create-tasks ──── (inline, no agent; skill writes TODO.md directly)
 
 /autocode:execute (skill, lightweight loop owner)
-                  ├── task-runner (opus, fresh per task)
-                  │     ├── tester (sonnet)
-                  │     ├── coder (opus)
+                  ├── task-runner (sonnet, fresh per task)
+                  │     ├── tester (opus)
+                  │     ├── coder (dynamic: C table, opus safe default)
                   │     ├── analyzer (sonnet)
                   │     └── refactorer (sonnet)
-                  └── session-summarizer (haiku, on context-critical)
+                  └── session-summarizer (sonnet, on context-critical)
 ```
 
 ## Model Tiers
 
-Agents are assigned to model tiers based on the complexity of their work.
+Model selection uses two mechanisms (canonical reference: [`plugins/autocode/docs/MODEL_SELECTION.md`](../../plugins/autocode/docs/MODEL_SELECTION.md)):
 
-| Tier | Model | Agents | Role |
-|------|-------|--------|------|
-| **Heavy** | Opus | task-runner, coder, plan-builder | Complex reasoning, code generation, multi-step orchestration |
-| **Medium** | Sonnet | tester, analyzer, refactorer, plan-researcher, plan-analyzer | Test writing, structured analysis, pattern matching, sequential tasks |
-| **Light** | Haiku | session-summarizer | Text compression |
+- **Fixed roles** pin `model` in frontmatter and never receive a `model` parameter from callers. Their tier follows the role: the tester is opus because the tests it writes are the oracle everything downstream trusts; analyzers and researchers are sonnet because their output feeds a more capable consumer; the task-runner is sonnet because its hardest judgment calls are encoded in the deterministic C-table rules it applies.
+- **Dynamic roles** (plan-builder, coder, reviewer) pin opus as a fail-up safe default; the orchestrating skill computes the actual tier per work item from a decision table (P for planning, C for coding, R for review) and passes it on the Task call. The common case runs mostly on sonnet; capability is bought only on evidence, and an omitted parameter can only fail up to opus, never down.
 
-The general rule: agents that write code or make architectural decisions use Opus. Agents that analyze, search, or follow structured procedures use Sonnet. Agents that produce formulaic output use Haiku.
+| Assignment | Agents |
+|------|--------|
+| Fixed opus | tester |
+| Fixed sonnet | task-runner, analyzer, refactorer, plan-researcher, plan-analyzer, session-summarizer |
+| Dynamic (opus safe default) | plan-builder (P table), coder (C table), reviewer (R table) |
+
+`models.ceiling` in `.claude/autocode.yml` caps dynamic resolutions only (default `opus`; `fable` allowed).
 
 ## Agent Reference
 
@@ -44,7 +47,7 @@ Orchestrates plan creation by spawning research and analysis sub-agents, then sy
 
 | Field | Value |
 |-------|-------|
-| Model | Opus |
+| Model | Dynamic (P table); opus safe default |
 | Tools | Read, Edit, Task |
 | Spawns | plan-researcher, plan-analyzer |
 
@@ -80,7 +83,7 @@ Executes a single task through the full test/code/analyze/refactor loop. Spawned
 
 | Field | Value |
 |-------|-------|
-| Model | Opus |
+| Model | Sonnet (applies the C table to pick each coder spawn's tier) |
 | Tools | Read, Edit, Write, Task, Glob, Bash |
 | Spawns | tester, coder, analyzer, refactorer |
 
@@ -103,7 +106,7 @@ Writes tests for a task based on requirements and acceptance criteria. Handles t
 
 | Field | Value |
 |-------|-------|
-| Model | Sonnet |
+| Model | Opus (fixed; oracle-defining work) |
 | Tools | Read, Write, Glob, Grep, Bash (scoped to syntax checks) |
 | Spawns | (none) |
 | Produces | Test files |
@@ -114,7 +117,7 @@ Implements the task. Generates audit trail artifacts (justifications, decisions,
 
 | Field | Value |
 |-------|-------|
-| Model | Opus |
+| Model | Dynamic (C table: easy=sonnet, standard=opus, hard=ceiling; repairs=sonnet); opus safe default |
 | Tools | Read, Edit, Write, Glob, Grep |
 | Spawns | (none) |
 | Produces | Justifications, decisions, assumptions, risks, debt, review hints |
@@ -149,7 +152,7 @@ Compresses the full session context into a 500-1000 token summary when context l
 
 | Field | Value |
 |-------|-------|
-| Model | Haiku |
+| Model | Sonnet (a lossy handoff silently degrades every later task) |
 | Tools | Read, Glob, Bash |
 | Spawns | (none) |
 | Output | `SESSION_SUMMARY.md` |

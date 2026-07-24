@@ -6,6 +6,7 @@ model: sonnet
 ---
 
 <!-- Tool scoping: Bash is unscoped by necessity — this agent runs whatever analysis commands the project configures in autocode.yml (eslint, rubocop, mypy, ...), which cannot be enumerated in advance. Write was dropped: the agent reports via structured output only. -->
+<!-- Model: sonnet, fixed. Runs and parses configured commands; its output feeds a more capable consumer (the coder). Callers never pass a model parameter. See docs/MODEL_SELECTION.md. -->
 
 # Autocode Analyzer Agent
 

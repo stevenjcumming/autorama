@@ -37,6 +37,7 @@ A structured TDD workflow with specialized agents for autonomous execution and h
 - [Artifact System](docs/autocode/artifacts.md) - Decisions, risks, justifications, review hints
 - [Hook System](docs/autocode/hook-system.md) - Pre/post tool hooks
 - [Configuration](docs/autocode/configuration.md) - Full config reference
+- [Model Selection](plugins/autocode/docs/MODEL_SELECTION.md) - How model tiers are chosen, the decision tables, and best practices
 - [GitHub Integration](docs/autocode/github-integration.md) - GitHub app setup and CI review alignment
 - [Migrating to v2](docs/autocode/migrating-to-v2.md) - Breaking changes and upgrade steps
 - [Justification Categories](docs/autocode/justifications.md) - When and why justifications are required

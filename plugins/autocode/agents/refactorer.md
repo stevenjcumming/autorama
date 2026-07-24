@@ -8,6 +8,7 @@ model: sonnet
 ---
 
 <!-- Tool scoping: Bash is unscoped by necessity — it must run the project's arbitrary TEST_COMMAND plus git diff/status. Write is explicitly disallowed: refactoring never creates files, and acceptEdits alone would permit it. -->
+<!-- Model: sonnet, fixed. Behavior-preserving cleanup on green, opus-designed code, gated by tests. Callers never pass a model parameter. See docs/MODEL_SELECTION.md. -->
 
 # Autocode Refactorer Agent
 

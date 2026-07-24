@@ -104,7 +104,7 @@ HUMAN ACTION
 /autocode:create-plan <id>
     |
     v
-plan-builder (opus)
+plan-builder (dynamic: P table tier, opus safe default)
     |
     ├── Spawns plan-researcher (sonnet)
     │       └── Analyzes codebase patterns, dependencies
@@ -179,15 +179,15 @@ HUMAN ACTION
 │  │  └───────────────────────────────────────────────────────────────┘ │  │
 │  │                          |                                         │  │
 │  │                          v                                         │  │
-│  │  ┌─── TASK AGENT: task-runner (opus, background) ───────────────┐  │  │
+│  │  ┌─── TASK AGENT: task-runner (sonnet, background) ─────────────┐  │  │
 │  │  │                                                              │  │  │
-│  │  │   tester (sonnet)                                            │  │  │
+│  │  │   tester (opus)                                              │  │  │
 │  │  │       │  Writes tests from acceptance criteria (TDD red)     │  │  │
 │  │  │       │  Generates: test files                               │  │  │
 │  │  │       v                                                      │  │  │
 │  │  │   Bash: run tests (expect RED — tests should fail)           │  │  │
 │  │  │       v                                                      │  │  │
-│  │  │   coder (opus)                                               │  │  │
+│  │  │   coder (C table tier)                                       │  │  │
 │  │  │       │  Implements task                                     │  │  │
 │  │  │       │  Generates: justifications, decisions, assumptions,  │  │  │
 │  │  │       │             risks, debt, review_hints                │  │  │
@@ -223,7 +223,7 @@ HUMAN ACTION
 │  │                          v                                         │  │
 │  │  ┌─── BETWEEN-TASK CHECKS ───────────────────────────────────────┐ │  │
 │  │  │  Context critical?                                            │ │  │
-│  │  │    └── Spawn session-summarizer (haiku)                       │ │  │
+│  │  │    └── Spawn session-summarizer (sonnet)                      │ │  │
 │  │  │        └── Writes SESSION_SUMMARY.md (500-1000 tokens)        │ │  │
 │  │  │                                                               │ │  │
 │  │  └───────────────────────────────────────────────────────────────┘ │  │
@@ -433,19 +433,19 @@ All artifacts written to `.specs/<id>/artifacts/` unless noted.
 ```
 /autocode:new-spec ────────── (script only, no agent)
 
-/autocode:create-plan ─────── plan-builder (opus)
+/autocode:create-plan ─────── plan-builder (dynamic: P table)
                        ├── plan-researcher (sonnet)
                        └── plan-analyzer (sonnet)
 
 /autocode:create-tasks ────── (inline, no agent; skill writes TODO.md directly)
 
 /autocode:execute (skill, lightweight loop owner)
-                       ├── task-runner (opus, fresh per task)
-                       │     ├── tester (sonnet)
-                       │     ├── coder (opus)
+                       ├── task-runner (sonnet, fresh per task)
+                       │     ├── tester (opus)
+                       │     ├── coder (dynamic: C table)
                        │     ├── analyzer (sonnet)
                        │     └── refactorer (sonnet)
-                       └── session-summarizer (haiku)
+                       └── session-summarizer (sonnet)
 ```
 
 ---

@@ -7,6 +7,7 @@ model: sonnet
 ---
 
 <!-- Tool scoping: no Bash. File discovery and pattern search use Glob/Grep only; Write is required for RESEARCH.md. (A prior Bash(wc:*) grant was removed — no documented step used it.) permissionMode: acceptEdits because this agent runs non-interactively inside a Task spawned by plan-builder; a permission prompt here would stall the pipeline. -->
+<!-- Model: sonnet, fixed. Research output feeds a more capable consumer (the plan-builder). Callers never pass a model parameter. See docs/MODEL_SELECTION.md. -->
 
 # Plan Researcher
 

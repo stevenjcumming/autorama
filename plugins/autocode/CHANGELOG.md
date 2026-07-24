@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.0] - 2026-07-23
+
+Dynamic model selection: capability follows the work item (spec, task, diff) for planning, coding, and code review; every other role gets a fixed frontmatter pin. Backward compatible: a missing `models` key, unrated TODO files, and existing specs all resolve to safe defaults.
+
+### Added
+
+- **`docs/MODEL_SELECTION.md`**: canonical reference for the two selection mechanisms, the P/C/R decision tables, the M1-M4 modifiers, fixed frontmatter assignments, the fail-up rule, and user best practices. Skills restate the tables inline where they apply them; any change starts in this doc.
+- **`models.ceiling` config key** in `templates/autocode.yml` (default `opus`; `fable` allowed): caps dynamic model resolution only. Fixed frontmatter pins ignore it, so lowering it for cost control cannot starve the tester or other fixed roles. `fable` is never a default and is only reachable via the ceiling plus a ceiling rule (P2, C3) or an explicit override.
+- **Task difficulty ratings**: the plan-builder now rates each task `easy`/`standard`/`hard` and writes a short per-task design contract (owning module, interface, pattern to mirror, do-not-touch boundaries) into PLAN.md. create-tasks carries ratings into TODO.md as `(easy)` annotations on task lines, human-editable before `/autocode:execute`. `build-task-queue.sh` parses the annotation tolerantly (missing/unrecognized means `standard`) and emits a new 4th field: `TASK:<id>:<phase>:<rating>:<description>`.
+- **Decision logging**: every P/C/R application (including C5 returns and M4 overrides) logs a `model-selection` event with the rule that fired via `log-usage.sh`, and is announced in one line as it happens. `read-history.sh --model-stats` summarizes rule counts, tier distribution, and the C5 return rate for table tuning.
+
+### Changed
+
+- **Dynamic planning**: `create-plan` selects the plan-builder tier from the P table (trivial spec with positive evidence: sonnet; auth/schema/concurrency/migrations, open questions, or 3+ modules: ceiling; else opus). The `ticket` skill's issue-metadata heuristic is deleted; ticket inherits the P table at its plan step and the C table during execution, with `MODEL_OVERRIDE` surviving as an explicit override passed to every stage.
+- **Dynamic coding**: the task-runner's uniform MODEL cascade is replaced by per-spawn C-table resolution. New `RATING` and `CEILING` inputs; generation spawns resolve C1/C2/C3 by rating, repairs run at sonnet (C4) with a return-to-generation-tier rule (C5) after two failed repairs or a structural fix. Tester, analyzer, and refactorer spawns never receive a `model` parameter. `MODEL` remains as an explicit override for generation spawns only, so an opus override no longer makes every retry expensive. The execute skill passes `RATING`/`CEILING` in the prompt and no longer passes `model` on the task-runner spawn itself.
+- **Dynamic review**: `code-review` selects the reviewer tier from the R table using the execution record (C5 escalations or failures force opus; an unavailable record counts as not-clean), diff size and module spread, and sensitive-path matches. `code_review.model` keeps its meaning as an explicit override of the table result.
+- **Frontmatter pins**: tester sonnet to opus (oracle-defining work is silent-failure work); task-runner opus to sonnet (its judgment moved into the deterministic C-table rules); session-summarizer haiku to sonnet (a lossy handoff silently degrades every later task); reviewer sonnet to opus (safe default for a dynamic role). plan-builder and coder stay opus as fail-up safe defaults. Previously unpinned skills get explicit pins: commit, sync-pr, new-spec, create-tasks, review, init, create-plan (sonnet) and spec-archive (haiku).
+
 ## [2.1.1] - 2026-07-22
 
 ### Added

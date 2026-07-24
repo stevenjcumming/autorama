@@ -31,7 +31,7 @@ teardown() {
 EOF
   run "$BUILD_QUEUE" "$SPEC_DIR"
   [ "$status" -eq 0 ]
-  [[ "$output" == *"TASK:T1:P1:Fix bug: edge case in parser"* ]]
+  [[ "$output" == *"TASK:T1:P1:standard:Fix bug: edge case in parser"* ]]
 }
 
 @test "anchored [T2] extraction is not fooled by a mid-line [T2] mention" {
@@ -43,7 +43,7 @@ EOF
   run "$BUILD_QUEUE" "$SPEC_DIR"
   [ "$status" -eq 0 ]
   # No task ID extracted (not anchored at the start), full text kept as description
-  [[ "$output" == *"TASK:none:P1:Some description mentioning [T2] elsewhere in the text"* ]]
+  [[ "$output" == *"TASK:none:P1:standard:Some description mentioning [T2] elsewhere in the text"* ]]
 }
 
 @test "anchored [T1] extraction at the true start of the task line works normally" {
@@ -54,7 +54,7 @@ EOF
 EOF
   run "$BUILD_QUEUE" "$SPEC_DIR"
   [ "$status" -eq 0 ]
-  [[ "$output" == *"TASK:T1:P1:Real task with a mention of [T2] in its own description"* ]]
+  [[ "$output" == *"TASK:T1:P1:standard:Real task with a mention of [T2] in its own description"* ]]
 }
 
 @test "tasks without a [T<n>] tag report task ID 'none'" {
@@ -65,7 +65,7 @@ EOF
 EOF
   run "$BUILD_QUEUE" "$SPEC_DIR"
   [ "$status" -eq 0 ]
-  [[ "$output" == *"TASK:none:P1:Untagged task description"* ]]
+  [[ "$output" == *"TASK:none:P1:standard:Untagged task description"* ]]
 }
 
 @test "completed tasks ([x]) are excluded from the queue" {
@@ -78,8 +78,62 @@ EOF
   run "$BUILD_QUEUE" "$SPEC_DIR"
   [ "$status" -eq 0 ]
   [[ "$output" != *"T1"* ]]
-  [[ "$output" == *"TASK:T2:P1:Still pending"* ]]
+  [[ "$output" == *"TASK:T2:P1:standard:Still pending"* ]]
   [[ "$output" == *"TOTAL:1"* ]]
+}
+
+# ------------------------------------------------------------------
+# difficulty rating annotation: "(easy|standard|hard)" after the task ID
+# ------------------------------------------------------------------
+
+@test "recognized rating annotations are emitted and stripped from the description" {
+  cat > "$SPEC_DIR/TODO.md" << 'EOF'
+## P1: Foundation
+
+- [ ] [T1] (easy) Update README install steps
+- [ ] [T2] (standard) Add validation to OrderController
+- [ ] [T3] (hard) Rework concurrency in the job queue
+EOF
+  run "$BUILD_QUEUE" "$SPEC_DIR"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"TASK:T1:P1:easy:Update README install steps"* ]]
+  [[ "$output" == *"TASK:T2:P1:standard:Add validation to OrderController"* ]]
+  [[ "$output" == *"TASK:T3:P1:hard:Rework concurrency in the job queue"* ]]
+}
+
+@test "missing rating annotation defaults to standard" {
+  cat > "$SPEC_DIR/TODO.md" << 'EOF'
+## P1: Foundation
+
+- [ ] [T1] Task with no rating
+EOF
+  run "$BUILD_QUEUE" "$SPEC_DIR"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"TASK:T1:P1:standard:Task with no rating"* ]]
+}
+
+@test "unrecognized annotation defaults to standard and stays in the description" {
+  cat > "$SPEC_DIR/TODO.md" << 'EOF'
+## P1: Foundation
+
+- [ ] [T1] (medium) Task with a bogus rating
+- [ ] [T2] (optional) Task with a non-rating annotation
+EOF
+  run "$BUILD_QUEUE" "$SPEC_DIR"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"TASK:T1:P1:standard:(medium) Task with a bogus rating"* ]]
+  [[ "$output" == *"TASK:T2:P1:standard:(optional) Task with a non-rating annotation"* ]]
+}
+
+@test "rating annotation works on tasks without a [T<n>] tag" {
+  cat > "$SPEC_DIR/TODO.md" << 'EOF'
+## P1: Foundation
+
+- [ ] (hard) Untagged but rated task
+EOF
+  run "$BUILD_QUEUE" "$SPEC_DIR"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"TASK:none:P1:hard:Untagged but rated task"* ]]
 }
 
 # ------------------------------------------------------------------
@@ -98,8 +152,8 @@ EOF
 EOF
   run "$BUILD_QUEUE" "$SPEC_DIR"
   [ "$status" -eq 0 ]
-  [[ "$output" == *"TASK:T1:P1:Task in P1 form"* ]]
-  [[ "$output" == *"TASK:T2:P2:Task in Phase form"* ]]
+  [[ "$output" == *"TASK:T1:P1:standard:Task in P1 form"* ]]
+  [[ "$output" == *"TASK:T2:P2:standard:Task in Phase form"* ]]
 }
 
 @test "P<n> filter matches tasks under a 'Phase N:' header form" {
@@ -114,7 +168,7 @@ EOF
 EOF
   run "$BUILD_QUEUE" "$SPEC_DIR" "P1"
   [ "$status" -eq 0 ]
-  [[ "$output" == *"TASK:T1:P1:Task under Phase form"* ]]
+  [[ "$output" == *"TASK:T1:P1:standard:Task under Phase form"* ]]
   [[ "$output" != *"T2"* ]]
 }
 
@@ -127,7 +181,7 @@ EOF
 EOF
   run "$BUILD_QUEUE" "$SPEC_DIR" "T2"
   [ "$status" -eq 0 ]
-  [[ "$output" == *"TASK:T2:P1:Second"* ]]
+  [[ "$output" == *"TASK:T2:P1:standard:Second"* ]]
   [[ "$output" != *"TASK:T1"* ]]
 }
 

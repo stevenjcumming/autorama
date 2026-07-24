@@ -13,14 +13,20 @@
 #   filter    Optional: T<n> for single task, P<n> for phase
 #
 # Output (one per line):
-#   TASK:<task_id>:<phase>:<description>
+#   TASK:<task_id>:<phase>:<rating>:<description>
 #
-#   The line is colon-delimited with exactly 3 leading colons; everything
-#   after the third colon is the description verbatim (it may itself
-#   contain colons - do not split on every colon, split on the first 3
+#   The line is colon-delimited with exactly 4 leading colons; everything
+#   after the fourth colon is the description verbatim (it may itself
+#   contain colons - do not split on every colon, split on the first 4
 #   only and take the remainder as-is). <task_id> is the bare ID without
 #   brackets (e.g. "T1"), or the literal string "none" if the checkbox had
-#   no [T<n>] tag; <phase> is "P<n>" or "none" likewise.
+#   no [T<n>] tag; <phase> is "P<n>" or "none" likewise. <rating> is the
+#   task's difficulty annotation from TODO.md ("easy", "standard", or
+#   "hard", written as "- [ ] [T1] (easy) Description"); a missing or
+#   unrecognized annotation emits "standard" (tolerant parsing, never an
+#   error). Recognized annotations are stripped from the description;
+#   unrecognized parenthesized text is left in place. The task-runner's
+#   C table (see docs/MODEL_SELECTION.md) consumes the rating.
 #
 # Exit codes:
 #   0 - Success (outputs task lines)
@@ -110,6 +116,17 @@ while IFS= read -r line; do
       DESCRIPTION="$REST"
     fi
 
+    # Extract the optional difficulty rating annotation, e.g.
+    # "(easy) Update README". Only the three recognized ratings are
+    # stripped from the description; any other parenthesized text (e.g.
+    # "(optional)") is left in the description untouched and the rating
+    # falls back to "standard". Tolerant by design: never an error.
+    RATING="standard"
+    if [[ "$DESCRIPTION" =~ ^\((easy|standard|hard)\)[[:space:]]* ]]; then
+      RATING="${BASH_REMATCH[1]}"
+      DESCRIPTION=$(printf '%s' "$DESCRIPTION" | sed -E 's/^\((easy|standard|hard)\)[[:space:]]*//')
+    fi
+
     # Apply filter
     if [ -n "$FILTER" ]; then
       if [[ "$FILTER" =~ ^T[0-9]+$ ]]; then
@@ -129,7 +146,7 @@ while IFS= read -r line; do
     fi
 
     # Output structured task line
-    echo "TASK:${TASK_ID:-none}:${CURRENT_PHASE:-none}:${DESCRIPTION}"
+    echo "TASK:${TASK_ID:-none}:${CURRENT_PHASE:-none}:${RATING}:${DESCRIPTION}"
     TASK_COUNT=$((TASK_COUNT + 1))
   fi
 done < "$TODO_FILE"

@@ -7,6 +7,7 @@ model: opus
 ---
 
 <!-- Tool scoping: no Bash. The coder only edits files; the task-runner owns running tests and scripts. -->
+<!-- Model: opus is the SAFE DEFAULT for this dynamic role, not the usual tier. The task-runner computes the actual tier per spawn from the C table in docs/MODEL_SELECTION.md (easy→sonnet, standard→opus, hard→ceiling; repairs→sonnet with the C5 return rule) and passes it as the Task call's model parameter. A call site that omits the parameter fails up to opus, never down. -->
 
 # Autocode Coder Agent
 

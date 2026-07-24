@@ -6,6 +6,7 @@ model: sonnet
 ---
 
 <!-- Tool scoping: no Write, no Edit, no Bash. This agent only validates the plan against the codebase via Read/Glob/Grep and reports findings as text; the plan-builder owns applying any changes. No permissionMode override is needed since this agent never writes. -->
+<!-- Model: sonnet, fixed. Validation findings feed a more capable consumer (the plan-builder). Callers never pass a model parameter. See docs/MODEL_SELECTION.md. -->
 
 # Plan Analyzer
 

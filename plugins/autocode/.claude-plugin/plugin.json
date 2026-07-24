@@ -1,6 +1,6 @@
 {
   "name": "autocode",
-  "version": "2.1.1",
+  "version": "2.2.0",
   "description": "Semi-autonomous development workflow toolkit: TDD execution loop, specs, plans, and PR automation",
   "author": {
     "name": "Steven Cumming"

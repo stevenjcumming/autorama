@@ -3,6 +3,7 @@ name: spec-archive
 description: Use when the user is done with a spec and wants to archive all of its files (REQUIREMENT.md, SPEC.md, PLAN.md, TODO.md, SUMMARY.md, artifacts, REVIEW.md) to ~/.autocode/specs/ for long-term storage. REVIEW.md is copied into the archive as well as being preserved in the working directory, so the durable human sign-off record survives in both places.
 allowed-tools: Bash(bash $AUTOCODE_PLUGIN_ROOT/skills/spec-archive/scripts/spec-archive.sh:*), Read
 argument-hint: <identifier>
+model: haiku # script wrapper: runs spec-archive.sh and relays its output; see docs/MODEL_SELECTION.md
 ---
 
 # Spec Archive

@@ -2,6 +2,7 @@
 name: sync-pr
 allowed-tools: Bash(git status:*), Bash(git diff:*), Bash(git log:*), Bash(git branch:*), Bash(git checkout:*), Bash(git switch:*), Bash(git push:*), Bash(git fetch:*), Bash(git remote show:*), Bash(gh repo view:*), Bash(gh pr view:*), Bash(gh pr create:*), Bash(gh pr edit:*), Read
 description: Use when the user wants to create a new GitHub PR or update an existing PR's description for the current branch. Pushes the branch and generates a description from commits and diff.
+model: sonnet # light generation (a PR description) with a human reading the output; see docs/MODEL_SELECTION.md
 ---
 
 ## Context

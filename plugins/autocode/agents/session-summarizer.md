@@ -2,11 +2,12 @@
 name: session-summarizer
 description: Called by the task-runner's Step 8.5 context-pressure check after a task completes, when check-context.sh reports WARNING or CRITICAL; also usable directly when a session ends mid-spec and progress must be compressed into SESSION_SUMMARY.md for the next task-runner.
 tools: Read, Write, Glob, Bash(git diff:*), Bash(git status:*), Bash(date:*), Bash(mkdir:*), Bash(mv:*)
-model: haiku
+model: sonnet
 permissionMode: acceptEdits
 ---
 
 <!-- Tool scoping: Bash is limited to the exact commands this agent runs — git diff/status for session changes, date for the archive timestamp, mkdir/mv for archiving the previous summary. -->
+<!-- Model: sonnet, fixed. Bounded compression work, but a lossy handoff silently degrades every later task in the spec; haiku is false economy here. See docs/MODEL_SELECTION.md. -->
 
 # Session Summarizer Agent
 

@@ -4,9 +4,18 @@ export const meta = {
   phases: [{ title: 'Execute' }],
 }
 
-// Expects `args` = { specDir, model, tasks, pluginRoot }, where tasks is an
-// array of { id, phase, description } parsed from build-task-queue.sh's
-// TASK: lines, and pluginRoot is the caller's resolved $AUTOCODE_PLUGIN_ROOT.
+// Expects `args` = { specDir, ceiling, modelOverride, tasks, pluginRoot },
+// where tasks is an array of { id, phase, rating, description } parsed from
+// build-task-queue.sh's TASK: lines (rating is easy|standard|hard, default
+// standard), ceiling is models.ceiling from autocode.yml (default opus),
+// modelOverride is the ticket skill's optional MODEL_OVERRIDE (M4; null or
+// absent when not given), and pluginRoot is the caller's resolved
+// $AUTOCODE_PLUGIN_ROOT.
+//
+// Model selection: the task-runner is spawned with NO model parameter, so
+// its sonnet frontmatter governs the orchestration itself; RATING/CEILING
+// (and MODEL only when overridden) go in the prompt and the task-runner
+// resolves each sub-agent spawn via the C table in docs/MODEL_SELECTION.md.
 //
 // Tasks run strictly sequentially (not pipeline()/parallel()) because they
 // share one working tree - concurrent task-runner agents editing the same
@@ -21,7 +30,7 @@ export const meta = {
 // "setup" category failure aborts the whole queue, since an environment
 // problem will hit every remaining task identically.
 
-const { specDir, model, tasks, pluginRoot } = args
+const { specDir, ceiling, modelOverride, tasks, pluginRoot } = args
 
 // task-runner shells out to $AUTOCODE_PLUGIN_ROOT/scripts/... internally
 // (test commands, plugin scripts, git rollback). A background Workflow
@@ -46,9 +55,11 @@ for (const task of tasks) {
   log(`${task.id} (${task.phase}): ${task.description}`)
 
   const output = await agent(
-    `Execute task\n\nSPEC_DIR=${specDir}\nTASK=[${task.id}] ${task.description}\nTASK_ID=${task.id}\n\nRun full write-tests -> red -> code -> green -> analyze -> refactor loop for this task. Output structured completion status when done.` +
+    `Execute task\n\nSPEC_DIR=${specDir}\nTASK=[${task.id}] ${task.description}\nTASK_ID=${task.id}\nRATING=${task.rating || 'standard'}\nCEILING=${ceiling || 'opus'}` +
+      (modelOverride ? `\nMODEL=${modelOverride}` : '') +
+      `\n\nRun full write-tests -> red -> code -> green -> analyze -> refactor loop for this task. Output structured completion status when done.` +
       envNote,
-    { agentType: 'autocode:task-runner', model, phase: 'Execute', label: task.id }
+    { agentType: 'autocode:task-runner', phase: 'Execute', label: task.id }
   )
 
   const text = typeof output === 'string' ? output : JSON.stringify(output ?? '')

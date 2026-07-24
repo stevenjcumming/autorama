@@ -3,6 +3,7 @@ name: create-tasks
 allowed-tools: Bash(bash $AUTOCODE_PLUGIN_ROOT/skills/create-tasks/scripts/create-tasks.sh:*), Read, Edit
 description: Use when the user has a completed PLAN.md and wants to break it into actionable tasks. Generates a phased TODO.md checklist with task IDs ([T1], [T2]) for execution. Does NOT start implementation.
 argument-hint: <identifier>
+model: sonnet # mechanical PLAN.md -> TODO.md conversion with a human reviewing the output; see docs/MODEL_SELECTION.md
 ---
 
 # Create Tasks
@@ -81,6 +82,7 @@ Then replace the template content in `TODO.md` with **numbered tasks**:
 
 - **Phases**: Use `## P1:`, `## P2:`, etc.
 - **Tasks**: Prefix each task with `[T1]`, `[T2]`, etc. (global numbering across all phases)
+- **Ratings**: After the task ID, carry over each task's difficulty rating from PLAN.md as a parenthesized annotation: `- [ ] [T1] (easy) First task`. Valid ratings are `easy`, `standard`, and `hard`. A missing annotation is valid and means `standard`; if PLAN.md has no rating for a task, omit the annotation rather than guessing. The rating selects the coder's model tier during execution (see the plugin's `docs/MODEL_SELECTION.md`).
 
 This enables targeted execution: `/autocode:execute <identifier> T3` runs only task T3.
 
@@ -90,13 +92,14 @@ This enables targeted execution: `/autocode:execute <identifier> T3` runs only t
 <!-- Task checklist generated from PLAN.md -->
 <!-- Run specific task: /autocode:execute <identifier> T3 -->
 <!-- Run specific phase: /autocode:execute <identifier> P1 -->
+<!-- (easy|standard|hard) after a task ID rates its difficulty; edit freely before /autocode:execute -->
 
 ## P1: [Actual Phase Name from PLAN.md]
 
-- [ ] [T1] First task
+- [ ] [T1] (easy) First task
 - [ ] [T2] Second task
-- [ ] [T3] Write tests for [component]
-- [ ] [T4] Run [verification command]
+- [ ] [T3] (standard) Write tests for [component]
+- [ ] [T4] (hard) Run [verification command]
 
 ---
 
@@ -125,6 +128,11 @@ Planning complete. Generated TODO.md with N tasks across M phases.
 Files:
 - .specs/<identifier>/PLAN.md - Implementation plan
 - .specs/<identifier>/TODO.md - Task checklist
+
+Task ratings: each task carries an (easy|standard|hard) difficulty rating
+that picks the coder's model tier during execution (missing = standard).
+This is your checkpoint to adjust them - edit the annotations in TODO.md
+before running /autocode:execute if any rating looks wrong.
 
 Run options:
 - All tasks: /autocode:execute <identifier>

@@ -3,6 +3,7 @@ name: review
 description: Use after autocode execution completes to review code changes, artifacts, risks, and review hints before committing. Provides a human checkpoint with approval/reject workflow.
 allowed-tools: Bash(bash $AUTOCODE_PLUGIN_ROOT/skills/review/scripts/review.sh:*), Read, Write, Glob, Grep
 argument-hint: <identifier>
+model: sonnet # presents script-generated SUMMARY.md and records the human's decision; the human is the judgment here; see docs/MODEL_SELECTION.md
 ---
 
 # Review

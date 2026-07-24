@@ -3,6 +3,7 @@ name: init
 allowed-tools: Bash(jq:*), Bash(python3:*), Bash(bash */skills/init/scripts/init.sh:*), Bash(printf "\n## Autocode\n\n@.claude/autocode.yml\n" >> CLAUDE.md), Read
 description: Use once per project to set up Autocode. Creates autocode.yml config, checks for yq dependency, adds .specs/ to .gitignore, and bootstraps the AUTOCODE_PLUGIN_ROOT env var.
 argument-hint: [--justifications <template>]
+model: sonnet # one-time setup: runs a script and relays its output; see docs/MODEL_SELECTION.md
 ---
 
 <!--

@@ -7,6 +7,7 @@ model: opus
 ---
 
 <!-- Tool scoping: no Write, no Bash. PLAN.md is scaffolded by create-plan.sh before this agent runs, so Edit is sufficient to fill it out; codebase research and plan validation are delegated to the plan-researcher and plan-analyzer sub-agents via Task. permissionMode: acceptEdits because this agent runs non-interactively inside a Task, sometimes near context exhaustion; a permission prompt here would stall the pipeline. -->
+<!-- Model: opus is the SAFE DEFAULT for this dynamic role. The create-plan skill computes the actual tier from the P table in docs/MODEL_SELECTION.md (trivial spec→sonnet, high-risk spec→ceiling, else opus) and passes it as the Task call's model parameter. A call site that omits the parameter fails up to opus, never down. -->
 
 # Plan Builder Agent
 
@@ -98,6 +99,13 @@ For each phase:
 - **Success Criteria**: Separated into Automated and Manual
 
 Order phases by dependencies (what must come first).
+
+For **each change/task** within a phase, additionally write:
+
+- **A one-word difficulty rating**: `easy`, `standard`, or `hard`. This drives model selection during execution (the task-runner's C table in `docs/MODEL_SELECTION.md`: easy→sonnet, standard→opus, hard→ceiling). `easy` requires that the design contract below fully specifies the change — if the implementer would have to make any design decision, the task is not `easy`. When in doubt, rate `standard`; a missing rating is treated as `standard` downstream.
+- **A short design contract**: the owning module, the exposed interface (function/class signatures or endpoints), an existing pattern in the codebase to mirror (`file:line`), and explicit do-not-touch boundaries. You just read the codebase, so this is marginal effort here — and it is exactly what makes an `easy` rating safe to hand to a smaller model.
+
+The create-tasks skill carries each rating into TODO.md as a `(easy|standard|hard)` annotation on the task line, where a human can still edit it before execution.
 
 #### Testing Strategy
 - Unit tests (components to test)

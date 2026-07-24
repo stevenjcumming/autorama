@@ -3,10 +3,11 @@ name: tester
 description: When the task-runner needs failing tests written for a task before implementation begins (TDD red phase). Writes tests only; never implementation.
 tools: Read, Write, Glob, Grep, Bash(npx tsc --noEmit:*), Bash(node -c:*), Bash(ruby -c:*), Bash(python -m py_compile:*), Bash(python3 -m py_compile:*), Bash(go vet:*), Bash(cargo check:*)
 permissionMode: acceptEdits
-model: sonnet
+model: opus
 ---
 
 <!-- Tool scoping: Bash is limited to the syntax-check commands from references/test-frameworks.md because this agent never runs tests (the task-runner does). Edit was dropped: Write covers both creating new test files and replacing existing ones after a Read. -->
+<!-- Model: opus, fixed. Oracle-defining work is silent-failure work: the tests this agent writes are the contract every downstream step (coder, refactorer, review) trusts, and weak tests fail silently. Callers never pass a model parameter to this agent. See docs/MODEL_SELECTION.md. -->
 
 # Autocode Tester Agent
 

@@ -12,6 +12,21 @@ cp plugins/autocode/templates/autocode.yml .claude/autocode.yml
 
 ## Reference
 
+### Model Selection
+
+Cap the model tiers that dynamic selection may resolve to.
+
+```yaml
+models:
+  ceiling: opus        # opus (default) or fable
+```
+
+Autocode selects model tiers with two mechanisms: fixed frontmatter pins for roles whose difficulty does not vary per work item, and per-work-item decision tables for planning, coding, and code review. `models.ceiling` caps only the dynamic resolutions; it never affects fixed pins, so lowering it for cost control cannot starve the tester or other fixed roles. Setting `ceiling: fable` allows the highest tier for high-risk specs (P2) and `hard`-rated tasks (C3). A missing key or file means `opus`; an unrecognized value is treated as `opus` with a warning.
+
+Task difficulty ratings are written by the plan-builder into TODO.md as `(easy|standard|hard)` annotations and are human-editable before `/autocode:execute`. Explicit overrides (`/autocode:execute <id> [model]`, `/autocode:ticket <url> [model-override]`, and `code_review.model` below) replace the table results but remain capped by the ceiling.
+
+See the canonical reference: [`plugins/autocode/docs/MODEL_SELECTION.md`](../../plugins/autocode/docs/MODEL_SELECTION.md) for the decision tables, fixed assignments, fail-up rule, and best practices.
+
 ### Static Analysis
 
 Run static analysis tools after tests pass and automatically fix blocking issues.
